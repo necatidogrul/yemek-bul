@@ -3,7 +3,7 @@ import { View, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 // UI Components
-import { Text } from "./index";
+import Text from "./Text";
 import {
   colors,
   spacing,

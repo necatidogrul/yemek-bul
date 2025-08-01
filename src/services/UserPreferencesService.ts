@@ -34,12 +34,20 @@ export class UserPreferencesService {
       const onboardingCompleted = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED);
       
       if (stored) {
-        const preferences = JSON.parse(stored);
-        return {
-          ...DEFAULT_PREFERENCES,
-          ...preferences,
-          onboardingCompleted: onboardingCompleted === 'true',
-        };
+        try {
+          const preferences = JSON.parse(stored);
+          return {
+            ...DEFAULT_PREFERENCES,
+            ...preferences,
+            onboardingCompleted: onboardingCompleted === 'true',
+          };
+        } catch (parseError) {
+          console.warn('Invalid user preferences stored, using defaults:', parseError);
+          return {
+            ...DEFAULT_PREFERENCES,
+            onboardingCompleted: onboardingCompleted === 'true',
+          };
+        }
       }
       
       return {
@@ -48,7 +56,17 @@ export class UserPreferencesService {
       };
     } catch (error) {
       console.error('Error getting user preferences:', error);
-      return DEFAULT_PREFERENCES;
+      // Even if there's an error, check onboarding status separately
+      try {
+        const onboardingCompleted = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED);
+        return {
+          ...DEFAULT_PREFERENCES,
+          onboardingCompleted: onboardingCompleted === 'true',
+        };
+      } catch (onboardingError) {
+        console.error('Error checking onboarding status:', onboardingError);
+        return DEFAULT_PREFERENCES;
+      }
     }
   }
 

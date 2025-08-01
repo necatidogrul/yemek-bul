@@ -64,7 +64,18 @@ export class MockRevenueCatService {
     try {
       const stored = await AsyncStorage.getItem(MOCK_STORAGE_KEY);
       if (stored) {
-        return JSON.parse(stored);
+        try {
+          const parsed = JSON.parse(stored);
+          // Convert date strings back to Date objects
+          return {
+            ...parsed,
+            originalPurchaseDate: parsed.originalPurchaseDate ? new Date(parsed.originalPurchaseDate) : undefined,
+            expirationDate: parsed.expirationDate ? new Date(parsed.expirationDate) : undefined,
+          };
+        } catch (parseError) {
+          console.warn('Invalid mock subscription data, clearing:', parseError);
+          await AsyncStorage.removeItem(MOCK_STORAGE_KEY);
+        }
       }
     } catch (error) {
       console.error('Mock storage error:', error);
@@ -148,7 +159,7 @@ export class MockRevenueCatService {
     if (!info.isPremium) return false;
     
     // Mock: if purchased less than 7 days ago, consider it trial
-    if (info.originalPurchaseDate) {
+    if (info.originalPurchaseDate && info.originalPurchaseDate instanceof Date) {
       const daysSincePurchase = (Date.now() - info.originalPurchaseDate.getTime()) / (1000 * 60 * 60 * 24);
       return daysSincePurchase <= 7;
     }

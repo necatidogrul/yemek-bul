@@ -426,29 +426,3 @@ export const components = {
   },
 };
 
-// Static colors export for StyleSheet usage
-export const colors = {
-  // Light theme colors
-  background: {
-    primary: '#ffffff',
-    secondary: '#f8fafc',
-    tertiary: '#f1f5f9',
-  },
-  text: {
-    primary: '#0f172a',
-    secondary: '#475569',
-    tertiary: '#64748b',
-    accent: basePalette.primary[500],
-    inverse: '#ffffff',
-  },
-  border: {
-    light: '#e2e8f0',
-    medium: '#cbd5e1',
-    strong: '#94a3b8',
-  },
-  neutral: basePalette.neutral,
-  primary: basePalette.primary,
-  success: basePalette.success,
-  warning: basePalette.warning,
-  error: basePalette.error,
-};

@@ -35,14 +35,19 @@ export class UsageLimitService {
       const today = new Date().toDateString();
       
       if (stored) {
-        const usage: UsageLimit = JSON.parse(stored);
-        
-        // Reset if it's a new day
-        if (usage.lastResetDate !== today) {
+        try {
+          const usage: UsageLimit = JSON.parse(stored);
+          
+          // Reset if it's a new day
+          if (usage.lastResetDate !== today) {
+            return this.resetDailyUsage();
+          }
+          
+          return usage;
+        } catch (error) {
+          console.warn('Invalid usage data stored, resetting:', error);
           return this.resetDailyUsage();
         }
-        
-        return usage;
       }
       
       // Initialize for first time

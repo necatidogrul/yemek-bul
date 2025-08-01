@@ -2,9 +2,11 @@ import React, { memo } from "react";
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Recipe } from "../../types/Recipe";
-import { Card, Text, FavoriteButton } from "./index";
+import Card from "./Card";
+import Text from "./Text";
+import { FavoriteButton } from "./FavoriteButton";
 import { OptimizedImage } from "./OptimizedImage";
-import { colors, spacing, borderRadius } from "../../theme/design-tokens";
+import { spacing, borderRadius } from "../../theme/design-tokens";
 import { useThemedStyles } from "../../hooks/useThemedStyles";
 
 interface RecipeCardProps {
@@ -90,7 +92,12 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
               recipe={recipe}
               size={isCompact ? "small" : "medium"}
             />
-            <View style={styles.matchContainer}>
+            <View
+              style={[
+                styles.matchContainer,
+                { backgroundColor: colors.primary[50] },
+              ]}
+            >
               <Text variant="caption" color="muted">
                 Eşleşme
               </Text>
@@ -103,7 +110,11 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
 
         {/* Image Placeholder */}
         <View
-          style={[styles.imagePlaceholder, isCompact && styles.compactImage]}
+          style={[
+            styles.imagePlaceholder,
+            { backgroundColor: colors.neutral[100] },
+            isCompact && styles.compactImage,
+          ]}
         >
           <Ionicons
             name="image-outline"
@@ -113,7 +124,12 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
         </View>
 
         {/* Stats */}
-        <View style={styles.statsContainer}>
+        <View
+          style={[
+            styles.statsContainer,
+            { backgroundColor: colors.background.secondary },
+          ]}
+        >
           <View style={styles.statItem}>
             <Ionicons
               name="time-outline"
@@ -167,7 +183,15 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
 
         {/* Missing Ingredients */}
         {recipe.missingIngredients && recipe.missingIngredients.length > 0 && (
-          <View style={styles.missingContainer}>
+          <View
+            style={[
+              styles.missingContainer,
+              {
+                backgroundColor: colors.warning[50],
+                borderColor: colors.warning[200],
+              },
+            ]}
+          >
             <View style={styles.missingHeader}>
               <Ionicons
                 name="add-circle-outline"
@@ -186,7 +210,13 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
         )}
 
         {/* Action Button */}
-        <TouchableOpacity style={styles.actionButton} onPress={onPress}>
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            { backgroundColor: colors.primary[50] },
+          ]}
+          onPress={onPress}
+        >
           <Text variant="bodySmall" color="accent" weight="semibold">
             Tarifi Görüntüle
           </Text>
@@ -236,7 +266,6 @@ const styles = StyleSheet.create({
 
   matchContainer: {
     alignItems: "center",
-    backgroundColor: colors.primary[50],
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[1],
     borderRadius: borderRadius.md,
@@ -244,7 +273,6 @@ const styles = StyleSheet.create({
 
   imagePlaceholder: {
     height: 120,
-    backgroundColor: colors.neutral[100],
     borderRadius: borderRadius.lg,
     alignItems: "center",
     justifyContent: "center",
@@ -259,7 +287,6 @@ const styles = StyleSheet.create({
     justifyContent: "space-around",
     marginBottom: spacing[3],
     paddingVertical: spacing[2],
-    backgroundColor: colors.background.secondary,
     borderRadius: borderRadius.md,
   },
 
@@ -278,11 +305,9 @@ const styles = StyleSheet.create({
   },
 
   missingContainer: {
-    backgroundColor: colors.warning[50],
     padding: spacing[3],
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: colors.warning[200],
     marginBottom: spacing[3],
   },
 
@@ -298,7 +323,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: spacing[3],
-    backgroundColor: colors.primary[50],
     borderRadius: borderRadius.md,
     gap: spacing[1],
   },

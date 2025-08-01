@@ -9,7 +9,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTour } from '../../contexts/TourContext';
-import { Button, Card, Text } from './index';
+import Button from './Button';
+import Card from './Card';
+import Text from './Text';
 import { colors, spacing, borderRadius } from '../../theme/design-tokens';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');

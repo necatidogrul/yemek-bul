@@ -1,9 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import { View, StyleSheet, ScrollView, Text as RNText, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Text from '../ui/Text';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
 import { spacing, borderRadius, getColors } from '../../theme/design-tokens';
 
 interface Props {
@@ -74,36 +71,36 @@ export class ErrorBoundary extends Component<Props, State> {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <Card variant="default" size="lg" style={styles.errorCard}>
+            <View style={styles.errorCard}>
               {/* Icon */}
               <View style={styles.iconContainer}>
-                <Ionicons name="alert-circle" size={64} color={getColors().error[500]} />
+                <Ionicons name="alert-circle" size={64} color={getColors(false).error[500]} />
               </View>
 
               {/* Title */}
-              <Text variant="h3" weight="bold" align="center" style={styles.title}>
+              <RNText style={styles.title}>
                 Beklenmeyen Bir Hata Oluştu
-              </Text>
+              </RNText>
 
               {/* Description */}
-              <Text variant="body" color="secondary" align="center" style={styles.description}>
+              <RNText style={styles.description}>
                 Uygulamamızda teknik bir sorun yaşandı. Bu durumu geliştirici ekibimize bildirdik.
-              </Text>
+              </RNText>
 
               {/* Error Details (Development Only) */}
               {__DEV__ && this.state.error && (
                 <View style={styles.errorDetails}>
-                  <Text variant="overline" weight="semibold" style={styles.errorDetailsTitle}>
+                  <RNText style={styles.errorDetailsTitle}>
                     Hata Detayları (Geliştirici Modu)
-                  </Text>
+                  </RNText>
                   <View style={styles.errorContent}>
-                    <Text variant="caption" style={styles.errorText}>
+                    <RNText style={styles.errorText}>
                       {this.state.error.toString()}
-                    </Text>
+                    </RNText>
                     {this.state.errorInfo && (
-                      <Text variant="caption" style={styles.stackTrace}>
+                      <RNText style={styles.stackTrace}>
                         {this.state.errorInfo.componentStack}
-                      </Text>
+                      </RNText>
                     )}
                   </View>
                 </View>
@@ -111,38 +108,40 @@ export class ErrorBoundary extends Component<Props, State> {
 
               {/* Actions */}
               <View style={styles.actions}>
-                <Button
-                  variant="primary"
-                  size="lg"
-                  onPress={this.handleRetry}
-                  leftIcon={<Ionicons name="refresh" size={20} />}
+                <TouchableOpacity
                   style={styles.retryButton}
+                  onPress={this.handleRetry}
+                  activeOpacity={0.7}
                 >
-                  Tekrar Dene
-                </Button>
+                  <Ionicons name="refresh" size={20} color={colors.text.inverse} />
+                  <RNText style={styles.buttonText}>
+                    Tekrar Dene
+                  </RNText>
+                </TouchableOpacity>
 
-                <Button
-                  variant="outline"
-                  size="lg"
+                <TouchableOpacity
+                  style={styles.homeButton}
                   onPress={() => {
                     // Could navigate to home or restart app
                     // For now, just retry
                     this.handleRetry();
                   }}
-                  leftIcon={<Ionicons name="home" size={20} />}
-                  style={styles.homeButton}
+                  activeOpacity={0.7}
                 >
-                  Ana Sayfaya Dön
-                </Button>
+                  <Ionicons name="home" size={20} color={colors.primary[500]} />
+                  <RNText style={styles.outlineButtonText}>
+                    Ana Sayfaya Dön
+                  </RNText>
+                </TouchableOpacity>
               </View>
 
               {/* Help Text */}
               <View style={styles.helpContainer}>
-                <Text variant="caption" color="secondary" align="center">
+                <RNText style={styles.helpText}>
                   Sorun devam ederse uygulamayı yeniden başlatmayı deneyin.
-                </Text>
+                </RNText>
               </View>
-            </Card>
+            </View>
           </ScrollView>
         </View>
       );
@@ -168,7 +167,7 @@ export const withErrorBoundary = <P extends object>(
   return WrappedComponent;
 };
 
-const colors = getColors();
+const colors = getColors(false); // Using light theme as default for ErrorBoundary
 
 const styles = StyleSheet.create({
   container: {
@@ -184,6 +183,17 @@ const styles = StyleSheet.create({
   
   errorCard: {
     alignItems: 'center',
+    backgroundColor: colors.surface.primary,
+    padding: spacing[6],
+    borderRadius: borderRadius.xl,
+    shadowColor: colors.neutral[900],
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   
   iconContainer: {
@@ -191,14 +201,20 @@ const styles = StyleSheet.create({
   },
   
   title: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
     marginBottom: spacing[3],
     color: colors.text.primary,
   },
   
   description: {
+    fontSize: 16,
+    textAlign: 'center',
     marginBottom: spacing[6],
     maxWidth: 300,
     lineHeight: 22,
+    color: colors.text.secondary,
   },
   
   errorDetails: {
@@ -207,8 +223,12 @@ const styles = StyleSheet.create({
   },
   
   errorDetailsTitle: {
+    fontSize: 12,
+    fontWeight: '600',
     marginBottom: spacing[2],
     color: colors.error[500],
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   
   errorContent: {
@@ -223,6 +243,7 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     color: colors.error[600],
     marginBottom: spacing[2],
+    fontSize: 12,
   },
   
   stackTrace: {
@@ -234,19 +255,53 @@ const styles = StyleSheet.create({
   
   actions: {
     width: '100%',
-    gap: spacing[3],
     marginBottom: spacing[4],
   },
   
   retryButton: {
-    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primary[500],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
+    borderRadius: borderRadius.md,
+    marginBottom: spacing[3],
+    gap: spacing[2],
   },
   
   homeButton: {
-    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: colors.primary[500],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[4],
+    borderRadius: borderRadius.md,
+    gap: spacing[2],
+  },
+  
+  buttonText: {
+    color: colors.text.inverse,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  
+  outlineButtonText: {
+    color: colors.primary[500],
+    fontSize: 16,
+    fontWeight: '600',
   },
   
   helpContainer: {
     marginTop: spacing[2],
+  },
+  
+  helpText: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: colors.text.secondary,
   },
 });

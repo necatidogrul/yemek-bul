@@ -141,7 +141,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
               <Ionicons name="calendar" size={16} color={colors.neutral[600]} />
               <Text variant="caption" color="secondary">
                 {subscriptionInfo.willRenew ? 'Yenilenir: ' : 'Bitiş: '}
-                {subscriptionInfo.expirationDate.toLocaleDateString('tr-TR')}
+                {subscriptionInfo.expirationDate ? subscriptionInfo.expirationDate.toLocaleDateString('tr-TR') : 'Belirtilmemiş'}
               </Text>
             </View>
           )}

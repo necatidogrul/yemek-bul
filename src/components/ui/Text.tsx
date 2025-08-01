@@ -12,6 +12,7 @@ type TextVariant =
   | "h4"
   | "body"
   | "bodyLarge"
+  | "bodyMedium"
   | "bodySmall"
   | "caption"
   | "overline";
@@ -39,7 +40,8 @@ type TextColor =
   | "inverse"
   | "destructive"
   | "success"
-  | "warning";
+  | "warning"
+  | "primary-foreground";
 
 interface TextProps {
   children: React.ReactNode;
@@ -144,6 +146,15 @@ const Text: React.FC<TextProps> = ({
           34
         ),
       },
+      bodyMedium: {
+        fontSize: scaleFontSize(typography.fontSize.base, scale, 15, 22),
+        lineHeight: scaleFontSize(
+          typography.fontSize.base * typography.lineHeight.normal,
+          scale,
+          19,
+          30
+        ),
+      },
       bodySmall: {
         fontSize: scaleFontSize(typography.fontSize.sm, scale, 12, 20),
         lineHeight: scaleFontSize(
@@ -207,6 +218,7 @@ const Text: React.FC<TextProps> = ({
         destructive: colors.destructive[500],
         success: colors.success[500],
         warning: colors.warning[500],
+        "primary-foreground": colors.text.inverse,
       };
 
       return {

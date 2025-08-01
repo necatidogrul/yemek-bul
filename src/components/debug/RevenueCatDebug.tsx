@@ -21,7 +21,7 @@ const RevenueCatDebug: React.FC = () => {
       `User ID: ${RevenueCatService.getCurrentUserId() || 'None'}`,
       `Premium: ${isPremium ? '👑 YES' : '🆓 NO'}`,
       `Trial: ${subscriptionInfo?.isSandbox ? '🧪 Sandbox' : '🏪 Production'}`,
-      subscriptionInfo?.expirationDate ? `Expires: ${subscriptionInfo.expirationDate.toLocaleDateString()}` : '',
+      subscriptionInfo?.expirationDate && subscriptionInfo.expirationDate instanceof Date ? `Expires: ${subscriptionInfo.expirationDate.toLocaleDateString()}` : '',
     ].filter(Boolean).join('\n');
     
     setDebugInfo(info);

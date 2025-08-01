@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { UserPreferencesService } from "./src/services/UserPreferencesService";
 import { RevenueCatService } from "./src/services/RevenueCatService";
 
@@ -66,6 +67,23 @@ export default function App(): React.ReactElement {
   const checkOnboardingStatus = async () => {
     try {
       const preferences = await UserPreferencesService.getUserPreferences();
+      console.log('🔍 Onboarding status check:', {
+        onboardingCompleted: preferences.onboardingCompleted,
+        fullPreferences: preferences
+      });
+      
+      // DEVELOPMENT ONLY: Force onboarding to show for testing
+      if (__DEV__) {
+        // Uncomment the line below to force show onboarding every time
+        // setIsOnboardingCompleted(false); return;
+        
+        // OR uncomment to reset onboarding once and then comment back
+        // await AsyncStorage.removeItem('onboarding_completed'); 
+        // await AsyncStorage.removeItem('user_preferences');
+        // console.log('🔄 Reset onboarding for testing');
+        // setIsOnboardingCompleted(false); return;
+      }
+      
       setIsOnboardingCompleted(preferences.onboardingCompleted);
     } catch (error) {
       console.error("Onboarding check error:", error);
@@ -73,8 +91,17 @@ export default function App(): React.ReactElement {
     }
   };
 
-  const handleOnboardingComplete = () => {
+  const handleOnboardingComplete = async () => {
+    console.log('🎉 Onboarding completed, updating state');
     setIsOnboardingCompleted(true);
+    
+    // Double-check that it was actually saved
+    try {
+      const preferences = await UserPreferencesService.getUserPreferences();
+      console.log('✅ Verified onboarding status after completion:', preferences.onboardingCompleted);
+    } catch (error) {
+      console.error('Error verifying onboarding completion:', error);
+    }
   };
 
   // Loading durumu
@@ -93,17 +120,17 @@ export default function App(): React.ReactElement {
     return (
       <SafeAreaProvider>
         <ErrorBoundary>
-          <GlobalErrorHandler>
-            <ThemeProvider>
-              <HapticProvider>
-                <ToastProvider>
+          <ThemeProvider>
+            <HapticProvider>
+              <ToastProvider>
+                <GlobalErrorHandler>
                   <OnboardingScreen onComplete={handleOnboardingComplete} />
                   <ToastContainer />
                   <ThemedStatusBar />
-                </ToastProvider>
-              </HapticProvider>
-            </ThemeProvider>
-          </GlobalErrorHandler>
+                </GlobalErrorHandler>
+              </ToastProvider>
+            </HapticProvider>
+          </ThemeProvider>
         </ErrorBoundary>
       </SafeAreaProvider>
     );
@@ -112,10 +139,10 @@ export default function App(): React.ReactElement {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
-        <GlobalErrorHandler>
-          <ThemeProvider>
-            <HapticProvider>
-              <ToastProvider>
+        <ThemeProvider>
+          <HapticProvider>
+            <ToastProvider>
+              <GlobalErrorHandler>
                 <PremiumProvider>
                   <TourProvider>
                     <NavigationContainer>
@@ -126,10 +153,10 @@ export default function App(): React.ReactElement {
                 </PremiumProvider>
                 <ToastContainer />
                 <ThemedStatusBar />
-              </ToastProvider>
-            </HapticProvider>
-          </ThemeProvider>
-        </GlobalErrorHandler>
+              </GlobalErrorHandler>
+            </ToastProvider>
+          </HapticProvider>
+        </ThemeProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
   );

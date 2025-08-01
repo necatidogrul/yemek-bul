@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { StackNavigationProp } from "@react-navigation/stack";
-import { HomeStackParamList } from "../../App";
+import { HomeStackParamList } from "../components/navigation/ThemedNavigators";
 import { SpeechService } from "../services/speechService";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -559,6 +559,6 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
 });
 
-const styles = createStyles(getColors());
+const styles = createStyles(getColors(false)); // Using light theme as default for StyleSheet
 
 export default HomeScreen;

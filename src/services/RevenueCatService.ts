@@ -177,7 +177,7 @@ export class RevenueCatService {
       }
       
       // Generate anonymous user ID
-      const anonymousId = `anonymous_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const anonymousId = `anonymous_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
       return await this.identifyUser(anonymousId);
     } catch (error) {
       console.error('❌ Anonymous login error:', error);
@@ -234,7 +234,12 @@ export class RevenueCatService {
       try {
         const cached = await AsyncStorage.getItem(STORAGE_KEYS.PREMIUM_STATUS);
         if (cached) {
-          return JSON.parse(cached);
+          try {
+            return JSON.parse(cached);
+          } catch (parseError) {
+            console.warn('Invalid premium status cache, clearing:', parseError);
+            await AsyncStorage.removeItem(STORAGE_KEYS.PREMIUM_STATUS);
+          }
         }
       } catch (cacheError) {
         console.error('Cache read error:', cacheError);
@@ -265,8 +270,12 @@ export class RevenueCatService {
       if (lastCheck && parseInt(lastCheck) > fiveMinutesAgo) {
         const cached = await AsyncStorage.getItem(STORAGE_KEYS.PREMIUM_STATUS);
         if (cached) {
-          const info: SubscriptionInfo = JSON.parse(cached);
-          return info.isPremium;
+          try {
+            const info: SubscriptionInfo = JSON.parse(cached);
+            return info.isPremium;
+          } catch (parseError) {
+            console.warn('Invalid cached subscription info:', parseError);
+          }
         }
       }
       

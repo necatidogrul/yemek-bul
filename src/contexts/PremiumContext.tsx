@@ -78,7 +78,7 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
       }
 
       console.log(`🔄 Premium status refreshed: ${info.isPremium ? 'Premium' : 'Free'}`);
-      if (info.isPremium && info.expirationDate) {
+      if (info.isPremium && info.expirationDate && info.expirationDate instanceof Date) {
         console.log(`📅 Expires: ${info.expirationDate.toLocaleDateString()}`);
       }
     } catch (error) {

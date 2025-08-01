@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { ToastConfig, ToastType, ToastPosition } from '../components/ui/Toast';
 
 interface ToastContextType {
@@ -29,9 +29,18 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
   defaultPosition = 'top',
 }) => {
   const [toasts, setToasts] = useState<ToastConfig[]>([]);
+  const timeoutsRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+      timeoutsRef.current.clear();
+    };
+  }, []);
 
   const generateId = useCallback(() => {
-    return `toast_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `toast_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }, []);
 
   const showToast = useCallback((config: Omit<ToastConfig, 'id'>) => {
@@ -54,19 +63,30 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
 
     // Auto-hide toast after duration (unless duration is 0)
     if (newToast.duration && newToast.duration > 0) {
-      setTimeout(() => {
+      const timeout = setTimeout(() => {
         hideToast(id);
+        timeoutsRef.current.delete(id);
       }, newToast.duration);
+      timeoutsRef.current.set(id, timeout);
     }
 
     return id;
   }, [generateId, defaultDuration, defaultPosition, maxToasts]);
 
   const hideToast = useCallback((id: string) => {
+    // Clear timeout if exists
+    const timeout = timeoutsRef.current.get(id);
+    if (timeout) {
+      clearTimeout(timeout);
+      timeoutsRef.current.delete(id);
+    }
     setToasts(prevToasts => prevToasts.filter(toast => toast.id !== id));
   }, []);
 
   const hideAllToasts = useCallback(() => {
+    // Clear all timeouts
+    timeoutsRef.current.forEach(timeout => clearTimeout(timeout));
+    timeoutsRef.current.clear();
     setToasts([]);
   }, []);
 
