@@ -15,7 +15,16 @@ import { Ionicons } from "@expo/vector-icons";
 
 // New UI Components
 import { Button, Card, Input, Text } from "../components/ui";
-import { colors, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { spacing, borderRadius, shadows, getColors } from "../theme/design-tokens";
+import { useThemedStyles } from "../hooks/useThemedStyles";
+import PaywallModal from "../components/premium/PaywallModal";
+import { usePremiumGuard } from "../hooks/usePremiumGuard";
+import { usePremium } from "../contexts/PremiumContext";
+import { useToast } from "../contexts/ToastContext";
+import RevenueCatDebug from "../components/debug/RevenueCatDebug";
+import { ThemeToggle } from "../components/theme/ThemeToggle";
+import { useHaptics } from "../hooks/useHaptics";
+import { useAccessibility } from "../hooks/useAccessibility";
 
 type HomeScreenProps = {
   navigation: StackNavigationProp<HomeStackParamList, "HomeMain">;
@@ -26,27 +35,59 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [ingredientsList, setIngredientsList] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  
+  const { colors } = useThemedStyles();
+  const { isPremium } = usePremium();
+  const { showSuccess, showError, showWarning, showInfo } = useToast();
+  const haptics = useHaptics();
+  const { announceForAccessibility, generateHint } = useAccessibility();
+  const {
+    showPaywall,
+    currentFeature,
+    paywallTitle,
+    paywallDescription,
+    checkSearchLimit,
+    hidePaywall,
+    incrementSearch,
+  } = usePremiumGuard();
 
   const addIngredient = () => {
     const trimmedIngredient = ingredients.trim();
     if (trimmedIngredient && !ingredientsList.includes(trimmedIngredient)) {
       setIngredientsList([...ingredientsList, trimmedIngredient]);
       setIngredients("");
+      showSuccess("Malzeme Eklendi", `${trimmedIngredient} listene eklendi`);
+      // Accessibility announcement
+      announceForAccessibility(`${trimmedIngredient} malzeme listesine eklendi`);
+    } else if (ingredientsList.includes(trimmedIngredient)) {
+      showWarning("Zaten Ekli", "Bu malzeme zaten listende mevcut");
+      announceForAccessibility("Bu malzeme zaten listede mevcut");
     }
   };
 
-  const removeIngredient = (ingredient: string) => {
+  const removeIngredient = async (ingredient: string) => {
     setIngredientsList(ingredientsList.filter((item) => item !== ingredient));
+    showInfo("Malzeme Çıkarıldı", `${ingredient} listeden çıkarıldı`);
+    // Accessibility announcement
+    announceForAccessibility(`${ingredient} listeden çıkarıldı`);
+    // Light haptic feedback for removal  
+    await haptics.selection();
   };
 
   const clearIngredients = () => {
-    setIngredientsList([]);
+    if (ingredientsList.length > 0) {
+      setIngredientsList([]);
+      showInfo("Liste Temizlendi", "Tüm malzemeler listeden çıkarıldı");
+    }
   };
 
   const handleSpeechInput = async () => {
     if (isListening) return;
 
     setIsListening(true);
+    // Haptic feedback for voice start
+    await haptics.voiceStart();
+    
     try {
       SpeechService.speak("Malzemelerinizi söyleyin");
       const spokenIngredients = await SpeechService.speechToText();
@@ -57,22 +98,44 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         );
         setIngredientsList([...ingredientsList, ...newIngredients]);
         SpeechService.speak(`${newIngredients.join(", ")} malzemeleri eklendi`);
+        showSuccess("Sesli Giriş Başarılı", `${newIngredients.length} malzeme eklendi`);
+        // Success haptic feedback
+        await haptics.voiceSuccess();
       } else {
-        Alert.alert("Uyarı", "Hiçbir malzeme algılanmadı. Tekrar deneyin.");
+        showWarning("Malzeme Algılanamadı", "Hiçbir malzeme algılanmadı. Tekrar deneyin.");
+        // Warning haptic feedback
+        await haptics.warning();
       }
     } catch (error) {
-      Alert.alert("Hata", "Sesli giriş sırasında bir hata oluştu.");
+      showError("Sesli Giriş Hatası", "Sesli giriş sırasında bir hata oluştu.");
+      // Error haptic feedback
+      await haptics.voiceError();
     } finally {
+      // Voice stop haptic feedback
+      await haptics.voiceStop();
       setIsListening(false);
     }
   };
 
-  const searchRecipes = () => {
+  const searchRecipes = async () => {
     if (ingredientsList.length === 0) {
-      Alert.alert("Uyarı", "Lütfen en az bir malzeme girin.");
+      showWarning("Malzeme Gerekli", "Lütfen en az bir malzeme girin.");
+      await haptics.warning();
       return;
     }
 
+    // Check search limit for free users
+    const canSearch = await checkSearchLimit();
+    if (!canSearch) {
+      return; // Paywall will be shown automatically
+    }
+
+    // Haptic feedback for search start
+    await haptics.searchStart();
+
+    // Increment search count for tracking
+    await incrementSearch();
+    
     navigation.navigate("RecipeResults", { ingredients: ingredientsList });
   };
 
@@ -82,6 +145,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       style={styles.ingredientChip}
       onPress={() => removeIngredient(ingredient)}
       activeOpacity={0.7}
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={`${ingredient} malzemesi`}
+      accessibilityHint={generateHint('remove_ingredient', 'Malzemeyi listeden çıkarmak için')}
+      testID={`ingredient-chip-${ingredient.toLowerCase().replace(/\s+/g, '-')}`}
     >
       <Text variant="bodySmall" color="accent" weight="medium">
         {ingredient}
@@ -96,15 +164,26 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView 
+      style={styles.container} 
+      nativeID="home-screen"
+      accessible={false} // Let child elements handle accessibility
+    >
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        accessibilityLabel="Ana sayfa içeriği"
+        accessibilityHint="Malzeme eklemek ve yemek tarifleri aramak için aşağı kaydırın"
       >
         {/* Hero Section */}
         <Card variant="elevated" size="lg" style={styles.heroCard}>
-          <View style={styles.heroContent}>
+          <View 
+            style={styles.heroContent}
+            accessible={true}
+            accessibilityRole="header"
+            accessibilityLabel="Yemek Bulucu Ana Başlık"
+          >
             <View style={styles.heroIcon}>
               <Ionicons
                 name="restaurant"
@@ -118,10 +197,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               align="center"
               weight="bold"
               style={styles.heroTitle}
+              accessibilityHeading={true}
+              accessibilityRole="header"
             >
               Evdeki Malzemelerle
             </Text>
-            <Text variant="h4" color="accent" align="center" weight="medium">
+            <Text 
+              variant="h4" 
+              color="accent" 
+              align="center" 
+              weight="medium"
+              accessibilityHeading={true}
+            >
               Neler Yapabilirsin?
             </Text>
 
@@ -130,6 +217,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               color="secondary"
               align="center"
               style={styles.heroSubtitle}
+              accessibilityLabel="Malzemelerinizi girin, size özel yemek tarifleri keşfedin"
             >
               Malzemelerinizi girin, size özel yemek tarifleri keşfedin
             </Text>
@@ -152,6 +240,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             variant="filled"
             size="lg"
             onSubmitEditing={addIngredient}
+            nativeID="ingredient-input"
             rightIcon={
               <TouchableOpacity
                 onPress={addIngredient}
@@ -181,6 +270,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               )
             }
             style={styles.voiceButton}
+            accessibilityLabel={isListening ? "Sesli giriş dinleniyor" : "Sesli malzeme girişi"}
+            accessibilityHint={generateHint('start_voice_input', 'Malzemelerinizi sesli olarak söyleyebilirsiniz')}
+            accessibilityState={{ busy: isListening, disabled: isListening }}
+            testID="voice-input-button"
           >
             {isListening ? "Dinleniyor..." : "🎤 Sesli Giriş"}
           </Button>
@@ -228,6 +321,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               onPress={searchRecipes}
               disabled={isLoading}
               fullWidth
+              nativeID="search-recipes-button"
               leftIcon={
                 isLoading ? (
                   <ActivityIndicator size="small" color={colors.neutral[0]} />
@@ -235,6 +329,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   <Ionicons name="search" size={20} />
                 )
               }
+              accessibilityLabel={isLoading ? "Yemek tarifleri aranıyor" : "Yemek tariflerini ara"}
+              accessibilityHint={generateHint('search_recipes', `${ingredientsList.length} malzeme ile yemek tarifleri bulunacak`)}
+              accessibilityState={{ busy: isLoading, disabled: isLoading }}
+              testID="search-recipes-button"
             >
               {isLoading ? "Aranıyor..." : "🍽️ Yemek Önerilerini Görüntüle"}
             </Button>
@@ -261,6 +359,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             fullWidth
             leftIcon={<Ionicons name="library-outline" size={20} />}
             style={styles.browseButton}
+            nativeID="random-recipe-button"
           >
             📚 Tüm Yemekleri Görüntüle
           </Button>
@@ -311,12 +410,29 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             ))}
           </View>
         </Card>
+        
+        {/* Debug Panel (Development Only) */}
+        <RevenueCatDebug />
+        
+        {/* Dark Mode Toggle (Development Only) */}
+        {__DEV__ && <ThemeToggle />}
       </ScrollView>
+      
+      {/* Premium Paywall Modal */}
+      {currentFeature && (
+        <PaywallModal
+          visible={showPaywall}
+          onClose={hidePaywall}
+          feature={currentFeature}
+          title={paywallTitle}
+          description={paywallDescription}
+        />
+      )}
     </SafeAreaView>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.secondary,
@@ -442,5 +558,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 });
+
+const styles = createStyles(getColors());
 
 export default HomeScreen;

@@ -9,6 +9,8 @@ import {
 } from "../../theme/design-tokens";
 import { Recipe } from "../../types/Recipe";
 import { FavoritesService } from "../../services/FavoritesService";
+import { usePremiumGuard } from "../../hooks/usePremiumGuard";
+import { usePremium } from "../../contexts/PremiumContext";
 
 interface FavoriteButtonProps {
   recipe: Recipe;
@@ -23,6 +25,9 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  const { isPremium } = usePremium();
+  const { checkPremiumFeature } = usePremiumGuard();
 
   useEffect(() => {
     checkFavoriteStatus();
@@ -39,6 +44,11 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
   const toggleFavorite = async () => {
     if (isLoading) return;
+
+    // Check if user has premium access for favorites
+    if (!checkPremiumFeature('favorites')) {
+      return; // Paywall will be shown automatically
+    }
 
     setIsLoading(true);
     try {

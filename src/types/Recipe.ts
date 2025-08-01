@@ -11,11 +11,15 @@ export interface Recipe {
   ingredients: string[];
   instructions: string[];
   preparationTime?: number; // dakika cinsinden
+  cookingTime?: number; // dakika cinsinden
   servings?: number;
   difficulty?: "kolay" | "orta" | "zor";
   category?: "çorba" | "ana_yemek" | "salata" | "tatlı" | "aperatif";
   imageUrl?: string;
   missingIngredients?: string[];
+  matchingIngredients?: number;
+  totalIngredients?: number;
+  isFavorite?: boolean;
 }
 
 export interface RecipeSearchResult {

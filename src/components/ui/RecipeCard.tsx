@@ -1,9 +1,11 @@
-import React from "react";
+import React, { memo } from "react";
 import { TouchableOpacity, View, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Recipe } from "../../types/Recipe";
 import { Card, Text, FavoriteButton } from "./index";
+import { OptimizedImage } from "./OptimizedImage";
 import { colors, spacing, borderRadius } from "../../theme/design-tokens";
+import { useThemedStyles } from "../../hooks/useThemedStyles";
 
 interface RecipeCardProps {
   recipe: Recipe;
@@ -11,11 +13,12 @@ interface RecipeCardProps {
   onPress: () => void;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({
+const RecipeCardComponent: React.FC<RecipeCardProps> = ({
   recipe,
   variant = "default",
   onPress,
 }) => {
+  const { colors } = useThemedStyles();
   const getDifficultyColor = (difficulty?: string) => {
     switch (difficulty?.toLowerCase()) {
       case "easy":
@@ -46,7 +49,9 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
       <Card
         variant="default"
         size={isCompact ? "md" : "lg"}
-        style={[styles.card, isCompact && styles.compactCard]}
+        style={
+          isCompact ? { ...styles.card, ...styles.compactCard } : styles.card
+        }
       >
         {/* Header */}
         <View style={styles.header}>
@@ -297,4 +302,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     gap: spacing[1],
   },
+});
+
+// Memoized export for performance
+export const RecipeCard = memo(RecipeCardComponent, (prevProps, nextProps) => {
+  // Custom comparison function for better performance
+  return (
+    prevProps.recipe.id === nextProps.recipe.id &&
+    prevProps.variant === nextProps.variant &&
+    prevProps.recipe.matchingIngredients === nextProps.recipe.matchingIngredients
+  );
 });

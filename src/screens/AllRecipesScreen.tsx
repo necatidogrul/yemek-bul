@@ -19,6 +19,9 @@ import { debounce } from "lodash";
 // UI Components
 import { Input, Text, Card, Button } from "../components/ui";
 import { RecipeCard } from "../components/ui/RecipeCard";
+import { PullToRefresh } from "../components/ui/PullToRefresh";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
 import { colors, spacing, borderRadius } from "../theme/design-tokens";
 
 type AllRecipesScreenProps = {
@@ -34,7 +37,8 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  // Pull-to-refresh hook tarafından yönetiliyor
+  // const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -115,14 +119,35 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
-      setIsRefreshing(false);
+      // Pull-to-refresh hook'u otomatik olarak yönetiyor
+      // setIsRefreshing(false);
     }
   };
 
-  const onRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    await loadRecipes(1, searchTerm, filters);
-  }, [searchTerm, filters]);
+  // Pull-to-refresh hook'unu kullan
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: useCallback(async () => {
+      await loadRecipes(1, searchTerm, filters);
+    }, [searchTerm, filters]),
+    enabled: true,
+    hapticFeedback: true,
+    refreshingText: 'Tarifler yenileniyor...',
+    pullToRefreshText: 'Tarifleri yenilemek için aşağı çekin',
+    releaseToRefreshText: 'Tarifleri yenilemek için bırakın',
+  });
+
+  const onRefresh = pullToRefresh.handleRefresh;
+
+  // FlatList performance optimizasyonları
+  const flatListOptimizations = useOptimizedFlatList<Recipe>({
+    estimatedItemSize: 200, // Tahmini RecipeCard yüksekliği
+    enableGetItemLayout: false, // Dinamik yükseklik olduğu için false
+    keyExtractor: (item) => item.id,
+    viewabilityConfig: {
+      itemVisiblePercentThreshold: 50,
+      minimumViewTime: 100,
+    },
+  });
 
   const loadMore = useCallback(async () => {
     if (!isLoadingMore && hasMore) {
@@ -374,22 +399,23 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <FlatList
         data={recipes}
-        renderItem={renderRecipeItem}
-        keyExtractor={(item) => item.id}
+        renderItem={flatListOptimizations.createRenderItem(renderRecipeItem)}
         ListHeaderComponent={renderListHeader}
         ListFooterComponent={renderListFooter}
         ListEmptyComponent={renderEmptyState}
         refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
+          <PullToRefresh
+            refreshing={pullToRefresh.isRefreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary[500]]}
-            tintColor={colors.primary[500]}
+            accessibilityLabel="Tarifler listesini yenilemek için aşağı çekin"
+            title={pullToRefresh.refreshText}
           />
         }
         onEndReached={loadMore}
         onEndReachedThreshold={0.5}
         showsVerticalScrollIndicator={false}
+        // Performance optimizations
+        {...flatListOptimizations.optimizedProps}
         contentContainerStyle={[
           styles.listContent,
           recipes.length === 0 && styles.listContentEmpty,

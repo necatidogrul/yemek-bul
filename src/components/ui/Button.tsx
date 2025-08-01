@@ -15,6 +15,9 @@ import {
   borderRadius,
   shadows,
 } from "../../theme/design-tokens";
+import { useHaptics } from "../../hooks/useHaptics";
+import { useAccessibility } from "../../hooks/useAccessibility";
+import { useDynamicType, scaleSpacing } from "../../hooks/useDynamicType";
 
 // Button Variants
 type ButtonVariant =
@@ -37,6 +40,13 @@ interface ButtonProps {
   rightIcon?: React.ReactNode;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  hapticFeedback?: boolean; // Enable/disable haptic feedback
+  nativeID?: string;
+  // Accessibility props
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: { disabled?: boolean; selected?: boolean };
+  testID?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -51,7 +61,16 @@ const Button: React.FC<ButtonProps> = ({
   rightIcon,
   style,
   textStyle,
+  hapticFeedback = true,
+  nativeID,
+  accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
+  testID,
 }) => {
+  const haptics = useHaptics();
+  const { generateHint, shouldReduceMotion } = useAccessibility();
+  const { scale, isAccessibilitySize } = useDynamicType();
   const getButtonStyles = (): ViewStyle => {
     const baseStyles: ViewStyle = {
       flexDirection: "row",
@@ -61,26 +80,26 @@ const Button: React.FC<ButtonProps> = ({
       ...shadows.sm,
     };
 
-    // Size styles
+    // Size styles with accessibility considerations
     const sizeStyles: Record<ButtonSize, ViewStyle> = {
       sm: {
-        height: 36,
-        paddingHorizontal: spacing[3],
+        height: Math.max(36, isAccessibilitySize ? 44 : 36), // Minimum 44pt for accessibility
+        paddingHorizontal: scaleSpacing(spacing[3], scale),
         minWidth: 64,
       },
       md: {
-        height: 44,
-        paddingHorizontal: spacing[4],
+        height: Math.max(44, scaleSpacing(44, scale)), // Always maintain minimum touch target
+        paddingHorizontal: scaleSpacing(spacing[4], scale),
         minWidth: 80,
       },
       lg: {
-        height: 52,
-        paddingHorizontal: spacing[6],
+        height: Math.max(44, scaleSpacing(52, scale)),
+        paddingHorizontal: scaleSpacing(spacing[6], scale),
         minWidth: 96,
       },
       xl: {
-        height: 60,
-        paddingHorizontal: spacing[8],
+        height: Math.max(44, scaleSpacing(60, scale)),
+        paddingHorizontal: scaleSpacing(spacing[8], scale),
         minWidth: 112,
       },
     };
@@ -196,20 +215,54 @@ const Button: React.FC<ButtonProps> = ({
     return iconSizes[size];
   };
 
-  const handlePress = () => {
+  const handlePress = async () => {
     if (!disabled && !loading && onPress) {
+      // Trigger haptic feedback before the action
+      if (hapticFeedback) {
+        await haptics.buttonPress();
+      }
       onPress();
     }
   };
 
   const iconSpacing = spacing[2];
 
+  // Generate accessibility props
+  const getAccessibilityLabel = (): string => {
+    if (accessibilityLabel) return accessibilityLabel;
+    if (typeof children === 'string') return children;
+    return 'Button';
+  };
+
+  const getAccessibilityHint = (): string | undefined => {
+    if (accessibilityHint) return accessibilityHint;
+    if (disabled) return 'Button is disabled';
+    if (loading) return 'Button is loading';
+    return generateHint('button_press');
+  };
+
+  const getAccessibilityState = () => {
+    return {
+      disabled: disabled || loading,
+      busy: loading,
+      ...accessibilityState,
+    };
+  };
+
   return (
     <TouchableOpacity
       style={[getButtonStyles(), style]}
       onPress={handlePress}
       disabled={disabled || loading}
-      activeOpacity={0.8}
+      activeOpacity={shouldReduceMotion() ? 1 : 0.8}
+      nativeID={nativeID}
+      // Accessibility props
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={getAccessibilityLabel()}
+      accessibilityHint={getAccessibilityHint()}
+      accessibilityState={getAccessibilityState()}
+      testID={testID}
     >
       {loading ? (
         <ActivityIndicator

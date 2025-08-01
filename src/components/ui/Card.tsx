@@ -1,11 +1,11 @@
 import React from "react";
 import { View, ViewStyle } from "react-native";
 import {
-  colors,
   spacing,
   borderRadius,
   shadows,
 } from "../../theme/design-tokens";
+import { useThemedStyles } from "../../hooks/useThemedStyles";
 
 type CardVariant = "default" | "elevated" | "outlined" | "filled";
 type CardSize = "sm" | "md" | "lg" | "xl";
@@ -23,6 +23,8 @@ const Card: React.FC<CardProps> = ({
   size = "md",
   style,
 }) => {
+  const { colors } = useThemedStyles();
+  
   const getCardStyles = (): ViewStyle => {
     const baseStyles: ViewStyle = {
       borderRadius: borderRadius.xl,

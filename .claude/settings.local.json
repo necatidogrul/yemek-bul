@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(npx expo start:*)",
+      "Bash(grep:*)",
+      "WebFetch(domain:www.revenuecat.com)",
+      "Bash(npx expo install:*)",
+      "Bash(mv:*)"
+    ],
+    "deny": []
+  }
+}

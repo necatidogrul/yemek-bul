@@ -17,8 +17,13 @@ import { RecipeCard } from "../components/ui/RecipeCard";
 import { SuggestionCard } from "../components/ui/SuggestionCard";
 
 // UI Components
-import { Button, Card, Text } from "../components/ui";
-import { colors, spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { Button, Card, Text, RecipeListSkeleton, Loading, NoSearchResultsEmpty } from "../components/ui";
+import { PullToRefresh } from "../components/ui/PullToRefresh";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
+import { spacing, borderRadius, shadows, colors } from "../theme/design-tokens";
+import { useThemedStyles } from "../hooks/useThemedStyles";
+import { useLoadingState } from "../hooks/useLoadingState";
 
 type RecipeResultsScreenProps = {
   navigation: StackNavigationProp<HomeStackParamList, "RecipeResults">;
@@ -30,9 +35,10 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
   route,
 }) => {
   const { ingredients } = route.params;
-  const [searchResults, setSearchResults] = useState<RecipeSearchResult | null>(
-    null
-  );
+  const { colors } = useThemedStyles();
+  const { isLoading, error, executeAsync } = useLoadingState(true);
+  
+  const [searchResults, setSearchResults] = useState<RecipeSearchResult | null>(null);
   const [suggestions, setSuggestions] = useState<
     {
       ingredient: string;
@@ -40,35 +46,56 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
       priority: number;
     }[]
   >([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [randomRecipe, setRandomRecipe] = useState<Recipe | null>(null);
   const [showRandomSuggestion, setShowRandomSuggestion] = useState(false);
+
+  // Pull-to-refresh hook'unu kullan
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: async () => {
+      await searchRecipes();
+    },
+    enabled: true,
+    hapticFeedback: true,
+    refreshingText: 'Tarifler yenileniyor...',
+    pullToRefreshText: 'Tarifleri yenilemek için aşağı çekin',
+    releaseToRefreshText: 'Tarifleri yenilemek için bırakın',
+  });
+
+  // FlatList performance optimizasyonları
+  const flatListOptimizations = useOptimizedFlatList<Recipe>({
+    estimatedItemSize: 180, // Compact RecipeCard yüksekliği
+    enableGetItemLayout: false,
+    keyExtractor: (item) => item.id,
+    viewabilityConfig: {
+      itemVisiblePercentThreshold: 60,
+      minimumViewTime: 150,
+    },
+  });
 
   useEffect(() => {
     searchRecipes();
   }, []);
 
   const searchRecipes = async () => {
-    try {
-      setIsLoading(true);
-
+    const results = await executeAsync(async () => {
       // Tarifleri ara
-      const results = await RecipeService.searchRecipesByIngredients({
+      const searchResults = await RecipeService.searchRecipesByIngredients({
         ingredients,
         maxMissingIngredients: 8,
       });
-      setSearchResults(results);
-
+      setSearchResults(searchResults);
+      
       // Önerileri al
       const ingredientSuggestions = await RecipeService.getSuggestedIngredients(
         ingredients
       );
       setSuggestions(ingredientSuggestions);
-    } catch (error) {
+      
+      return searchResults;
+    });
+    
+    if (!results && error) {
       Alert.alert("Hata", "Tarifler aranırken bir hata oluştu.");
-      console.error("Search error:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -242,6 +269,17 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
     );
   }
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <View style={styles.loadingContainer}>
+          <RecipeListSkeleton count={4} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   const allRecipes = searchResults
     ? [...searchResults.exactMatches, ...searchResults.nearMatches]
     : [];
@@ -252,7 +290,11 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
       searchResults.nearMatches.length === 0)
   ) {
     return (
-      <SafeAreaView style={styles.container}>{renderEmptyState()}</SafeAreaView>
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <NoSearchResultsEmpty 
+          onBrowseAll={() => navigation.navigate('AllRecipes')}
+        />
+      </SafeAreaView>
     );
   }
 
@@ -339,7 +381,7 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
 
       <FlatList
         data={allRecipes}
-        renderItem={({ item, index }) => (
+        renderItem={flatListOptimizations.createRenderItem(({ item, index }) => (
           <View style={styles.recipeCardContainer}>
             <RecipeCard
               recipe={item}
@@ -356,9 +398,18 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
               }
             />
           </View>
-        )}
-        keyExtractor={(item) => item.id}
+        ))}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <PullToRefresh
+            refreshing={pullToRefresh.isRefreshing}
+            onRefresh={pullToRefresh.handleRefresh}
+            accessibilityLabel="Tarif sonuçlarını yenilemek için aşağı çekin"
+            title={pullToRefresh.refreshText}
+          />
+        }
+        // Performance optimizations
+        {...flatListOptimizations.optimizedProps}
         ListHeaderComponent={() => (
           <View style={styles.sectionsContainer}>
             {/* Exact Matches Section */}
@@ -486,9 +537,7 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing[6],
+    paddingTop: spacing[8],
   },
   loadingContent: {
     marginTop: spacing[4],

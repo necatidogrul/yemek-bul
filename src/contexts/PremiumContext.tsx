@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { RevenueCatService, PremiumStatus } from '../services/RevenueCatService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RevenueCatService, SubscriptionInfo, OfferingInfo } from '../services/RevenueCatService';
 
 interface PremiumContextType {
   isPremium: boolean;
   isLoading: boolean;
-  subscriptionInfo: PremiumStatus | null;
-  purchasePremium: () => Promise<boolean>;
+  subscriptionInfo: SubscriptionInfo | null;
+  availableOfferings: OfferingInfo[];
+  purchasePremium: (packageId?: string) => Promise<boolean>;
   restorePurchases: () => Promise<boolean>;
   refreshStatus: () => Promise<void>;
+  isInFreeTrial: boolean;
+  getSubscriptionManagementURL: () => string;
 }
 
 const PremiumContext = createContext<PremiumContextType | undefined>(undefined);
@@ -20,9 +22,10 @@ interface PremiumProviderProps {
 export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) => {
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [subscriptionInfo, setSubscriptionInfo] = useState<PremiumStatus | null>(null);
+  const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
+  const [availableOfferings, setAvailableOfferings] = useState<OfferingInfo[]>([]);
+  const [isInFreeTrial, setIsInFreeTrial] = useState<boolean>(false);
 
-  // Component mount'ta durumu kontrol et
   useEffect(() => {
     initializePremiumStatus();
   }, []);
@@ -31,17 +34,16 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
     try {
       setIsLoading(true);
       
-      // RevenueCat'i başlat
-      await RevenueCatService.initialize();
-      
-      // Cached durumu kontrol et
-      const cachedStatus = await AsyncStorage.getItem('premium_status');
-      if (cachedStatus) {
-        const cached = JSON.parse(cachedStatus);
-        setIsPremium(cached.isPremium);
+      // RevenueCat should already be initialized in App.tsx
+      if (!RevenueCatService.isReady()) {
+        console.warn('RevenueCat not ready during PremiumContext initialization');
+        return;
       }
       
-      // Güncel durumu kontrol et
+      // Load available offerings
+      await loadOfferings();
+      
+      // Get current subscription status
       await refreshStatus();
     } catch (error) {
       console.error('Premium status initialization error:', error);
@@ -49,39 +51,54 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
       setIsLoading(false);
     }
   };
-
-  const refreshStatus = async () => {
+  
+  const loadOfferings = async () => {
     try {
-      const [status, info] = await Promise.all([
-        RevenueCatService.checkSubscriptionStatus(),
-        RevenueCatService.getSubscriptionInfo()
-      ]);
-      
-      setIsPremium(status);
-      setSubscriptionInfo(info);
-      
-      // Cache'le
-      await AsyncStorage.setItem('premium_status', JSON.stringify({
-        isPremium: status,
-        lastChecked: new Date().toISOString()
-      }));
+      const offerings = await RevenueCatService.getOfferings();
+      setAvailableOfferings(offerings);
+      console.log(`✅ Loaded ${offerings.length} offerings`);
     } catch (error) {
-      console.error('Refresh premium status error:', error);
+      console.error('Load offerings error:', error);
+      setAvailableOfferings([]);
     }
   };
 
-  const purchasePremium = async (): Promise<boolean> => {
+  const refreshStatus = async () => {
+    try {
+      const info = await RevenueCatService.getSubscriptionInfo();
+      setSubscriptionInfo(info);
+      setIsPremium(info.isPremium);
+
+      // Check if user is in free trial
+      if (info.isPremium) {
+        const trialStatus = await RevenueCatService.isInFreeTrial();
+        setIsInFreeTrial(trialStatus);
+      } else {
+        setIsInFreeTrial(false);
+      }
+
+      console.log(`🔄 Premium status refreshed: ${info.isPremium ? 'Premium' : 'Free'}`);
+      if (info.isPremium && info.expirationDate) {
+        console.log(`📅 Expires: ${info.expirationDate.toLocaleDateString()}`);
+      }
+    } catch (error) {
+      console.error('Refresh status error:', error);
+    }
+  };
+
+  const purchasePremium = async (packageId?: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       
-      const result = await RevenueCatService.purchasePremium();
+      const result = await RevenueCatService.purchasePremium(packageId);
       
       if (result.success) {
         await refreshStatus();
         return true;
+      } else {
+        console.error('Purchase failed:', result.error);
+        return false;
       }
-      
-      return false;
     } catch (error) {
       console.error('Purchase premium error:', error);
       return false;
@@ -99,9 +116,10 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
       if (result.success) {
         await refreshStatus();
         return true;
+      } else {
+        console.error('Restore failed:', result.error);
+        return false;
       }
-      
-      return false;
     } catch (error) {
       console.error('Restore purchases error:', error);
       return false;
@@ -110,13 +128,20 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
     }
   };
 
+  const getSubscriptionManagementURL = (): string => {
+    return RevenueCatService.getSubscriptionManagementURL();
+  };
+
   const value: PremiumContextType = {
     isPremium,
     isLoading,
     subscriptionInfo,
+    availableOfferings,
     purchasePremium,
     restorePurchases,
-    refreshStatus
+    refreshStatus,
+    isInFreeTrial,
+    getSubscriptionManagementURL,
   };
 
   return (
@@ -126,13 +151,12 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) =>
   );
 };
 
-// Hook
 export const usePremium = (): PremiumContextType => {
   const context = useContext(PremiumContext);
-  
-  if (context === undefined) {
+  if (!context) {
     throw new Error('usePremium must be used within a PremiumProvider');
   }
-  
   return context;
-}; 
+};
+
+export default PremiumContext;

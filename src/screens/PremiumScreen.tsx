@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -6,21 +6,22 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { StackNavigationProp } from '@react-navigation/stack';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { StackNavigationProp } from "@react-navigation/stack";
 
 // UI Components
-import { Button, Card, Text } from '../components/ui';
-import { colors, spacing, borderRadius } from '../theme/design-tokens';
-import { usePremium } from '../contexts/PremiumContext';
+import { Button, Card, Text } from "../components/ui";
+import { colors, spacing, borderRadius } from "../theme/design-tokens";
+import { usePremium } from "../contexts/PremiumContext";
 
 interface PremiumScreenProps {
   navigation: StackNavigationProp<any>;
 }
 
 const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
-  const { isPremium, isLoading, purchasePremium, restorePurchases } = usePremium();
+  const { isPremium, isLoading, purchasePremium, restorePurchases } =
+    usePremium();
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Eğer zaten premium ise geri dön
@@ -33,32 +34,32 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
   const handlePurchase = async () => {
     try {
       setIsProcessing(true);
-      
+
       const success = await purchasePremium();
-      
+
       if (success) {
         Alert.alert(
-          '🎉 Tebrikler!',
-          'Premium üyeliğiniz aktifleştirildi. Artık sınırsız favori tarif ekleyebilirsiniz!',
+          "🎉 Tebrikler!",
+          "Premium üyeliğiniz aktifleştirildi. Artık sınırsız favori tarif ekleyebilirsiniz!",
           [
             {
-              text: 'Harika!',
+              text: "Harika!",
               onPress: () => navigation.goBack(),
-            }
+            },
           ]
         );
       } else {
         Alert.alert(
-          '❌ Satın Alma Başarısız',
-          'Satın alma işlemi tamamlanamadı. Lütfen tekrar deneyiniz.',
-          [{ text: 'Tamam' }]
+          "❌ Satın Alma Başarısız",
+          "Satın alma işlemi tamamlanamadı. Lütfen tekrar deneyiniz.",
+          [{ text: "Tamam" }]
         );
       }
     } catch (error) {
       Alert.alert(
-        '❌ Hata',
-        'Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.',
-        [{ text: 'Tamam' }]
+        "❌ Hata",
+        "Bir hata oluştu. Lütfen daha sonra tekrar deneyiniz.",
+        [{ text: "Tamam" }]
       );
     } finally {
       setIsProcessing(false);
@@ -68,33 +69,31 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
   const handleRestore = async () => {
     try {
       setIsProcessing(true);
-      
+
       const success = await restorePurchases();
-      
+
       if (success) {
         Alert.alert(
-          '✅ Satın Alımlar Geri Yüklendi',
-          'Premium üyeliğiniz başarıyla geri yüklendi!',
+          "✅ Satın Alımlar Geri Yüklendi",
+          "Premium üyeliğiniz başarıyla geri yüklendi!",
           [
             {
-              text: 'Harika!',
+              text: "Harika!",
               onPress: () => navigation.goBack(),
-            }
+            },
           ]
         );
       } else {
         Alert.alert(
-          'ℹ️ Satın Alım Bulunamadı',
-          'Bu hesapta premium üyelik bulunamadı.',
-          [{ text: 'Tamam' }]
+          "ℹ️ Satın Alım Bulunamadı",
+          "Bu hesapta premium üyelik bulunamadı.",
+          [{ text: "Tamam" }]
         );
       }
     } catch (error) {
-      Alert.alert(
-        '❌ Hata',
-        'Satın alımlar geri yüklenirken hata oluştu.',
-        [{ text: 'Tamam' }]
-      );
+      Alert.alert("❌ Hata", "Satın alımlar geri yüklenirken hata oluştu.", [
+        { text: "Tamam" },
+      ]);
     } finally {
       setIsProcessing(false);
     }
@@ -102,39 +101,39 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
 
   const premiumFeatures = [
     {
-      icon: 'heart',
-      title: 'Sınırsız Favori Tarifler',
-      description: 'İstediğiniz kadar tarifi favorilerinize ekleyin',
+      icon: "heart",
+      title: "Sınırsız Favori Tarifler",
+      description: "İstediğiniz kadar tarifi favorilerinize ekleyin",
       color: colors.destructive[500],
     },
     {
-      icon: 'folder',
-      title: 'Özel Koleksiyonlar',
-      description: 'Tariflerinizi kategorilere göre organize edin',
+      icon: "folder",
+      title: "Özel Koleksiyonlar",
+      description: "Tariflerinizi kategorilere göre organize edin",
       color: colors.primary[500],
     },
     {
-      icon: 'sparkles',
-      title: 'Premium Tarif Önerileri',
-      description: 'Size özel gelişmiş algoritma ile tarif önerileri',
+      icon: "sparkles",
+      title: "Premium Tarif Önerileri",
+      description: "Size özel gelişmiş algoritma ile tarif önerileri",
       color: colors.warning[500],
     },
     {
-      icon: 'flash',
-      title: 'Gelişmiş Filtreleme',
-      description: 'Daha detaylı arama ve filtreleme seçenekleri',
+      icon: "flash",
+      title: "Gelişmiş Filtreleme",
+      description: "Daha detaylı arama ve filtreleme seçenekleri",
       color: colors.success[500],
     },
     {
-      icon: 'sync',
-      title: 'Bulut Senkronizasyonu',
-      description: 'Verileriniz tüm cihazlarınızda senkronize',
+      icon: "sync",
+      title: "Bulut Senkronizasyonu",
+      description: "Verileriniz tüm cihazlarınızda senkronize",
       color: colors.info[500],
     },
     {
-      icon: 'remove-circle',
-      title: 'Reklamsız Deneyim',
-      description: 'Hiç reklam görmeden kullanın',
+      icon: "remove-circle",
+      title: "Reklamsız Deneyim",
+      description: "Hiç reklam görmeden kullanın",
       color: colors.neutral[600],
     },
   ];
@@ -167,15 +166,20 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
               <Ionicons name="close" size={24} color={colors.neutral[600]} />
             </Button>
           </View>
-          
+
           <View style={styles.headerContent}>
             <View style={styles.premiumBadge}>
-              <Ionicons name="crown" size={32} color={colors.warning[600]} />
+              <Ionicons name="star" size={32} color={colors.warning[600]} />
             </View>
             <Text variant="h1" weight="bold" align="center" color="primary">
               Premium'a Yükseltin
             </Text>
-            <Text variant="body" align="center" color="secondary" style={styles.headerSubtitle}>
+            <Text
+              variant="body"
+              align="center"
+              color="secondary"
+              style={styles.headerSubtitle}
+            >
               Yemek Bulucu'nun tüm özelliklerinin keyfini çıkarın
             </Text>
           </View>
@@ -192,15 +196,20 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
                 /ay
               </Text>
             </View>
-            
+
             <View style={styles.trialInfo}>
               <Ionicons name="gift" size={20} color={colors.success[500]} />
               <Text variant="body" weight="semibold" color="success">
                 İlk 3 gün ücretsiz!
               </Text>
             </View>
-            
-            <Text variant="caption" color="secondary" align="center" style={styles.renewalInfo}>
+
+            <Text
+              variant="caption"
+              color="secondary"
+              align="center"
+              style={styles.renewalInfo}
+            >
               İstediğiniz zaman iptal edebilirsiniz. Otomatik yenilenir.
             </Text>
           </View>
@@ -211,14 +220,28 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
           <Text variant="h3" weight="semibold" style={styles.featuresTitle}>
             Premium Özellikler
           </Text>
-          
+
           {premiumFeatures.map((feature, index) => (
-            <Card key={index} variant="default" size="md" style={styles.featureCard}>
+            <Card
+              key={index}
+              variant="default"
+              size="md"
+              style={styles.featureCard}
+            >
               <View style={styles.featureContent}>
-                <View style={[styles.featureIcon, { backgroundColor: `${feature.color}20` }]}>
-                  <Ionicons name={feature.icon as any} size={24} color={feature.color} />
+                <View
+                  style={[
+                    styles.featureIcon,
+                    { backgroundColor: `${feature.color}20` },
+                  ]}
+                >
+                  <Ionicons
+                    name={feature.icon as any}
+                    size={24}
+                    color={feature.color}
+                  />
                 </View>
-                
+
                 <View style={styles.featureText}>
                   <Text variant="bodyLarge" weight="semibold" color="primary">
                     {feature.title}
@@ -244,12 +267,12 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
               isProcessing ? (
                 <ActivityIndicator size={20} color={colors.neutral[0]} />
               ) : (
-                <Ionicons name="crown" size={20} />
+                <Ionicons name="star" size={20} />
               )
             }
             style={styles.purchaseButton}
           >
-            {isProcessing ? 'İşlem yapılıyor...' : '👑 Premium'a Başla'}
+            {isProcessing ? "İşlem yapılıyor..." : "👑 Premium'a Başla"}
           </Button>
 
           <Button
@@ -265,12 +288,17 @@ const PremiumScreen: React.FC<PremiumScreenProps> = ({ navigation }) => {
 
         {/* Legal Info */}
         <View style={styles.legalContainer}>
-          <Text variant="caption" color="secondary" align="center" style={styles.legalText}>
-            Satın alma işlemi ile{' '}
+          <Text
+            variant="caption"
+            color="secondary"
+            align="center"
+            style={styles.legalText}
+          >
+            Satın alma işlemi ile{" "}
             <Text variant="caption" weight="semibold" color="primary">
               Kullanım Şartları
-            </Text>
-            {' '}ve{' '}
+            </Text>{" "}
+            ve{" "}
             <Text variant="caption" weight="semibold" color="primary">
               Gizlilik Politikası
             </Text>
@@ -292,8 +320,8 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     gap: spacing[4],
   },
   loadingText: {
@@ -304,14 +332,14 @@ const styles = StyleSheet.create({
     paddingBottom: spacing[6],
   },
   closeButtonContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
     marginBottom: spacing[4],
   },
   closeButton: {
     padding: spacing[2],
   },
   headerContent: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing[3],
   },
   premiumBadge: {
@@ -319,8 +347,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: colors.warning[100],
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing[2],
   },
   headerSubtitle: {
@@ -332,17 +360,17 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   pricingContent: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing[3],
   },
   priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
+    flexDirection: "row",
+    alignItems: "baseline",
     gap: spacing[1],
   },
   trialInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing[2],
     backgroundColor: colors.success[50],
     paddingHorizontal: spacing[4],
@@ -364,16 +392,16 @@ const styles = StyleSheet.create({
     marginBottom: spacing[3],
   },
   featureContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing[4],
   },
   featureIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   featureText: {
     flex: 1,
@@ -391,7 +419,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
   restoreButton: {
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   legalContainer: {
     padding: spacing[4],
@@ -403,4 +431,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PremiumScreen; 
+export default PremiumScreen;

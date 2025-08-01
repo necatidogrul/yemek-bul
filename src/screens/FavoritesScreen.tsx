@@ -13,9 +13,16 @@ import { Recipe } from "../types/Recipe";
 import { FavoritesService } from "../services/FavoritesService";
 
 // UI Components
-import { Button, Card, Text } from "../components/ui";
+import { Button, Card, Text, NoFavoritesEmpty, Loading } from "../components/ui";
 import { RecipeCard } from "../components/ui/RecipeCard";
-import { colors, spacing, borderRadius } from "../theme/design-tokens";
+import { PullToRefresh } from "../components/ui/PullToRefresh";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
+import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
+import { spacing, borderRadius, colors } from "../theme/design-tokens";
+import { useThemedStyles } from "../hooks/useThemedStyles";
+import PaywallModal from "../components/premium/PaywallModal";
+import { usePremiumGuard } from "../hooks/usePremiumGuard";
+import { usePremium } from "../contexts/PremiumContext";
 
 type FavoritesScreenProps = {
   navigation: StackNavigationProp<FavoritesStackParamList, "FavoritesMain">;
@@ -25,9 +32,50 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const [favorites, setFavorites] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Pull-to-refresh hook'unu kullan
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: async () => {
+      await loadFavorites();
+    },
+    enabled: true,
+    hapticFeedback: true,
+    refreshingText: 'Favoriler yenileniyor...',
+    pullToRefreshText: 'Favorileri yenilemek için aşağı çekin',
+    releaseToRefreshText: 'Favorileri yenilemek için bırakın',
+  });
+
+  // FlatList performance optimizasyonları
+  const flatListOptimizations = useOptimizedFlatList<Recipe>({
+    estimatedItemSize: 200, // Default RecipeCard yüksekliği
+    enableGetItemLayout: false,
+    keyExtractor: (item) => item.id,
+    viewabilityConfig: {
+      itemVisiblePercentThreshold: 50,
+      minimumViewTime: 100,
+    },
+  });
+  
+  const { colors } = useThemedStyles();
+  const { isPremium } = usePremium();
+  const {
+    showPaywall,
+    currentFeature,
+    paywallTitle,
+    paywallDescription,
+    checkPremiumFeature,
+    hidePaywall,
+  } = usePremiumGuard();
+
   useEffect(() => {
+    checkAccessAndLoadFavorites();
+  }, [isPremium]);
+  
+  const checkAccessAndLoadFavorites = async () => {
+    if (!checkPremiumFeature('favorites')) {
+      return; // Paywall will be shown automatically
+    }
     loadFavorites();
-  }, []);
+  };
 
   const loadFavorites = async () => {
     try {
@@ -48,43 +96,10 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     });
   };
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconContainer}>
-        <Ionicons name="heart-outline" size={64} color={colors.neutral[400]} />
-      </View>
-      <View style={styles.emptyContent}>
-        <Text variant="h3" weight="bold" color="primary" align="center">
-          Henüz Favori Tarifiniz Yok
-        </Text>
-        <Text
-          variant="body"
-          color="secondary"
-          align="center"
-          style={styles.emptyDescription}
-        >
-          Beğendiğiniz tarifleri favorilerinize ekleyerek buradan kolayca
-          ulaşabilirsiniz. Kalp simgesine tıklayarak tarif ekleyebilirsiniz.
-        </Text>
-      </View>
-      <Button
-        variant="primary"
-        size="lg"
-        onPress={() =>
-          navigation.navigate("RecipeDetail", {
-            recipeId: "sample",
-            recipeName: "Örnek Tarif",
-          })
-        }
-        leftIcon={
-          <Ionicons name="search" size={20} color={colors.neutral[0]} />
-        }
-        style={styles.exploreButton}
-      >
-        🍽️ Tarifleri Keşfet
-      </Button>
-    </View>
-  );
+  const handleExploreRecipes = () => {
+    // Navigate to all recipes screen  
+    navigation.getParent()?.navigate('AllRecipesTab');
+  };
 
   const renderHeader = () => (
     <Card variant="filled" size="lg" style={styles.headerCard}>
@@ -140,22 +155,69 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     );
   }
 
+  // Show loading state
+  if (isLoading && favorites.length === 0) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <Loading size="large" text="Favoriler yükleniyor..." />
+      </SafeAreaView>
+    );
+  }
+
+  // Show empty state if no favorites
+  if (!isLoading && favorites.length === 0) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
+        <NoFavoritesEmpty onExplore={handleExploreRecipes} />
+        
+        {/* Premium Paywall Modal */}
+        {currentFeature && (
+          <PaywallModal
+            visible={showPaywall}
+            onClose={hidePaywall}
+            feature={currentFeature}
+            title={paywallTitle}
+            description={paywallDescription}
+          />
+        )}
+      </SafeAreaView>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
       <FlatList
         data={favorites}
-        renderItem={({ item }) => (
+        renderItem={flatListOptimizations.createRenderItem(({ item }) => (
           <View style={styles.recipeCardContainer}>
             <RecipeCard recipe={item} onPress={() => handleRecipePress(item)} />
           </View>
-        )}
-        keyExtractor={(item) => item.id}
+        ))}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.listContent}
-        refreshing={isLoading}
-        onRefresh={loadFavorites}
+        refreshControl={
+          <PullToRefresh
+            refreshing={pullToRefresh.isRefreshing || isLoading}
+            onRefresh={pullToRefresh.handleRefresh}
+            accessibilityLabel="Favoriler listesini yenilemek için aşağı çekin"
+            title={pullToRefresh.refreshText}
+          />
+        }
+        // Performance optimizations
+        {...flatListOptimizations.optimizedProps}
       />
+      
+      {/* Premium Paywall Modal */}
+      {currentFeature && (
+        <PaywallModal
+          visible={showPaywall}
+          onClose={hidePaywall}
+          feature={currentFeature}
+          title={paywallTitle}
+          description={paywallDescription}
+        />
+      )}
     </SafeAreaView>
   );
 };

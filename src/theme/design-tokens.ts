@@ -1,5 +1,7 @@
-// Design Tokens - Modern, Professional Design System
-export const colors = {
+// Design Tokens - Modern, Professional Design System with Dark Mode Support
+
+// Base color palettes (theme-independent)
+const basePalette = {
   // Brand Colors - Food-centric palette
   primary: {
     50: "#fff7ed",
@@ -75,11 +77,41 @@ export const colors = {
     950: "#451a03",
   },
 
+  // Destructive - Red for errors and destructive actions
+  destructive: {
+    50: "#fef2f2",
+    100: "#fee2e2",
+    200: "#fecaca",
+    300: "#fca5a5",
+    400: "#f87171",
+    500: "#ef4444",
+    600: "#dc2626",
+    700: "#b91c1c",
+    800: "#991b1b",
+    900: "#7f1d1d",
+    950: "#450a0a",
+  },
+
+  // Info - Blue for informational content
+  info: {
+    50: "#eff6ff",
+    100: "#dbeafe",
+    200: "#bfdbfe",
+    300: "#93c5fd",
+    400: "#60a5fa",
+    500: "#3b82f6",
+    600: "#2563eb",
+    700: "#1d4ed8",
+    800: "#1e40af",
+    900: "#1e3a8a",
+    950: "#172554",
+  },
+
   // Neutral Colors - Modern Gray Scale
   neutral: {
     0: "#ffffff",
     50: "#f9fafb",
-    100: "#f3f4f6",
+    100: "#f3f4f6",	
     200: "#e5e7eb",
     300: "#d1d5db",
     400: "#9ca3af",
@@ -90,28 +122,89 @@ export const colors = {
     900: "#111827",
     950: "#030712",
   },
+};
 
-  // Semantic Colors
+// Light theme colors
+const lightTheme = {
+  ...basePalette,
+  
+  // Semantic Colors - Light Mode
   background: {
-    primary: "#ffffff",
-    secondary: "#f9fafb",
-    tertiary: "#f3f4f6",
+    primary: basePalette.neutral[0],      // white
+    secondary: basePalette.neutral[50],   // very light gray
+    tertiary: basePalette.neutral[100],   // light gray
+    accent: basePalette.primary[50],      // light orange
   },
 
   // Surface colors for cards, modals etc.
   surface: {
-    primary: "#ffffff",
-    secondary: "#f9fafb",
-    elevated: "#ffffff",
+    primary: basePalette.neutral[0],      // white
+    secondary: basePalette.neutral[50],   // very light gray
+    elevated: basePalette.neutral[0],     // white with shadow
+    accent: basePalette.primary[50],      // light orange
+  },
+
+  // Text colors
+  text: {
+    primary: basePalette.neutral[900],    // dark gray
+    secondary: basePalette.neutral[600],  // medium gray
+    tertiary: basePalette.neutral[400],   // light gray
+    accent: basePalette.primary[600],     // orange
+    inverse: basePalette.neutral[0],      // white (for dark backgrounds)
   },
 
   // Border colors
   border: {
-    light: "#f3f4f6",
-    medium: "#e5e7eb",
-    strong: "#d1d5db",
+    light: basePalette.neutral[100],      // very light gray
+    medium: basePalette.neutral[200],     // light gray
+    strong: basePalette.neutral[300],     // medium-light gray
   },
 };
+
+// Dark theme colors
+const darkTheme = {
+  ...basePalette,
+  
+  // Semantic Colors - Dark Mode
+  background: {
+    primary: basePalette.neutral[950],    // very dark
+    secondary: basePalette.neutral[900],  // dark
+    tertiary: basePalette.neutral[800],   // medium dark
+    accent: basePalette.primary[950],     // dark orange
+  },
+
+  // Surface colors for cards, modals etc.
+  surface: {
+    primary: basePalette.neutral[900],    // dark
+    secondary: basePalette.neutral[800],  // medium dark
+    elevated: basePalette.neutral[800],   // medium dark with shadow
+    accent: basePalette.primary[900],     // dark orange
+  },
+
+  // Text colors
+  text: {
+    primary: basePalette.neutral[50],     // very light
+    secondary: basePalette.neutral[300],  // light gray
+    tertiary: basePalette.neutral[500],   // medium gray
+    accent: basePalette.primary[400],     // light orange
+    inverse: basePalette.neutral[900],    // dark (for light backgrounds)
+  },
+
+  // Border colors
+  border: {
+    light: basePalette.neutral[800],      // medium dark
+    medium: basePalette.neutral[700],     // dark
+    strong: basePalette.neutral[600],     // medium dark
+  },
+};
+
+// Theme-aware color function
+export const getColors = (isDark: boolean = false) => {
+  return isDark ? darkTheme : lightTheme;
+};
+
+// Default export for backwards compatibility (light theme)
+export const colors = lightTheme;
 
 // Typography Scale
 export const typography = {
@@ -331,4 +424,31 @@ export const components = {
       xl: 24,
     },
   },
+};
+
+// Static colors export for StyleSheet usage
+export const colors = {
+  // Light theme colors
+  background: {
+    primary: '#ffffff',
+    secondary: '#f8fafc',
+    tertiary: '#f1f5f9',
+  },
+  text: {
+    primary: '#0f172a',
+    secondary: '#475569',
+    tertiary: '#64748b',
+    accent: basePalette.primary[500],
+    inverse: '#ffffff',
+  },
+  border: {
+    light: '#e2e8f0',
+    medium: '#cbd5e1',
+    strong: '#94a3b8',
+  },
+  neutral: basePalette.neutral,
+  primary: basePalette.primary,
+  success: basePalette.success,
+  warning: basePalette.warning,
+  error: basePalette.error,
 };

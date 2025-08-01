@@ -27,6 +27,9 @@ import {
   typography,
 } from "../theme/design-tokens";
 import { FavoriteButton } from "../components/ui/FavoriteButton";
+import PaywallModal from "../components/premium/PaywallModal";
+import { usePremiumGuard } from "../hooks/usePremiumGuard";
+import { usePremium } from "../contexts/PremiumContext";
 
 type RecipeDetailScreenProps = {
   navigation:
@@ -46,11 +49,39 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [shoppingList, setShoppingList] = useState<string[]>([]);
+  
+  const { isPremium } = usePremium();
+  const {
+    showPaywall,
+    currentFeature,
+    paywallTitle,
+    paywallDescription,
+    checkRecipeViewLimit,
+    hidePaywall,
+    incrementRecipeView,
+  } = usePremiumGuard();
 
   useEffect(() => {
     navigation.setOptions({ title: recipeName });
-    loadRecipe();
+    checkAndLoadRecipe();
   }, []);
+  
+  const checkAndLoadRecipe = async () => {
+    // Check if user can view this recipe (for free users)
+    const canView = await checkRecipeViewLimit();
+    if (canView) {
+      await incrementRecipeView();
+      loadRecipe();
+    } else {
+      // Paywall will be shown automatically
+      // Navigate back after a short delay if user doesn't upgrade
+      setTimeout(() => {
+        if (!isPremium) {
+          navigation.goBack();
+        }
+      }, 100);
+    }
+  };
 
   const loadRecipe = async () => {
     try {
@@ -561,6 +592,17 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           </View>
         </View>
       </ScrollView>
+      
+      {/* Premium Paywall Modal */}
+      {currentFeature && (
+        <PaywallModal
+          visible={showPaywall}
+          onClose={hidePaywall}
+          feature={currentFeature}
+          title={paywallTitle}
+          description={paywallDescription}
+        />
+      )}
     </SafeAreaView>
   );
 };
