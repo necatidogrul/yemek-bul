@@ -1,21 +1,30 @@
 import React from "react";
 import { Text as RNText, TextStyle, AccessibilityRole } from "react-native";
-import { typography } from "../../theme/design-tokens";
-import { useThemedStyles } from "../../hooks/useThemedStyles";
-import { useDynamicType, scaleFontSize } from "../../hooks/useDynamicType";
+import { useTheme } from "../../contexts/ThemeContext";
 import { useAccessibility } from "../../hooks/useAccessibility";
 
+// Modern Typography Variants - Professional Design System
 type TextVariant =
+  | "displayLarge"
+  | "displayMedium"
+  | "displaySmall"
+  | "headlineLarge"
+  | "headlineMedium"
+  | "headlineSmall"
+  | "bodyLarge"
+  | "bodyMedium"
+  | "bodySmall"
+  | "labelLarge"
+  | "labelMedium"
+  | "labelSmall"
   | "h1"
   | "h2"
   | "h3"
   | "h4"
-  | "body"
-  | "bodyLarge"
-  | "bodyMedium"
-  | "bodySmall"
+  | "h5"
+  | "h6"
   | "caption"
-  | "overline";
+  | "body";
 
 type TextWeight =
   | "normal"
@@ -35,13 +44,11 @@ type TextWeight =
 type TextColor =
   | "primary"
   | "secondary"
-  | "tertiary"
   | "accent"
   | "inverse"
-  | "destructive"
   | "success"
   | "warning"
-  | "primary-foreground";
+  | "error";
 
 interface TextProps {
   children: React.ReactNode;
@@ -62,7 +69,7 @@ interface TextProps {
 
 const Text: React.FC<TextProps> = ({
   children,
-  variant = "body",
+  variant = "bodyMedium",
   weight = "normal",
   color = "primary",
   align = "left",
@@ -75,117 +82,92 @@ const Text: React.FC<TextProps> = ({
   accessibilityHeading,
   testID,
 }) => {
-  const { colors } = useThemedStyles();
-  const { scale, isAccessibilitySize } = useDynamicType();
+  const { colors, typography } = useTheme();
   const { isScreenReaderActive } = useAccessibility();
 
   const getTextStyles = (): TextStyle => {
     const baseStyles: TextStyle = {
-      fontFamily: typography.fontFamily.sans,
       color: colors.text.primary,
       textAlign: align,
     };
 
-    // Variant styles with dynamic type scaling
+    // Professional typography variants
     const variantStyles: Record<TextVariant, TextStyle> = {
-      h1: {
-        fontSize: scaleFontSize(typography.fontSize["4xl"], scale, 24, 60),
-        lineHeight: scaleFontSize(
-          typography.fontSize["4xl"] * typography.lineHeight.tight,
-          scale,
-          28,
-          72
-        ),
-        fontWeight: "700",
+      displayLarge: {
+        ...typography.display.large,
       },
-      h2: {
-        fontSize: scaleFontSize(typography.fontSize["3xl"], scale, 22, 48),
-        lineHeight: scaleFontSize(
-          typography.fontSize["3xl"] * typography.lineHeight.tight,
-          scale,
-          26,
-          56
-        ),
-        fontWeight: "700",
+      displayMedium: {
+        ...typography.display.medium,
       },
-      h3: {
-        fontSize: scaleFontSize(typography.fontSize["2xl"], scale, 20, 36),
-        lineHeight: scaleFontSize(
-          typography.fontSize["2xl"] * typography.lineHeight.snug,
-          scale,
-          24,
-          42
-        ),
-        fontWeight: "600",
+      displaySmall: {
+        ...typography.display.small,
       },
-      h4: {
-        fontSize: scaleFontSize(typography.fontSize.xl, scale, 18, 28),
-        lineHeight: scaleFontSize(
-          typography.fontSize.xl * typography.lineHeight.snug,
-          scale,
-          22,
-          34
-        ),
-        fontWeight: "600",
+      headlineLarge: {
+        ...typography.headline.large,
       },
-      body: {
-        fontSize: scaleFontSize(typography.fontSize.base, scale, 14, 24),
-        lineHeight: scaleFontSize(
-          typography.fontSize.base * typography.lineHeight.normal,
-          scale,
-          18,
-          32
-        ),
+      headlineMedium: {
+        ...typography.headline.medium,
+      },
+      headlineSmall: {
+        ...typography.headline.small,
       },
       bodyLarge: {
-        fontSize: scaleFontSize(typography.fontSize.lg, scale, 16, 26),
-        lineHeight: scaleFontSize(
-          typography.fontSize.lg * typography.lineHeight.normal,
-          scale,
-          20,
-          34
-        ),
+        ...typography.body.large,
       },
       bodyMedium: {
-        fontSize: scaleFontSize(typography.fontSize.base, scale, 15, 22),
-        lineHeight: scaleFontSize(
-          typography.fontSize.base * typography.lineHeight.normal,
-          scale,
-          19,
-          30
-        ),
+        ...typography.body.medium,
       },
       bodySmall: {
-        fontSize: scaleFontSize(typography.fontSize.sm, scale, 12, 20),
-        lineHeight: scaleFontSize(
-          typography.fontSize.sm * typography.lineHeight.normal,
-          scale,
-          16,
-          26
-        ),
+        ...typography.body.small,
+      },
+      labelLarge: {
+        ...typography.label.large,
+      },
+      labelMedium: {
+        ...typography.label.medium,
+      },
+      labelSmall: {
+        ...typography.label.small,
+      },
+      h1: {
+        fontSize: 36,
+        fontWeight: "600",
+        lineHeight: 44,
+      },
+      h2: {
+        fontSize: 32,
+        fontWeight: "600",
+        lineHeight: 40,
+      },
+      h3: {
+        fontSize: 30,
+        fontWeight: "600",
+        lineHeight: 38,
+      },
+      h4: {
+        fontSize: 24,
+        fontWeight: "600",
+        lineHeight: 32,
+      },
+      h5: {
+        fontSize: 20,
+        fontWeight: "600",
+        lineHeight: 28,
+      },
+      h6: {
+        fontSize: 16,
+        fontWeight: "600",
+        lineHeight: 24,
       },
       caption: {
-        fontSize: scaleFontSize(typography.fontSize.xs, scale, 10, 16),
-        lineHeight: scaleFontSize(
-          typography.fontSize.xs * typography.lineHeight.normal,
-          scale,
-          14,
-          22
-        ),
-        color: colors.text.secondary,
+        fontSize: 12,
+        fontWeight: "400",
+        lineHeight: 16,
       },
-      overline: {
-        fontSize: scaleFontSize(typography.fontSize.xs, scale, 10, 16),
-        lineHeight: scaleFontSize(
-          typography.fontSize.xs * typography.lineHeight.normal,
-          scale,
-          14,
-          22
-        ),
-        fontWeight: "600",
-        textTransform: "uppercase",
-        letterSpacing: typography.letterSpacing.wider,
-        color: colors.text.secondary,
+      body: {
+        fontSize: 16,
+        fontWeight: "400",
+        lineHeight: 24,
       },
     };
 
@@ -207,18 +189,16 @@ const Text: React.FC<TextProps> = ({
       semibold: { fontWeight: "600" },
     };
 
-    // Color styles
+    // Professional color mapping
     const getColorStyle = (): TextStyle => {
       const colorMap: Record<TextColor, string> = {
         primary: colors.text.primary,
         secondary: colors.text.secondary,
-        tertiary: colors.text.tertiary,
         accent: colors.text.accent,
-        inverse: colors.text.inverse,
-        destructive: colors.destructive[500],
-        success: colors.success[500],
-        warning: colors.warning[500],
-        "primary-foreground": colors.text.inverse,
+        inverse: colors.current.onSurface,
+        success: colors.semantic.success,
+        warning: colors.semantic.warning,
+        error: colors.semantic.error,
       };
 
       return {
@@ -238,7 +218,11 @@ const Text: React.FC<TextProps> = ({
   const getAccessibilityRole = (): AccessibilityRole => {
     if (accessibilityRole) return accessibilityRole;
 
-    if (variant.startsWith("h") || accessibilityHeading) {
+    if (
+      variant.includes("display") ||
+      variant.includes("headline") ||
+      accessibilityHeading
+    ) {
       return "header";
     }
 
@@ -270,10 +254,9 @@ const Text: React.FC<TextProps> = ({
       accessibilityLabel={getAccessibilityLabel()}
       accessibilityHint={accessibilityHint}
       testID={testID}
-      // Adjust for screen reader
-      adjustsFontSizeToFit={!isScreenReaderActive && isAccessibilitySize}
+      // Professional font scaling
       allowFontScaling={true}
-      maxFontSizeMultiplier={2.5}
+      maxFontSizeMultiplier={1.5}
     >
       {children}
     </RNText>

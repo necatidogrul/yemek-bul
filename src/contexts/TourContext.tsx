@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserPreferencesService } from '../services/UserPreferencesService';
+import { Logger } from '../services/LoggerService';
 
 interface TourStep {
   id: string;

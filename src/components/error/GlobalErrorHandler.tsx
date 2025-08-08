@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useErrorHandler } from '../../hooks/useErrorHandler';
+import { Logger } from '../../services/LoggerService';
 
 interface GlobalErrorHandlerProps {
   children: React.ReactNode;

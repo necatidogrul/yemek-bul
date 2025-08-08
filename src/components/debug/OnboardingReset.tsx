@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { UserPreferencesService } from '../../services/UserPreferencesService';
 import { Button } from '../ui';
+import { Logger } from '../../services/LoggerService';
 
 interface OnboardingResetProps {
   onReset?: () => void;

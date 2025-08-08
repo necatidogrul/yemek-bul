@@ -1,10 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Logger } from '../services/LoggerService';
 
 export interface UserPreferences {
   dietaryRestrictions: string[];
   allergies: string[];
   cuisineTypes: string[];
+  favoriteCategories: string[]; // ModernHomeScreen'de kullanılan
   cookingExperience: string;
+  cookingLevel: string; // ModernHomeScreen'de kullanılan
   notificationsEnabled: boolean;
   onboardingCompleted: boolean;
 }
@@ -13,7 +16,9 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   dietaryRestrictions: [],
   allergies: [],
   cuisineTypes: [],
+  favoriteCategories: [],
   cookingExperience: '',
+  cookingLevel: 'orta',
   notificationsEnabled: false,
   onboardingCompleted: false,
 };

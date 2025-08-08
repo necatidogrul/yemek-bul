@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çevrimdışı - Yemek Bulucu</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        
+        .offline-container {
+            max-width: 400px;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .offline-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            margin: 0 0 1rem 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        p {
+            margin: 0 0 1.5rem 0;
+            font-size: 1rem;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+        
+        .retry-button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.8rem 2rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .retry-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .features {
+            margin-top: 2rem;
+            text-align: left;
+        }
+        
+        .feature {
+            display: flex;
+            align-items: center;
+            margin: 0.8rem 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .feature-icon {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+        }
+        
+        @media (max-width: 480px) {
+            .offline-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .offline-icon {
+                font-size: 3rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📱</div>
+        <h1>Çevrimdışısınız</h1>
+        <p>İnternet bağlantınız yok, ancak kaydedilmiş tariflerinizi görüntüleyebilirsiniz.</p>
+        
+        <button class="retry-button" onclick="window.location.reload()">
+            Tekrar Dene
+        </button>
+        
+        <div class="features">
+            <div class="feature">
+                <span class="feature-icon">📦</span>
+                <span>Kaydedilmiş tarifleri görüntüle</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">🔍</span>
+                <span>Arama geçmişini incele</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">⭐</span>
+                <span>Favori tariflerine eriş</span>
+            </div>
+            <div class="feature">
+                <span class="feature-icon">🏠</span>
+                <span>Ana sayfa</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Online olunca otomatik redirect
+        window.addEventListener('online', () => {
+            window.location.reload();
+        });
+        
+        // Connection status göster
+        function updateConnectionStatus() {
+            if (navigator.onLine) {
+                window.location.reload();
+            }
+        }
+        
+        // Her 5 saniyede bir kontrol et
+        setInterval(updateConnectionStatus, 5000);
+        
+        // Retry button handler
+        function retryConnection() {
+            if (navigator.onLine) {
+                window.location.href = '/';
+            } else {
+                // Shake animation
+                document.querySelector('.retry-button').style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    document.querySelector('.retry-button').style.animation = '';
+                }, 500);
+            }
+        }
+        
+        // Shake animation CSS
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-5px); }
+                75% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

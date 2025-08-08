@@ -2,6 +2,7 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { View, StyleSheet, ScrollView, Text as RNText, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, borderRadius, getColors } from '../../theme/design-tokens';
+import { Logger } from '../../services/LoggerService';
 
 interface Props {
   children: ReactNode;

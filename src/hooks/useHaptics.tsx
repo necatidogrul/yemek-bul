@@ -21,6 +21,13 @@ interface HapticContextType {
   voiceStop: () => Promise<void>;
   purchaseSuccess: () => Promise<void>;
   tabPress: () => Promise<void>;
+  // Additional methods needed
+  light: () => Promise<void>;
+  medium: () => Promise<void>;
+  heavy: () => Promise<void>;
+  notificationSuccess: () => Promise<void>;
+  lightImpact: () => Promise<void>;
+  impactLight: () => Promise<void>; // ModernHomeScreen'de kullanılan
 }
 
 const HapticContext = createContext<HapticContextType | undefined>(undefined);
@@ -47,6 +54,13 @@ export const useHaptics = (): HapticContextType => {
       voiceStop: async () => {},
       purchaseSuccess: async () => {},
       tabPress: async () => {},
+      // Additional methods
+      light: async () => {},
+      medium: async () => {},
+      heavy: async () => {},
+      notificationSuccess: async () => {},
+      lightImpact: async () => {},
+      impactLight: async () => {},
     };
   }
   return context;
@@ -132,6 +146,31 @@ export const HapticProvider: React.FC<HapticProviderProps> = ({
     HapticFeedback.setEnabled(initialEnabled);
   }, [initialEnabled]);
 
+  // Additional methods
+  const light = useCallback(async () => {
+    await HapticFeedback.light();
+  }, []);
+
+  const medium = useCallback(async () => {
+    await HapticFeedback.medium();
+  }, []);
+
+  const heavy = useCallback(async () => {
+    await HapticFeedback.heavy();
+  }, []);
+
+  const notificationSuccess = useCallback(async () => {
+    await HapticFeedback.success();
+  }, []);
+
+  const lightImpact = useCallback(async () => {
+    await HapticFeedback.light();
+  }, []);
+
+  const impactLight = useCallback(async () => {
+    await HapticFeedback.light();
+  }, []);
+
   const value: HapticContextType = {
     enabled: initialEnabled,
     setEnabled,
@@ -150,6 +189,13 @@ export const HapticProvider: React.FC<HapticProviderProps> = ({
     voiceStop,
     purchaseSuccess,
     tabPress,
+    // Additional methods
+    light,
+    medium,
+    heavy,
+    notificationSuccess,
+    lightImpact,
+    impactLight,
   };
 
   return (

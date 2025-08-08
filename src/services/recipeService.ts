@@ -1,26 +1,217 @@
 import { supabase } from "./supabase";
-import { Recipe, RecipeSearchResult, SearchRequest } from "../types/Recipe";
+import { Recipe, RecipeSearchResult, SearchRequest, SearchHistoryEntry, UserSearchStats, SearchAnalytics, PopularSearchIngredient } from "../types/Recipe";
+import { OpenAIService, RecipeGenerationRequest } from "./openaiService";
+import { CreditService } from "./creditService";
+import { TranslationService } from "./translationService";
+import { MOCK_RECIPES } from "../data/mockRecipes";
+import { MobileStorageService } from "./localStorageService";
+import { RevenueCatService } from "./RevenueCatService";
+import { PremiumLimitsService } from "./PremiumLimitsService";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Logger } from '../services/LoggerService';
 
 export class RecipeService {
-  // Kullanıcının girdiği malzemelere göre tarif arama
+  // Kullanıcının girdiği malzemelere göre tarif arama (Offline-First + AI + Cache + Fallback)
   static async searchRecipesByIngredients(
-    request: SearchRequest
-  ): Promise<RecipeSearchResult> {
+    request: SearchRequest & { userId?: string; useAI?: boolean; userAgent?: string; ipAddress?: string; sessionId?: string }
+  ): Promise<RecipeSearchResult & { isCached?: boolean; isStale?: boolean }> {
+    const startTime = Date.now();
+    let resultType: 'community_pool' | 'ai_cache' | 'ai_generation' | 'mock' = 'mock';
+    let creditsSpent = 0;
+    let isCachedResult = false;
+    let isStaleResult = false;
+    
     try {
-      const { ingredients, maxMissingIngredients = 10 } = request;
+      const { ingredients, maxMissingIngredients = 10, userId, useAI = false, userAgent, ipAddress, sessionId } = request;
 
-      // Tüm tarifleri al
-      const { data: recipes, error } = await supabase
-        .from("recipes")
-        .select("*");
+      const isOnline = await MobileStorageService.isOnline();
+      console.log('🔍 Recipe search started:', { ingredients, useAI, userId, offline: !isOnline });
 
-      if (error) {
-        throw error;
+      // 0. ÖNCE AsyncStorage'dan kontrol et (Mobile Offline-First)
+      const cachedResult = await MobileStorageService.getCachedSearchResult(ingredients);
+      if (cachedResult) {
+        console.log('⚡ Found in mobile cache:', cachedResult.metadata.source);
+        isCachedResult = true;
+        isStaleResult = cachedResult.metadata.isStale || false;
+        
+        // Local search history ekle
+        await MobileStorageService.addSearchHistory(
+          ingredients,
+          ingredients.join(', '),
+          cachedResult.results.exactMatches.length + cachedResult.results.nearMatches.length,
+          `cached_${cachedResult.metadata.source}`
+        );
+
+        // Stale değilse direkt döndür
+        if (!isStaleResult) {
+          return {
+            ...cachedResult.results,
+            isCached: true,
+            isStale: false
+          };
+        }
+
+        // Stale ise background'da güncelle (stale-while-revalidate pattern)
+        console.log('🔄 Cached result is stale, updating in background...');
+        this.updateCacheInBackground(request, cachedResult);
+        
+        return {
+          ...cachedResult.results,
+          isCached: true,
+          isStale: true
+        };
       }
 
-      if (!recipes) {
-        return { exactMatches: [], nearMatches: [] };
+      // Offline durumunda cached sonuç yoksa mock data kullan
+      if (!isOnline) {
+        console.log('📱 Mobile offline mode: Using mock recipes');
+        const mockResult = this.searchInMockRecipes(ingredients, maxMissingIngredients);
+        
+        // Mock result'ı cache'e kaydet
+        await MobileStorageService.cacheSearchResult(ingredients, mockResult, 'mock', 0, Date.now() - startTime);
+        
+        // Local history ekle
+        await MobileStorageService.addSearchHistory(
+          ingredients,
+          ingredients.join(', '),
+          mockResult.exactMatches.length + mockResult.nearMatches.length,
+          'offline_mock'
+        );
+
+        return { ...mockResult, isCached: false, isStale: false };
       }
+
+      console.log('🌐 Online mode: Fetching fresh data...');
+
+      // 1. Community AI recipes pool'da ara
+      try {
+        const communityResults = await this.searchCommunityAIRecipes(ingredients, userId);
+        if (communityResults.exactMatches.length > 0 || communityResults.nearMatches.length > 0) {
+          console.log('✅ Found results in community AI recipe pool');
+          resultType = 'community_pool';
+          const result = communityResults;
+          
+          // AsyncStorage'a cache'le
+          await MobileStorageService.cacheSearchResult(ingredients, result, 'community_pool', 0, Date.now() - startTime);
+          
+          // Local search history ekle
+          await MobileStorageService.addSearchHistory(
+            ingredients,
+            ingredients.join(', '),
+            result.exactMatches.length + result.nearMatches.length,
+            'community_pool'
+          );
+          
+          // Server search history kaydet
+          if (userId) {
+            await this.recordSearchHistory({
+              userId,
+              searchIngredients: ingredients,
+              resultType,
+              resultsFound: result.exactMatches.length + result.nearMatches.length,
+              exactMatches: result.exactMatches.length,
+              nearMatches: result.nearMatches.length,
+              usedAI: false,
+              creditsSpent: 0,
+              responseTimeMs: Date.now() - startTime,
+              userAgent,
+              ipAddress,
+              sessionId
+            });
+          }
+          
+          return { ...result, isCached: false, isStale: false };
+        }
+      } catch (communityError) {
+        console.warn('⚠️ Community search failed:', communityError);
+      }
+
+      // 2. Cache'den ara (kısa vadeli AI cache)
+      try {
+        const cachedResults = await this.searchInCache(ingredients);
+        if (cachedResults.exactMatches.length > 0 || cachedResults.nearMatches.length > 0) {
+          console.log('✅ Found results in AI cache');
+          resultType = 'ai_cache';
+          const result = cachedResults;
+          
+          // AsyncStorage'a cache'le
+          await MobileStorageService.cacheSearchResult(ingredients, result, 'ai_cache', 0, Date.now() - startTime);
+          
+          // Local search history ekle
+          await MobileStorageService.addSearchHistory(
+            ingredients,
+            ingredients.join(', '),
+            result.exactMatches.length + result.nearMatches.length,
+            'ai_cache'
+          );
+          
+          // Server search history kaydet
+          if (userId) {
+            await this.recordSearchHistory({
+              userId,
+              searchIngredients: ingredients,
+              resultType,
+              resultsFound: result.exactMatches.length + result.nearMatches.length,
+              exactMatches: result.exactMatches.length,
+              nearMatches: result.nearMatches.length,
+              usedAI: false,
+              creditsSpent: 0,
+              responseTimeMs: Date.now() - startTime,
+              userAgent,
+              ipAddress,
+              sessionId
+            });
+          }
+          
+          return { ...result, isCached: false, isStale: false };
+        }
+      } catch (cacheError) {
+        console.warn('⚠️ Cache search failed:', cacheError);
+      }
+
+      // 3. Eğer AI kullanımı istenmişse ve kullanıcı ID'si varsa
+      if (useAI && userId) {
+        try {
+          const aiResult = await this.searchWithAI(ingredients, userId);
+          resultType = 'ai_generation';
+          creditsSpent = 1; // AI generation cost
+          
+          // AsyncStorage'a cache'le (AI results uzun süre cache'lenir)
+          await MobileStorageService.cacheSearchResult(ingredients, aiResult, 'ai_generation', creditsSpent, Date.now() - startTime);
+          
+          // Local search history ekle
+          await MobileStorageService.addSearchHistory(
+            ingredients,
+            ingredients.join(', '),
+            aiResult.exactMatches.length + aiResult.nearMatches.length,
+            'ai_generation'
+          );
+          
+          // Server search history kaydet
+          await this.recordSearchHistory({
+            userId,
+            searchIngredients: ingredients,
+            resultType,
+            resultsFound: aiResult.exactMatches.length + aiResult.nearMatches.length,
+            exactMatches: aiResult.exactMatches.length,
+            nearMatches: aiResult.nearMatches.length,
+            usedAI: true,
+            creditsSpent,
+            responseTimeMs: Date.now() - startTime,
+            userAgent,
+            ipAddress,
+            sessionId
+          });
+          
+          return { ...aiResult, isCached: false, isStale: false };
+        } catch (aiError) {
+          console.warn('⚠️ AI search failed, falling back to mock data:', aiError);
+        }
+      }
+
+      // Fallback 2: Mock verileri kullan
+      console.log('📦 Using mock recipe data');
+      const recipes = MOCK_RECIPES;
 
       const exactMatches: Recipe[] = [];
       const nearMatches: Recipe[] = [];
@@ -83,11 +274,11 @@ export class RecipeService {
           description: recipe.description || undefined,
           ingredients: recipe.ingredients,
           instructions: recipe.instructions,
-          preparationTime: recipe.preparation_time || undefined,
+          preparationTime: recipe.preparationTime || undefined,
           servings: recipe.servings || undefined,
           difficulty: recipe.difficulty as any,
           category: recipe.category as any,
-          imageUrl: recipe.image_url || undefined,
+          imageUrl: recipe.imageUrl || undefined,
           missingIngredients: missingIngredients,
         };
 
@@ -122,14 +313,461 @@ export class RecipeService {
         }
       );
 
-      return {
+      const result = {
         exactMatches: exactMatches.slice(0, 15),
         nearMatches: nearMatches.slice(0, 25),
       };
+
+      // AsyncStorage'a cache'le
+      await MobileStorageService.cacheSearchResult(ingredients, result, 'mock', 0, Date.now() - startTime);
+      
+      // Local search history ekle
+      await MobileStorageService.addSearchHistory(
+        ingredients,
+        ingredients.join(', '),
+        result.exactMatches.length + result.nearMatches.length,
+        'mock'
+      );
+
+      // Server search history kaydet
+      if (userId) {
+        await this.recordSearchHistory({
+          userId,
+          searchIngredients: ingredients,
+          resultType: 'mock',
+          resultsFound: result.exactMatches.length + result.nearMatches.length,
+          exactMatches: result.exactMatches.length,
+          nearMatches: result.nearMatches.length,
+          usedAI: false,
+          creditsSpent: 0,
+          responseTimeMs: Date.now() - startTime,
+          userAgent,
+          ipAddress,
+          sessionId
+        });
+      }
+
+      return { ...result, isCached: false, isStale: false };
     } catch (error) {
       console.error("Recipe search error:", error);
+      
+      // Hata durumu için de history kaydet
+      if (request.userId && request.ingredients) {
+        try {
+          await this.recordSearchHistory({
+            userId: request.userId,
+            searchIngredients: request.ingredients,
+            resultType: resultType,
+            resultsFound: 0,
+            exactMatches: 0,
+            nearMatches: 0,
+            usedAI: request.useAI || false,
+            creditsSpent: creditsSpent,
+            responseTimeMs: Date.now() - startTime,
+            userAgent: request.userAgent,
+            ipAddress: request.ipAddress,
+            sessionId: request.sessionId
+          });
+        } catch (historyError) {
+          console.warn('⚠️ Failed to record error search history:', historyError);
+        }
+      }
+      
       throw error;
     }
+  }
+
+  /**
+   * Community AI recipes'ta arama yap (Premium limit kontrolü ile)
+   */
+  private static async searchCommunityAIRecipes(ingredients: string[], userId?: string): Promise<RecipeSearchResult> {
+    try {
+      console.log('🔍 Searching in community AI recipes pool...');
+      
+      // Premium kullanıcılar için community pool limit kontrolü
+      if (userId) {
+        const isPremium = await RevenueCatService.isPremiumUser();
+        if (isPremium) {
+          const communityCheck = await PremiumLimitsService.canUseCommunityPool(userId);
+          if (!communityCheck.canUse) {
+            console.log(`⚠️ Premium community pool limit exceeded: ${communityCheck.used}/${communityCheck.limit}`);
+            return { exactMatches: [], nearMatches: [] };
+          }
+          
+          // Community pool kullanımını kaydet
+          await PremiumLimitsService.recordCommunityUsage(userId);
+          console.log(`👥 Premium community pool used: ${communityCheck.used + 1}/${communityCheck.limit}`);
+        }
+      }
+      
+      const sortedIngredients = ingredients.map(ing => ing.toLowerCase().trim()).sort();
+      
+      // 1. Önce tam eşleşme ara
+      const { data: exactMatches, error: exactError } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('ai_generated', true)
+        .contains('ingredient_combination', sortedIngredients)
+        .order('popularity_score', { ascending: false })
+        .limit(5);
+
+      if (exactError) {
+        console.warn('⚠️ Exact match search failed:', exactError);
+      }
+
+      // 2. Kısmi eşleşmeler ara (en az %60 eşleşme)
+      const { data: allAIRecipes, error: allError } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('ai_generated', true)
+        .not('ingredient_combination', 'is', null)
+        .order('popularity_score', { ascending: false })
+        .limit(50);
+
+      if (allError) {
+        console.warn('⚠️ Community search failed:', allError);
+        return { exactMatches: [], nearMatches: [] };
+      }
+
+      const exactResults: Recipe[] = [];
+      const nearResults: Recipe[] = [];
+
+      // Exact matches'i işle
+      if (exactMatches && exactMatches.length > 0) {
+        exactMatches.forEach(recipe => {
+          exactResults.push(this.mapDatabaseRecipeToRecipe(recipe));
+        });
+        
+        // Popularity score artır
+        await this.incrementPopularityScore(exactMatches.map(r => r.id));
+      }
+
+      // Kısmi eşleşmeler için analiz yap
+      if (allAIRecipes && allAIRecipes.length > 0) {
+        const partialMatches = allAIRecipes
+          .filter(recipe => {
+            if (!recipe.ingredient_combination) return false;
+            
+            const recipeIngredients = recipe.ingredient_combination.map((ing: string) => ing.toLowerCase().trim());
+            const matchingCount = sortedIngredients.filter((userIng: string) => 
+              recipeIngredients.some((recipeIng: string) => 
+                recipeIng.includes(userIng) || userIng.includes(recipeIng)
+              )
+            ).length;
+            
+            const matchRatio = matchingCount / sortedIngredients.length;
+            return matchRatio >= 0.6 && matchingCount >= 2; // En az %60 eşleşme ve 2 malzeme
+          })
+          .slice(0, 10); // En fazla 10 kısmi eşleşme
+
+        partialMatches.forEach(recipe => {
+          // Exact matches'te yoksa near matches'e ekle
+          if (!exactResults.find(er => er.id === recipe.id)) {
+            nearResults.push(this.mapDatabaseRecipeToRecipe(recipe));
+          }
+        });
+
+        // Kısmi eşleşmeler için de popularity artır (daha az)
+        if (partialMatches.length > 0) {
+          await this.incrementPopularityScore(partialMatches.map(r => r.id), 0.5);
+        }
+      }
+
+      const totalResults = exactResults.length + nearResults.length;
+      if (totalResults > 0) {
+        console.log(`✅ Found ${totalResults} community AI recipes (${exactResults.length} exact, ${nearResults.length} near)`);
+      }
+
+      return {
+        exactMatches: exactResults,
+        nearMatches: nearResults
+      };
+    } catch (error) {
+      console.error('❌ Community AI search error:', error);
+      return { exactMatches: [], nearMatches: [] };
+    }
+  }
+
+  /**
+   * AI tariflerini community pool'a kaydet
+   */
+  private static async saveToCommunityPool(
+    recipes: Recipe[], 
+    originalIngredients: string[], 
+    userId: string,
+    tokensUsed: number = 0
+  ): Promise<void> {
+    try {
+      console.log('💾 Saving AI recipes to community pool...');
+      
+      const sortedIngredients = originalIngredients.map(ing => ing.toLowerCase().trim()).sort();
+      
+      const communityRecipes = recipes.map(recipe => ({
+        id: recipe.id, // AI'dan gelen ID'yi kullan
+        name: recipe.name,
+        description: recipe.description,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        preparation_time: recipe.preparationTime,
+        cooking_time: recipe.cookingTime,
+        servings: recipe.servings,
+        difficulty: recipe.difficulty,
+        category: recipe.category,
+        image_url: recipe.imageUrl,
+        source: 'ai',
+        ai_generated: true,
+        popularity_score: 1, // Başlangıç popülerlik skoru
+        ingredient_combination: sortedIngredients,
+        original_ingredients: originalIngredients,
+        tokens_used: Math.floor(tokensUsed / recipes.length), // Token'ları tariflere böl
+        created_by_user_id: userId,
+        created_at: new Date().toISOString()
+      }));
+
+      const { error } = await supabase
+        .from('recipes')
+        .upsert(communityRecipes, { 
+          onConflict: 'id',
+          ignoreDuplicates: false 
+        });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log(`✅ Successfully saved ${recipes.length} AI recipes to community pool`);
+    } catch (error) {
+      console.error('❌ Failed to save recipes to community pool:', error);
+    }
+  }
+
+  /**
+   * Popülerlik skorunu artır
+   */
+  private static async incrementPopularityScore(recipeIds: string[], increment: number = 1): Promise<void> {
+    try {
+      for (const recipeId of recipeIds) {
+        await supabase.rpc('increment_popularity', { 
+          recipe_id: recipeId, 
+          increment_value: increment 
+        });
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to increment popularity score:', error);
+    }
+  }
+
+  /**
+   * Database recipe'sini Recipe type'ına çevir
+   */
+  private static mapDatabaseRecipeToRecipe(dbRecipe: any): Recipe {
+    return {
+      id: dbRecipe.id,
+      name: dbRecipe.name,
+      description: dbRecipe.description || undefined,
+      ingredients: dbRecipe.ingredients || [],
+      instructions: dbRecipe.instructions || [],
+      preparationTime: dbRecipe.preparation_time || undefined,
+      cookingTime: dbRecipe.cooking_time || undefined,
+      servings: dbRecipe.servings || undefined,
+      difficulty: dbRecipe.difficulty as any,
+      category: dbRecipe.category as any,
+      imageUrl: dbRecipe.image_url || undefined,
+      source: dbRecipe.source || 'database',
+      aiGenerated: dbRecipe.ai_generated || false,
+      popularityScore: dbRecipe.popularity_score || 0,
+      ingredientCombination: dbRecipe.ingredient_combination || undefined,
+      originalIngredients: dbRecipe.original_ingredients || undefined,
+      tokensUsed: dbRecipe.tokens_used || undefined,
+      createdByUserId: dbRecipe.created_by_user_id || undefined,
+      createdAt: dbRecipe.created_at || undefined
+    };
+  }
+
+  /**
+   * AI ile tarif arama (Credit system + Premium limits entegreli)
+   */
+  private static async searchWithAI(ingredients: string[], userId: string): Promise<RecipeSearchResult> {
+    // Kullanıcının premium durumunu kontrol et
+    const isPremium = await RevenueCatService.isPremiumUser();
+    
+    if (isPremium) {
+      // Premium kullanıcı - günlük AI limit kontrolü
+      const aiCheck = await PremiumLimitsService.canUseAI(userId);
+      if (!aiCheck.canUse) {
+        throw new Error(`Daily AI generation limit exceeded. Used ${aiCheck.used}/${aiCheck.limit} today.`);
+      }
+      
+      // AI tarif üretimi
+      const aiRequest: RecipeGenerationRequest = {
+        ingredients,
+        preferences: {
+          difficulty: undefined,
+          servings: 2
+        }
+      };
+
+      const aiResponse = await OpenAIService.generateRecipes(aiRequest);
+      
+      // Premium kullanım kaydı
+      await PremiumLimitsService.recordAIUsage(userId);
+      
+      // Community pool'a kaydet
+      await this.saveToCommunityPool(aiResponse.recipes, ingredients, userId, aiResponse.totalTokensUsed);
+
+      // Cache'e kaydet
+      await this.cacheAIRecipes(ingredients, aiResponse.recipes, aiResponse.totalTokensUsed, aiResponse.estimatedCost);
+
+      // Kullanıcı geçmişine kaydet
+      await this.recordUserRecipeHistory(userId, aiResponse.recipes, ingredients, aiResponse.totalTokensUsed);
+
+      console.log(`🎯 Premium AI generation used: ${aiCheck.used + 1}/${aiCheck.limit}`);
+      
+      return {
+        exactMatches: aiResponse.recipes,
+        nearMatches: []
+      };
+      
+    } else {
+      // Free kullanıcı - kredi kontrolü
+      const creditCheck = await CreditService.canUseCredits(userId, 'recipe_generation');
+      if (!creditCheck.canUse) {
+        throw new Error('Insufficient credits for AI recipe generation');
+      }
+
+      // Kredi düş (API çağrısı öncesinde)
+      const creditResult = await CreditService.spendCredits(userId, 'recipe_generation', 
+        `AI tarif üretimi: ${ingredients.join(', ')}`);
+      
+      if (!creditResult.success) {
+        throw new Error('Insufficient credits for AI recipe generation');
+      }
+
+      // AI tarif üretimi
+      const aiRequest: RecipeGenerationRequest = {
+        ingredients,
+        preferences: {
+          difficulty: undefined,
+          servings: 2
+        }
+      };
+
+      const aiResponse = await OpenAIService.generateRecipes(aiRequest);
+
+      // Community pool'a kaydet
+      await this.saveToCommunityPool(aiResponse.recipes, ingredients, userId, aiResponse.totalTokensUsed);
+
+      // Cache'e kaydet
+      await this.cacheAIRecipes(ingredients, aiResponse.recipes, aiResponse.totalTokensUsed, aiResponse.estimatedCost);
+
+      // Kullanıcı geçmişine kaydet
+      await this.recordUserRecipeHistory(userId, aiResponse.recipes, ingredients, aiResponse.totalTokensUsed);
+
+      console.log(`💎 Credit AI generation: ${creditCheck.userCredits.remainingCredits - 1} credits remaining`);
+      
+      return {
+        exactMatches: aiResponse.recipes,
+        nearMatches: []
+      };
+    }
+  }
+
+  /**
+   * Cache'den tarif ara
+   */
+  private static async searchInCache(ingredients: string[]): Promise<RecipeSearchResult> {
+    const ingredientHash = this.generateIngredientHash(ingredients);
+    
+    const { data, error } = await supabase
+      .from('ai_recipe_cache')
+      .select('recipe_data')
+      .eq('ingredient_hash', ingredientHash)
+      .gt('expires_at', new Date().toISOString())
+      .single();
+
+    if (error || !data) {
+      return { exactMatches: [], nearMatches: [] };
+    }
+
+    const recipes = data.recipe_data as Recipe[];
+    return {
+      exactMatches: recipes,
+      nearMatches: []
+    };
+  }
+
+  /**
+   * AI tariflerini cache'e kaydet
+   */
+  private static async cacheAIRecipes(
+    ingredients: string[], 
+    recipes: Recipe[], 
+    tokensUsed: number, 
+    costUSD: number
+  ): Promise<void> {
+    try {
+      const cacheData = {
+        ingredient_hash: this.generateIngredientHash(ingredients),
+        ingredients,
+        recipe_data: recipes,
+        tokens_used: tokensUsed,
+        cost_usd: costUSD,
+        popularity_score: 1,
+        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 gün
+      };
+
+      await supabase.from('ai_recipe_cache').insert(cacheData);
+      console.log('✅ AI recipes cached successfully');
+    } catch (error) {
+      console.warn('⚠️ Failed to cache AI recipes:', error);
+    }
+  }
+
+  /**
+   * Kullanıcı geçmişine kaydet
+   */
+  private static async recordUserRecipeHistory(
+    userId: string, 
+    recipes: Recipe[], 
+    ingredients: string[], 
+    tokensUsed: number
+  ): Promise<void> {
+    try {
+      const historyEntries = recipes.map(recipe => ({
+        user_id: userId,
+        recipe_id: recipe.id,
+        recipe_name: recipe.name,
+        ingredients_used: ingredients,
+        action_type: 'generated',
+        credits_spent: 1, // recipe_generation cost
+        ai_model_used: 'gpt-3.5-turbo',
+        tokens_used: Math.floor(tokensUsed / recipes.length) // Distribute tokens across recipes
+      }));
+
+      await supabase.from('user_recipe_history').insert(historyEntries);
+      console.log('✅ User recipe history recorded');
+    } catch (error) {
+      console.warn('⚠️ Failed to record user history:', error);
+    }
+  }
+
+  /**
+   * Malzeme hash'i oluştur (cache key için)
+   */
+  private static generateIngredientHash(ingredients: string[]): string {
+    const sortedIngredients = ingredients
+      .map(ing => ing.toLowerCase().trim())
+      .sort()
+      .join('|');
+    
+    // Basit hash function (production'da crypto hash kullanılabilir)
+    let hash = 0;
+    for (let i = 0; i < sortedIngredients.length; i++) {
+      const char = sortedIngredients.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash).toString(16);
   }
 
   // Benzer malzemeleri kontrol et
@@ -157,6 +795,14 @@ export class RecipeService {
   // Tarif detayını al
   static async getRecipeById(id: string): Promise<Recipe | null> {
     try {
+      // Önce mock verilerden ara
+      const mockRecipe = MOCK_RECIPES.find(recipe => recipe.id === id);
+      if (mockRecipe) {
+        console.log('✅ Recipe found in mock data:', mockRecipe.name);
+        return mockRecipe;
+      }
+
+      // Fallback: Supabase'den ara
       const { data, error } = await supabase
         .from("recipes")
         .select("*")
@@ -164,7 +810,8 @@ export class RecipeService {
         .single();
 
       if (error) {
-        throw error;
+        console.warn('⚠️ Supabase getRecipeById failed:', error);
+        return null;
       }
 
       if (!data) {
@@ -185,13 +832,22 @@ export class RecipeService {
       };
     } catch (error) {
       console.error("Get recipe error:", error);
-      throw error;
+      return null;
     }
   }
 
   // Tüm mevcut malzemeleri al (önerilerde kullanmak için)
   static async getAllIngredients(): Promise<string[]> {
     try {
+      // Çeviri servisinden Türkçe malzemeleri al
+      const turkishIngredients = TranslationService.getAllTurkishIngredients();
+      
+      if (turkishIngredients.length > 0) {
+        console.log('📝 Using ingredients from translation service:', turkishIngredients.length);
+        return turkishIngredients;
+      }
+
+      // Fallback: Supabase'den al
       const { data, error } = await supabase
         .from("ingredients")
         .select("name")
@@ -204,7 +860,7 @@ export class RecipeService {
       return data?.map((item) => item.name) || [];
     } catch (error) {
       console.error("Get ingredients error:", error);
-      return [];
+      return TranslationService.getAllTurkishIngredients(); // Güvenli fallback
     }
   }
 
@@ -312,12 +968,25 @@ export class RecipeService {
     try {
       const offset = (page - 1) * limit;
 
-      // Toplam sayıyı al
+      // Önce mock verilerden al
+      const allRecipes = MOCK_RECIPES;
+      const totalCount = allRecipes.length;
+      const paginatedRecipes = allRecipes.slice(offset, offset + limit);
+
+      if (paginatedRecipes.length > 0) {
+        console.log('✅ Using mock recipes for getAllRecipes:', paginatedRecipes.length);
+        return {
+          recipes: paginatedRecipes,
+          totalCount,
+          hasMore: totalCount > offset + limit,
+        };
+      }
+
+      // Fallback: Supabase'den al
       const { count } = await supabase
         .from("recipes")
         .select("*", { count: "exact", head: true });
 
-      // Tarifleri al
       const { data: recipes, error } = await supabase
         .from("recipes")
         .select("*")
@@ -349,10 +1018,16 @@ export class RecipeService {
       };
     } catch (error) {
       console.error("Get all recipes error:", error);
+      // Son fallback: Mock veriler
+      const allRecipes = MOCK_RECIPES;
+      const totalCount = allRecipes.length;
+      const offset = (page - 1) * limit;
+      const paginatedRecipes = allRecipes.slice(offset, offset + limit);
+      
       return {
-        recipes: [],
-        totalCount: 0,
-        hasMore: false,
+        recipes: paginatedRecipes,
+        totalCount,
+        hasMore: totalCount > offset + limit,
       };
     }
   }
@@ -441,8 +1116,15 @@ export class RecipeService {
         query = query.eq("difficulty", difficulty);
       }
 
-      // Toplam sayıyı al
-      const { count } = await query.select("*", { count: "exact", head: true });
+      // Toplam sayıyı al  
+      const countQuery = supabase.from("recipes").select("*", { count: "exact", head: true });
+      if (category && category !== "all") {
+        countQuery.eq("category", category);
+      }
+      if (difficulty && difficulty !== "all") {
+        countQuery.eq("difficulty", difficulty);
+      }
+      const { count } = await countQuery;
 
       // Tarifleri al
       const { data: recipes, error } = await query
@@ -479,6 +1161,671 @@ export class RecipeService {
         totalCount: 0,
         hasMore: false,
       };
+    }
+  }
+
+  /**
+   * API durumunu kontrol et ve gerekirse yerel veritabanını kullan
+   */
+  static async checkApiHealth(): Promise<{
+    spoonacular: boolean;
+    supabase: boolean;
+  }> {
+    const results = {
+      spoonacular: false,
+      supabase: false
+    };
+
+    // Spoonacular API (devre dışı)
+    results.spoonacular = false;
+
+    // Supabase durumunu kontrol et
+    try {
+      const { error } = await supabase
+        .from('recipes')
+        .select('id')
+        .limit(1);
+      results.supabase = !error;
+    } catch (error) {
+      console.warn('Supabase health check failed:', error);
+    }
+
+    console.log('🏥 API Health Status:', results);
+    return results;
+  }
+
+  /**
+   * Gelişmiş malzeme önerisi (çeviri servisi ile)
+   */
+  static async getIngredientSuggestions(partialInput: string, limit: number = 10): Promise<string[]> {
+    try {
+    const allIngredients = await this.getAllIngredients();
+    const searchTerm = partialInput.toLowerCase().trim();
+    
+    if (!searchTerm) {
+      return allIngredients.slice(0, limit);
+    }
+
+    // Türkçe malzemeler içinde ara
+    const matches = allIngredients.filter(ingredient => 
+      ingredient.toLowerCase().includes(searchTerm)
+    );
+
+    // Önce tam eşleşenleri al, sonra kısmi eşleşenleri
+    const exactMatches = matches.filter(ingredient => 
+      ingredient.toLowerCase().startsWith(searchTerm)
+    );
+    const partialMatches = matches.filter(ingredient => 
+      !ingredient.toLowerCase().startsWith(searchTerm)
+    );
+
+    return [...exactMatches, ...partialMatches].slice(0, limit);
+    } catch (error) {
+      console.warn('⚠️ getIngredientSuggestions failed, falling back to mobile storage:', error);
+      return await MobileStorageService.getIngredientSuggestions(partialInput, limit);
+    }
+  }
+
+  /**
+   * Community Pool Analytics - Popüler malzeme kombinasyonlarını al
+   */
+  static async getPopularIngredientCombinations(limit: number = 10): Promise<{
+    combination: string[];
+    recipeCount: number;
+    avgPopularity: number;
+    latestRecipe: string;
+  }[]> {
+    try {
+      const { data, error } = await supabase
+        .from('popular_ingredient_combinations')
+        .select('*')
+        .limit(limit);
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.map(item => ({
+        combination: item.ingredient_combination || [],
+        recipeCount: item.recipe_count || 0,
+        avgPopularity: item.avg_popularity || 0,
+        latestRecipe: item.latest_recipe || ''
+      })) || [];
+    } catch (error) {
+      console.error('Get popular combinations error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Community Pool Analytics - AI tarif istatistikleri
+   */
+  static async getAIRecipeStats(): Promise<{
+    totalAIRecipes: number;
+    uniqueContributors: number;
+    avgPopularity: number;
+    totalTokensUsed: number;
+    latestRecipeDate: string;
+  }> {
+    try {
+      const { data, error } = await supabase
+        .from('ai_recipe_stats')
+        .select('*')
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        totalAIRecipes: data?.total_ai_recipes || 0,
+        uniqueContributors: data?.unique_contributors || 0,
+        avgPopularity: data?.avg_popularity || 0,
+        totalTokensUsed: data?.total_tokens_used || 0,
+        latestRecipeDate: data?.latest_recipe_date || ''
+      };
+    } catch (error) {
+      console.error('Get AI recipe stats error:', error);
+      return {
+        totalAIRecipes: 0,
+        uniqueContributors: 0,
+        avgPopularity: 0,
+        totalTokensUsed: 0,
+        latestRecipeDate: ''
+      };
+    }
+  }
+
+  /**
+   * Kullanıcıya özel AI tarif geçmişi
+   */
+  static async getUserAIRecipes(userId: string, limit: number = 20): Promise<Recipe[]> {
+    try {
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('created_by_user_id', userId)
+        .eq('ai_generated', true)
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.map(recipe => this.mapDatabaseRecipeToRecipe(recipe)) || [];
+    } catch (error) {
+      console.error('Get user AI recipes error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * En popüler AI tariflerini al
+   */
+  static async getMostPopularAIRecipes(limit: number = 10): Promise<Recipe[]> {
+    try {
+      const { data, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('ai_generated', true)
+        .order('popularity_score', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.map(recipe => this.mapDatabaseRecipeToRecipe(recipe)) || [];
+    } catch (error) {
+      console.error('Get popular AI recipes error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Arama geçmişini kaydet
+   */
+  private static async recordSearchHistory(historyData: Omit<SearchHistoryEntry, 'id' | 'searchTimestamp'>): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('user_search_history')
+        .insert({
+          user_id: historyData.userId,
+          search_ingredients: historyData.searchIngredients,
+          search_query: historyData.searchQuery,
+          result_type: historyData.resultType,
+          results_found: historyData.resultsFound,
+          exact_matches: historyData.exactMatches,
+          near_matches: historyData.nearMatches,
+          used_ai: historyData.usedAI,
+          credits_spent: historyData.creditsSpent,
+          response_time_ms: historyData.responseTimeMs,
+          user_agent: historyData.userAgent,
+          ip_address: historyData.ipAddress,
+          session_id: historyData.sessionId
+        });
+
+      if (error) {
+        console.warn('⚠️ Failed to record search history:', error);
+      } else {
+        console.log('📝 Search history recorded successfully');
+      }
+    } catch (error) {
+      console.warn('⚠️ Search history recording error:', error);
+    }
+  }
+
+  /**
+   * Kullanıcının arama geçmişini al
+   */
+  static async getUserSearchHistory(userId: string, limit: number = 50): Promise<SearchHistoryEntry[]> {
+    try {
+      const { data, error } = await supabase
+        .from('user_search_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('search_timestamp', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.map(item => ({
+        id: item.id,
+        userId: item.user_id,
+        searchIngredients: item.search_ingredients || [],
+        searchQuery: item.search_query,
+        resultType: item.result_type,
+        resultsFound: item.results_found || 0,
+        exactMatches: item.exact_matches || 0,
+        nearMatches: item.near_matches || 0,
+        usedAI: item.used_ai || false,
+        creditsSpent: item.credits_spent || 0,
+        responseTimeMs: item.response_time_ms,
+        searchTimestamp: item.search_timestamp,
+        userAgent: item.user_agent,
+        ipAddress: item.ip_address,
+        sessionId: item.session_id
+      })) || [];
+    } catch (error) {
+      console.error('Get user search history error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Kullanıcının arama istatistiklerini al
+   */
+  static async getUserSearchStats(userId: string): Promise<UserSearchStats | null> {
+    try {
+      const { data, error } = await supabase
+        .from('user_search_stats')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ? {
+        userId: data.user_id,
+        totalSearches: data.total_searches || 0,
+        aiSearches: data.ai_searches || 0,
+        communitySearches: data.community_searches || 0,
+        failedSearches: data.failed_searches || 0,
+        totalCreditsSpent: data.total_credits_spent || 0,
+        avgResponseTime: data.avg_response_time || 0,
+        lastSearchDate: data.last_search_date,
+        firstSearchDate: data.first_search_date
+      } : null;
+    } catch (error) {
+      console.error('Get user search stats error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Popüler arama malzemelerini al
+   */
+  static async getPopularSearchIngredients(limit: number = 20): Promise<PopularSearchIngredient[]> {
+    try {
+      const { data, error } = await supabase
+        .from('popular_search_ingredients')
+        .select('*')
+        .limit(limit);
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.map(item => ({
+        ingredient: item.ingredient,
+        searchCount: item.search_count || 0,
+        uniqueUsers: item.unique_users || 0,
+        avgResultsFound: item.avg_results_found || 0,
+        latestSearch: item.latest_search
+      })) || [];
+    } catch (error) {
+      console.error('Get popular search ingredients error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Genel arama analitiklerini al
+   */
+  static async getSearchAnalytics(days: number = 30): Promise<SearchAnalytics[]> {
+    try {
+      const { data, error } = await supabase
+        .from('search_analytics')
+        .select('*')
+        .gte('search_date', new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+        .order('search_date', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.map(item => ({
+        searchDate: item.search_date,
+        totalSearches: item.total_searches || 0,
+        uniqueUsers: item.unique_users || 0,
+        aiSearches: item.ai_searches || 0,
+        communityPoolHits: item.community_pool_hits || 0,
+        cacheHits: item.cache_hits || 0,
+        fallbackSearches: item.fallback_searches || 0,
+        avgResultsFound: item.avg_results_found || 0,
+        avgResponseTime: item.avg_response_time || 0,
+        totalCreditsSpent: item.total_credits_spent || 0
+      })) || [];
+    } catch (error) {
+      console.error('Get search analytics error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Kullanıcının son aramalarını öner (frequently searched)
+   */
+  static async getUserFrequentIngredients(userId: string, limit: number = 10): Promise<string[]> {
+    try {
+      const { data, error } = await supabase
+        .from('user_search_history')
+        .select('search_ingredients')
+        .eq('user_id', userId)
+        .gte('search_timestamp', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Son 30 gün
+        .order('search_timestamp', { ascending: false })
+        .limit(100);
+
+      if (error || !data) {
+        return [];
+      }
+
+      // Tüm malzemeleri say
+      const ingredientCount = new Map<string, number>();
+      data.forEach((record: any) => {
+        record.search_ingredients?.forEach((ingredient: string) => {
+          const normalizedIngredient = ingredient.toLowerCase().trim();
+          ingredientCount.set(normalizedIngredient, (ingredientCount.get(normalizedIngredient) || 0) + 1);
+        });
+      });
+
+      // En çok aranan malzemeleri döndür
+      return Array.from(ingredientCount.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([ingredient]) => ingredient);
+    } catch (error) {
+      console.error('Get user frequent ingredients error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Background'da cache güncelle (stale-while-revalidate)
+   */
+  private static async updateCacheInBackground(
+    request: SearchRequest & { userId?: string; useAI?: boolean; userAgent?: string; ipAddress?: string; sessionId?: string },
+    staleCache: any
+  ): Promise<void> {
+    try {
+      console.log('🔄 Updating stale cache in background...');
+      
+      // Background'da fresh data çek (ana akışı engelleme)
+      setTimeout(async () => {
+        try {
+          const { ingredients, userId, useAI, userAgent, ipAddress, sessionId } = request;
+          
+          // Fresh search yap (cache bypass)
+          const freshResult = await this.searchFresh(ingredients, userId, useAI);
+          
+          if (freshResult) {
+            // Yeni result'ı cache'e kaydet
+            await MobileStorageService.cacheSearchResult(
+              ingredients, 
+              freshResult.result, 
+              freshResult.source, 
+              freshResult.creditsSpent,
+              freshResult.responseTime
+            );
+            
+            console.log('✅ Background cache update completed');
+          }
+        } catch (error) {
+          console.warn('⚠️ Background cache update failed:', error);
+        }
+      }, 100); // 100ms gecikme ile background'da çalış
+      
+    } catch (error) {
+      console.warn('⚠️ Failed to start background update:', error);
+    }
+  }
+
+  /**
+   * Fresh search (cache bypass)
+   */
+  private static async searchFresh(ingredients: string[], userId?: string, useAI: boolean = false): Promise<{
+    result: any;
+    source: 'community_pool' | 'ai_cache' | 'ai_generation' | 'mock';
+    creditsSpent: number;
+    responseTime: number;
+  } | null> {
+    const startTime = Date.now();
+    
+    try {
+      // Community pool'dan ara
+      const communityResults = await this.searchCommunityAIRecipes(ingredients, userId);
+      if (communityResults.exactMatches.length > 0 || communityResults.nearMatches.length > 0) {
+        return {
+          result: communityResults,
+          source: 'community_pool',
+          creditsSpent: 0,
+          responseTime: Date.now() - startTime
+        };
+      }
+
+      // AI cache'den ara
+      const cacheResults = await this.searchInCache(ingredients);
+      if (cacheResults.exactMatches.length > 0 || cacheResults.nearMatches.length > 0) {
+        return {
+          result: cacheResults,
+          source: 'ai_cache',
+          creditsSpent: 0,
+          responseTime: Date.now() - startTime
+        };
+      }
+
+      // AI generation (eğer izin varsa)
+      if (useAI && userId) {
+        try {
+          const aiResults = await this.searchWithAI(ingredients, userId);
+          return {
+            result: aiResults,
+            source: 'ai_generation',
+            creditsSpent: 1,
+            responseTime: Date.now() - startTime
+          };
+        } catch (aiError) {
+          console.warn('⚠️ AI search failed in fresh search:', aiError);
+        }
+      }
+
+      // Mock fallback
+      const mockResults = this.searchInMockRecipes(ingredients, 10);
+      return {
+        result: mockResults,
+        source: 'mock',
+        creditsSpent: 0,
+        responseTime: Date.now() - startTime
+      };
+      
+    } catch (error) {
+      console.warn('⚠️ Fresh search failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Mock recipes'ta arama yap (extracted method)
+   */
+  private static searchInMockRecipes(ingredients: string[], maxMissingIngredients: number = 10): RecipeSearchResult {
+    const recipes = MOCK_RECIPES;
+    const exactMatches: Recipe[] = [];
+    const nearMatches: Recipe[] = [];
+
+    // Mock search logic (mevcut kodu buraya taşı)
+    const recipeAnalysis: Array<{
+      recipe: Recipe;
+      matchingCount: number;
+      missingCount: number;
+      matchRatio: number;
+      priority: number;
+    }> = [];
+
+    recipes.forEach((recipe) => {
+      const recipeIngredients = recipe.ingredients.map((ing) =>
+        ing.toLowerCase().trim()
+      );
+      const userIngredients = ingredients.map((ing) =>
+        ing.toLowerCase().trim()
+      );
+
+      const matchingIngredients = recipeIngredients.filter((ing) =>
+        userIngredients.some(
+          (userIng) =>
+            ing.includes(userIng) ||
+            userIng.includes(ing) ||
+            this.areSimilarIngredients(ing, userIng)
+        )
+      );
+
+      const missingIngredients = recipeIngredients.filter(
+        (ing) =>
+          !userIngredients.some(
+            (userIng) =>
+              ing.includes(userIng) ||
+              userIng.includes(ing) ||
+              this.areSimilarIngredients(ing, userIng)
+          )
+      );
+
+      const matchingCount = matchingIngredients.length;
+      const missingCount = missingIngredients.length;
+      const matchRatio = matchingCount / recipeIngredients.length;
+
+      let priority = matchingCount * 10;
+      priority += matchRatio * 5;
+      priority -= missingCount * 0.5;
+
+      if (matchingIngredients.some((ing) => this.isBasicIngredient(ing))) {
+        priority += 2;
+      }
+
+      const mappedRecipe: Recipe = {
+        id: recipe.id,
+        name: recipe.name,
+        description: recipe.description || undefined,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+        preparationTime: recipe.preparationTime || undefined,
+        servings: recipe.servings || undefined,
+        difficulty: recipe.difficulty as any,
+        category: recipe.category as any,
+        imageUrl: recipe.imageUrl || undefined,
+        missingIngredients: missingIngredients,
+      };
+
+      if (matchingCount > 0) {
+        recipeAnalysis.push({
+          recipe: mappedRecipe,
+          matchingCount,
+          missingCount,
+          matchRatio,
+          priority,
+        });
+      }
+    });
+
+    recipeAnalysis.sort((a, b) => b.priority - a.priority);
+
+    recipeAnalysis.forEach(
+      ({ recipe, missingCount, matchingCount, matchRatio }) => {
+        if (missingCount === 0) {
+          exactMatches.push(recipe);
+        } else if (
+          matchingCount >= 1 &&
+          (matchRatio >= 0.3 || matchingCount >= 2 || missingCount <= 3)
+        ) {
+          nearMatches.push(recipe);
+        }
+      }
+    );
+
+    return {
+      exactMatches: exactMatches.slice(0, 15),
+      nearMatches: nearMatches.slice(0, 25),
+    };
+  }
+
+
+  /**
+   * Mobile storage'dan kullanıcı preferences al
+   */
+  static async getMobileUserPreferences() {
+    return await MobileStorageService.getUserPreferences();
+  }
+
+  /**
+   * Mobile storage'dan search history al
+   */
+  static async getMobileSearchHistory(limit: number = 50) {
+    const history = await MobileStorageService.getSearchHistory();
+    return history.slice(0, limit);
+  }
+
+  /**
+   * Mobile cache'i temizle
+   */
+  static async clearMobileCache(): Promise<void> {
+    await MobileStorageService.clearCache();
+  }
+
+  /**
+   * Tüm mobile data'yı temizle
+   */
+  static async clearAllMobileData(): Promise<void> {
+    await MobileStorageService.clearAllData();
+  }
+
+  /**
+   * Sync local data to server
+   */
+  static async syncLocalDataToServer(userId: string): Promise<void> {
+    if (!(await MobileStorageService.isOnline())) {
+      console.log('📱 Offline: Cannot sync to server');
+      return;
+    }
+
+    try {
+      console.log('🔄 Syncing local data to server...');
+      
+      // Local search history'yi server'a gönder
+      const localHistory = (await MobileStorageService.getSearchHistory()).filter(entry => !entry.isSynced);
+      
+      for (const entry of localHistory) {
+        try {
+          await this.recordSearchHistory({
+            userId,
+            searchIngredients: entry.ingredients,
+            searchQuery: entry.searchQuery,
+            resultType: entry.source as any,
+            resultsFound: entry.resultsCount,
+            exactMatches: Math.floor(entry.resultsCount * 0.7), // Estimate
+            nearMatches: Math.floor(entry.resultsCount * 0.3), // Estimate
+            usedAI: entry.source.includes('ai_generation'),
+            creditsSpent: entry.source.includes('ai_generation') ? 1 : 0,
+            responseTimeMs: 0 // Historical data
+          });
+          
+          // Mark as synced
+          entry.isSynced = true;
+          
+        } catch (syncError) {
+          console.warn('⚠️ Failed to sync entry:', entry.id, syncError);
+        }
+      }
+
+      // Update mobile storage with synced status
+      const updatedHistory = await MobileStorageService.getSearchHistory();
+      await AsyncStorage.setItem('@yemek_bulucu:search_history', JSON.stringify(updatedHistory));
+      
+      console.log('✅ Local data synced to server');
+      
+    } catch (error) {
+      console.error('❌ Failed to sync local data:', error);
     }
   }
 }

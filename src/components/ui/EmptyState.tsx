@@ -1,26 +1,26 @@
-import React from 'react';
-import { View, StyleSheet, ViewStyle, Image } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useThemedStyles } from '../../hooks/useThemedStyles';
-import Text from './Text';
-import Button from './Button';
-import Card from './Card';
-import { spacing, borderRadius } from '../../theme/design-tokens';
+import React from "react";
+import { View, StyleSheet, ViewStyle, Image } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useThemedStyles } from "../../hooks/useThemedStyles";
+import Text from "./Text";
+import Button from "./Button";
+import Card from "./Card";
+import { spacing, borderRadius } from "../../theme/design-tokens";
 
-export type EmptyStateType = 
-  | 'no-recipes'
-  | 'no-favorites' 
-  | 'no-search-results'
-  | 'no-ingredients'
-  | 'offline'
-  | 'error'
-  | 'no-suggestions'
-  | 'premium-required';
+export type EmptyStateType =
+  | "no-recipes"
+  | "no-favorites"
+  | "no-search-results"
+  | "no-ingredients"
+  | "offline"
+  | "error"
+  | "no-suggestions"
+  | "premium-required";
 
 interface EmptyStateAction {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'outline' | 'ghost';
+  variant?: "primary" | "outline" | "ghost";
   icon?: keyof typeof Ionicons.glyphMap;
 }
 
@@ -35,59 +35,67 @@ interface EmptyStateProps {
   compact?: boolean;
 }
 
-const EMPTY_STATE_CONFIG: Record<EmptyStateType, {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  description: string;
-  color: 'primary' | 'secondary' | 'warning' | 'error';
-}> = {
-  'no-recipes': {
-    icon: 'restaurant-outline',
-    title: 'Henüz Tarif Yok',
-    description: 'Tarif koleksiyonumuz güncelleniyor. Yakında yeni tarifler eklenecek!',
-    color: 'primary',
+const EMPTY_STATE_CONFIG: Record<
+  EmptyStateType,
+  {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    description: string;
+    color: "primary" | "secondary" | "warning" | "error";
+  }
+> = {
+  "no-recipes": {
+    icon: "restaurant-outline",
+    title: "Henüz Tarif Yok",
+    description:
+      "Tarif koleksiyonumuz güncelleniyor. Yakında yeni tarifler eklenecek!",
+    color: "primary",
   },
-  'no-favorites': {
-    icon: 'heart-outline',
-    title: 'Henüz Favori Tarifiniz Yok',
-    description: 'Beğendiğiniz tarifleri favorilerinize ekleyerek kolayca bulabilirsiniz.',
-    color: 'secondary',
+  "no-favorites": {
+    icon: "heart-outline",
+    title: "Henüz Favori Tarifiniz Yok",
+    description:
+      "Beğendiğiniz tarifleri favorilerinize ekleyerek kolayca bulabilirsiniz.",
+    color: "secondary",
   },
-  'no-search-results': {
-    icon: 'search-outline',
-    title: 'Sonuç Bulunamadı',
-    description: 'Bu malzemelerle eşleşen tarif bulunamadı. Farklı malzemeler deneyebilirsiniz.',
-    color: 'warning',
+  "no-search-results": {
+    icon: "search-outline",
+    title: "Sonuç Bulunamadı",
+    description:
+      "Bu malzemelerle eşleşen tarif bulunamadı. Farklı malzemeler deneyebilirsiniz.",
+    color: "warning",
   },
-  'no-ingredients': {
-    icon: 'add-circle-outline',
-    title: 'Malzeme Eklemediniz',
-    description: 'Mutfağınızdaki malzemeleri ekleyerek size uygun tarifleri bulabilirsiniz.',
-    color: 'primary',
+  "no-ingredients": {
+    icon: "add-circle-outline",
+    title: "Malzeme Eklemediniz",
+    description:
+      "Mutfağınızdaki malzemeleri ekleyerek size uygun tarifleri bulabilirsiniz.",
+    color: "primary",
   },
-  'offline': {
-    icon: 'cloud-offline-outline',
-    title: 'İnternet Bağlantısı Yok',
-    description: 'İnternet bağlantınızı kontrol edin ve tekrar deneyin.',
-    color: 'error',
+  offline: {
+    icon: "cloud-offline-outline",
+    title: "İnternet Bağlantısı Yok",
+    description: "İnternet bağlantınızı kontrol edin ve tekrar deneyin.",
+    color: "error",
   },
-  'error': {
-    icon: 'alert-circle-outline',
-    title: 'Bir Hata Oluştu',
-    description: 'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.',
-    color: 'error',
+  error: {
+    icon: "alert-circle-outline",
+    title: "Bir Hata Oluştu",
+    description: "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",
+    color: "error",
   },
-  'no-suggestions': {
-    icon: 'bulb-outline',
-    title: 'Öneri Bulunamadı',
-    description: 'Şu anda size özel öneri oluşturamadık. Daha sonra tekrar deneyin.',
-    color: 'secondary',
+  "no-suggestions": {
+    icon: "bulb-outline",
+    title: "Öneri Bulunamadı",
+    description:
+      "Şu anda size özel öneri oluşturamadık. Daha sonra tekrar deneyin.",
+    color: "secondary",
   },
-  'premium-required': {
-    icon: 'diamond-outline',
-    title: 'Premium Özellik',
-    description: 'Bu özelliği kullanmak için premium üyeliğe geçmelisiniz.',
-    color: 'warning',
+  "premium-required": {
+    icon: "diamond-outline",
+    title: "Premium Özellik",
+    description: "Bu özelliği kullanmak için premium üyeliğe geçmelisiniz.",
+    color: "warning",
   },
 };
 
@@ -102,36 +110,36 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   compact = false,
 }) => {
   const { colors } = useThemedStyles();
-  
+
   const config = EMPTY_STATE_CONFIG[type];
   const finalTitle = title || config.title;
   const finalDescription = description || config.description;
   const finalIcon = icon || config.icon;
-  
+
   const getColorScheme = () => {
     switch (config.color) {
-      case 'primary':
+      case "primary":
         return {
           iconBg: colors.primary[100],
           iconColor: colors.primary[600],
           titleColor: colors.text.primary,
           descColor: colors.text.secondary,
         };
-      case 'secondary':
+      case "secondary":
         return {
           iconBg: colors.secondary[100],
           iconColor: colors.secondary[600],
           titleColor: colors.text.primary,
           descColor: colors.text.secondary,
         };
-      case 'warning':
+      case "warning":
         return {
           iconBg: colors.warning[100],
           iconColor: colors.warning[600],
           titleColor: colors.text.primary,
           descColor: colors.text.secondary,
         };
-      case 'error':
+      case "error":
         return {
           iconBg: colors.error[100],
           iconColor: colors.error[600],
@@ -147,31 +155,32 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         };
     }
   };
-  
+
   const colorScheme = getColorScheme();
-  
+
   const containerStyle = compact ? styles.compactContainer : styles.container;
   const iconSize = compact ? 40 : 64;
   const iconContainerSize = compact ? 60 : 96;
-  
+
   return (
     <View style={[containerStyle, style]}>
-      <Card 
-        variant="default" 
-        size={compact ? "md" : "lg"} 
-        style={styles.card}
-      >
+      <Card variant="default" size={compact ? "md" : "lg"} style={styles.card}>
         {/* Icon or Illustration */}
         {illustration ? (
-          <View style={[styles.illustrationContainer, { height: compact ? 120 : 160 }]}>
-            <Image 
-              source={illustration} 
+          <View
+            style={[
+              styles.illustrationContainer,
+              { height: compact ? 120 : 160 },
+            ]}
+          >
+            <Image
+              source={illustration}
               style={styles.illustration}
               resizeMode="contain"
             />
           </View>
         ) : (
-          <View 
+          <View
             style={[
               styles.iconContainer,
               {
@@ -179,7 +188,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
                 height: iconContainerSize,
                 borderRadius: iconContainerSize / 2,
                 backgroundColor: colorScheme.iconBg,
-              }
+              },
             ]}
           >
             <Ionicons
@@ -200,11 +209,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
           >
             {finalTitle}
           </Text>
-          
+
           <Text
             variant={compact ? "bodySmall" : "body"}
             align="center"
-            style={{ 
+            style={{
               color: colorScheme.descColor,
               lineHeight: compact ? 18 : 22,
               maxWidth: compact ? 250 : 300,
@@ -220,14 +229,20 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             {actions.map((action, index) => (
               <Button
                 key={index}
-                variant={action.variant || 'primary'}
+                variant={action.variant || "primary"}
                 size={compact ? "md" : "lg"}
                 onPress={action.onPress}
-                leftIcon={action.icon ? <Ionicons name={action.icon} size={16} /> : undefined}
-                style={[
-                  styles.actionButton,
-                  actions.length === 1 && styles.singleAction
-                ]}
+                leftIcon={
+                  action.icon ? (
+                    <Ionicons name={action.icon} size={16} />
+                  ) : undefined
+                }
+                style={
+                  [
+                    styles.actionButton,
+                    actions.length === 1 ? styles.singleAction : {},
+                  ] as any
+                }
               >
                 {action.label}
               </Button>
@@ -240,110 +255,150 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 };
 
 // Preset empty states for common scenarios
-export const NoRecipesEmpty: React.FC<{ onRefresh?: () => void }> = ({ onRefresh }) => (
+export const NoRecipesEmpty: React.FC<{ onRefresh?: () => void }> = ({
+  onRefresh,
+}) => (
   <EmptyState
     type="no-recipes"
-    actions={onRefresh ? [{ label: 'Yenile', onPress: onRefresh, icon: 'refresh' }] : []}
+    actions={
+      onRefresh
+        ? [{ label: "Yenile", onPress: onRefresh, icon: "refresh" }]
+        : []
+    }
   />
 );
 
-export const NoFavoritesEmpty: React.FC<{ onExplore?: () => void }> = ({ onExplore }) => (
+export const NoFavoritesEmpty: React.FC<{ onExplore?: () => void }> = ({
+  onExplore,
+}) => (
   <EmptyState
     type="no-favorites"
-    actions={onExplore ? [{ label: 'Tarifleri Keşfet', onPress: onExplore, icon: 'compass' }] : []}
+    actions={
+      onExplore
+        ? [{ label: "Tarifleri Keşfet", onPress: onExplore, icon: "compass" }]
+        : []
+    }
   />
 );
 
-export const NoSearchResultsEmpty: React.FC<{ 
+export const NoSearchResultsEmpty: React.FC<{
   searchTerm?: string;
   onClearSearch?: () => void;
   onBrowseAll?: () => void;
 }> = ({ searchTerm, onClearSearch, onBrowseAll }) => (
   <EmptyState
     type="no-search-results"
-    description={searchTerm 
-      ? `"${searchTerm}" için sonuç bulunamadı. Farklı kelimeler deneyebilirsiniz.`
-      : 'Bu malzemelerle eşleşen tarif bulunamadı. Farklı malzemeler deneyebilirsiniz.'
+    description={
+      searchTerm
+        ? `"${searchTerm}" için sonuç bulunamadı. Farklı kelimeler deneyebilirsiniz.`
+        : "Bu malzemelerle eşleşen tarif bulunamadı. Farklı malzemeler deneyebilirsiniz."
     }
     actions={[
-      ...(onClearSearch ? [{ label: 'Aramayı Temizle', onPress: onClearSearch, variant: 'outline' as const, icon: 'close-circle' as const }] : []),
-      ...(onBrowseAll ? [{ label: 'Tüm Tariflere Bak', onPress: onBrowseAll, icon: 'library' as const }] : []),
+      ...(onClearSearch
+        ? [
+            {
+              label: "Aramayı Temizle",
+              onPress: onClearSearch,
+              variant: "outline" as const,
+              icon: "close-circle" as const,
+            },
+          ]
+        : []),
+      ...(onBrowseAll
+        ? [
+            {
+              label: "Tüm Tariflere Bak",
+              onPress: onBrowseAll,
+              icon: "library" as const,
+            },
+          ]
+        : []),
     ]}
   />
 );
 
-export const OfflineEmpty: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => (
+export const OfflineEmpty: React.FC<{ onRetry?: () => void }> = ({
+  onRetry,
+}) => (
   <EmptyState
     type="offline"
-    actions={onRetry ? [{ label: 'Tekrar Dene', onPress: onRetry, icon: 'refresh' }] : []}
+    actions={
+      onRetry
+        ? [{ label: "Tekrar Dene", onPress: onRetry, icon: "refresh" }]
+        : []
+    }
   />
 );
 
 export const ErrorEmpty: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => (
   <EmptyState
     type="error"
-    actions={onRetry ? [{ label: 'Tekrar Dene', onPress: onRetry, icon: 'refresh' }] : []}
+    actions={
+      onRetry
+        ? [{ label: "Tekrar Dene", onPress: onRetry, icon: "refresh" }]
+        : []
+    }
   />
 );
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: spacing[6],
   },
-  
+
   compactContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: spacing[4],
   },
-  
+
   card: {
-    alignItems: 'center',
+    alignItems: "center",
     maxWidth: 400,
-    width: '100%',
+    width: "100%",
   },
-  
+
   iconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing[4],
   },
-  
+
   illustrationContainer: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: spacing[4],
   },
-  
+
   illustration: {
-    width: '80%',
-    height: '100%',
+    width: "80%",
+    height: "100%",
   },
-  
+
   content: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: spacing[6],
   },
-  
+
   actions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: spacing[3],
-    justifyContent: 'center',
+    justifyContent: "center",
   },
-  
+
   compactActions: {
     marginTop: spacing[2],
   },
-  
+
   actionButton: {
     minWidth: 120,
   },
-  
+
   singleAction: {
     minWidth: 160,
   },

@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useHaptics } from './useHaptics';
 import { useAccessibility } from './useAccessibility';
+import { Logger } from '../services/LoggerService';
 
 export interface PullToRefreshOptions {
   onRefresh?: () => Promise<void>;

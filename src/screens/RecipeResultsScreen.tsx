@@ -1,531 +1,845 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   FlatList,
-  Alert,
   SafeAreaView,
   StyleSheet,
   ActivityIndicator,
+  StatusBar,
+  TouchableOpacity,
+  ScrollView,
+  Dimensions,
+  Animated,
+  Share,
 } from "react-native";
+import { Logger } from "../services/LoggerService";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { RouteProp } from "@react-navigation/native";
 import { HomeStackParamList } from "../../App";
 import { Recipe, RecipeSearchResult } from "../types/Recipe";
 import { RecipeService } from "../services/recipeService";
 import { Ionicons } from "@expo/vector-icons";
-import { RecipeCard } from "../components/ui/RecipeCard";
-import { SuggestionCard } from "../components/ui/SuggestionCard";
+import { LinearGradient } from "expo-linear-gradient";
 
 // UI Components
-import { Button, Card, Text, RecipeListSkeleton, Loading, NoSearchResultsEmpty } from "../components/ui";
-import { PullToRefresh } from "../components/ui/PullToRefresh";
+import { Button, Card, Text } from "../components/ui";
+import { RecipeCard } from "../components/ui/RecipeCard";
+import {
+  useTheme,
+  spacing,
+  borderRadius,
+  elevation,
+  colors,
+} from "../contexts/ThemeContext";
+// import { spacing as designTokensSpacing } from "../theme/design-tokens";
+import { useToast } from "../contexts/ToastContext";
+import { useHaptics } from "../hooks/useHaptics";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
-import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
-import { spacing, borderRadius, shadows, colors } from "../theme/design-tokens";
-import { useThemedStyles } from "../hooks/useThemedStyles";
-import { useLoadingState } from "../hooks/useLoadingState";
+// import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 type RecipeResultsScreenProps = {
   navigation: StackNavigationProp<HomeStackParamList, "RecipeResults">;
   route: RouteProp<HomeStackParamList, "RecipeResults">;
 };
 
+type ViewMode = "grid" | "list";
+type SortOption = "relevance" | "cookingTime" | "name" | "rating";
+type FilterOption = "all" | "exact" | "near";
+
 const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
   navigation,
   route,
 }) => {
-  const { ingredients } = route.params;
-  const { colors } = useThemedStyles();
-  const { isLoading, error, executeAsync } = useLoadingState(true);
-  
-  const [searchResults, setSearchResults] = useState<RecipeSearchResult | null>(null);
-  const [suggestions, setSuggestions] = useState<
-    {
-      ingredient: string;
-      recipes: string[];
-      priority: number;
-    }[]
-  >([]);
-  const [randomRecipe, setRandomRecipe] = useState<Recipe | null>(null);
-  const [showRandomSuggestion, setShowRandomSuggestion] = useState(false);
+  const { ingredients, aiRecipes } = route.params;
+  const [searchResults, setSearchResults] = useState<RecipeSearchResult | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = useState(!aiRecipes);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortBy, setSortBy] = useState<SortOption>("relevance");
+  const [filterBy, setFilterBy] = useState<FilterOption>("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  // Pull-to-refresh hook'unu kullan
+  const { colors } = useTheme();
+  const { showSuccess, showError, showInfo } = useToast();
+  const haptics = useHaptics();
+
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const filterAnimation = useRef(new Animated.Value(0)).current;
+
+  // Get all recipes for processing
+  const allRecipes = searchResults
+    ? [...searchResults.exactMatches, ...searchResults.nearMatches]
+    : aiRecipes || [];
+
+  // Filter and sort recipes
+  const processedRecipes = React.useMemo(() => {
+    let result = [...allRecipes];
+
+    // Apply filter
+    if (filterBy === "exact" && searchResults) {
+      result = searchResults.exactMatches;
+    } else if (filterBy === "near" && searchResults) {
+      result = searchResults.nearMatches;
+    }
+
+    // Apply tag filtering
+    if (selectedTags.length > 0) {
+      result = result.filter((recipe) =>
+        selectedTags.some(
+          (tag) =>
+            recipe.ingredients?.some((ingredient: string) =>
+              ingredient.toLowerCase().includes(tag.toLowerCase())
+            ) || recipe.name.toLowerCase().includes(tag.toLowerCase())
+        )
+      );
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "cookingTime":
+          return (a.cookingTime || 30) - (b.cookingTime || 30);
+        case "rating":
+          return (b.rating || 0) - (a.rating || 0);
+        case "relevance":
+        default:
+          // Sort by matching ingredients ratio
+          const aMatch =
+            (a.matchingIngredients || 0) / (a.totalIngredients || 1);
+          const bMatch =
+            (b.matchingIngredients || 0) / (b.totalIngredients || 1);
+          return bMatch - aMatch;
+      }
+    });
+
+    return result;
+  }, [allRecipes, filterBy, selectedTags, sortBy, searchResults]);
+
+  // Popular ingredient tags
+  const ingredientTags = React.useMemo(() => {
+    const tagCount: { [key: string]: number } = {};
+    allRecipes.forEach((recipe) => {
+      recipe.ingredients?.forEach((ingredient: string) => {
+        const cleanIngredient = ingredient
+          .split(" ")
+          .find(
+            (word: string) =>
+              word.length > 3 &&
+              !["adet", "gram", "litre", "kaşık", "bardak"].includes(
+                word.toLowerCase()
+              )
+          );
+        if (cleanIngredient) {
+          tagCount[cleanIngredient] = (tagCount[cleanIngredient] || 0) + 1;
+        }
+      });
+    });
+
+    return Object.entries(tagCount)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 8)
+      .map(([tag]) => tag);
+  }, [allRecipes]);
+
+  const loadRecipes = async () => {
+    if (aiRecipes) {
+      setSearchResults({
+        exactMatches: aiRecipes,
+        nearMatches: [],
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const results = await RecipeService.searchRecipesByIngredients({
+        ingredients,
+        maxMissingIngredients: 5,
+      });
+      setSearchResults(results);
+      Logger.info(
+        `Found ${
+          results.exactMatches.length + results.nearMatches.length
+        } recipes`
+      );
+    } catch (error) {
+      Logger.error("Recipe search failed:", error);
+      showError("Tarifler yüklenemedi");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadRecipes();
+    setRefreshing(false);
+    haptics.notificationSuccess();
+    showSuccess("Tarifler yenilendi");
+  };
+
+  const shareResults = async () => {
+    try {
+      const message = `🍽️ ${ingredients.join(", ")} ile ${
+        processedRecipes.length
+      } tarif buldum!\n\nYemek Bulucu ile paylaşıldı`;
+      await Share.share({
+        message,
+        title: "Tarif Sonuçları",
+      });
+    } catch (error) {
+      Logger.error("Share failed:", error);
+    }
+  };
+
+  const toggleFilters = () => {
+    const toValue = showFilters ? 0 : 1;
+    setShowFilters(!showFilters);
+
+    Animated.spring(filterAnimation, {
+      toValue,
+      useNativeDriver: false,
+      tension: 100,
+      friction: 8,
+    }).start();
+  };
+
+  const clearAllFilters = () => {
+    setFilterBy("all");
+    setSelectedTags([]);
+    setSortBy("relevance");
+    haptics.lightImpact();
+  };
+
+  const toggleTag = (tag: string) => {
+    if (selectedTags.includes(tag)) {
+      setSelectedTags((prev) => prev.filter((t) => t !== tag));
+    } else {
+      setSelectedTags((prev) => [...prev, tag]);
+    }
+    haptics.lightImpact();
+  };
+
+  const handleRecipePress = (recipe: Recipe) => {
+    navigation.navigate("RecipeDetail", {
+      recipeId: recipe.id,
+      recipeName: recipe.name,
+      recipe: recipe,
+      isAiGenerated: recipe.aiGenerated || false,
+    });
+  };
+
   const pullToRefresh = usePullToRefresh({
-    onRefresh: async () => {
-      await searchRecipes();
-    },
+    onRefresh: handleRefresh,
     enabled: true,
-    hapticFeedback: true,
-    refreshingText: 'Tarifler yenileniyor...',
-    pullToRefreshText: 'Tarifleri yenilemek için aşağı çekin',
-    releaseToRefreshText: 'Tarifleri yenilemek için bırakın',
   });
 
-  // FlatList performance optimizasyonları
-  const flatListOptimizations = useOptimizedFlatList<Recipe>({
-    estimatedItemSize: 180, // Compact RecipeCard yüksekliği
-    enableGetItemLayout: false,
-    keyExtractor: (item) => item.id,
-    viewabilityConfig: {
-      itemVisiblePercentThreshold: 60,
-      minimumViewTime: 150,
-    },
-  });
+  // Removed useOptimizedFlatList hook usage
 
   useEffect(() => {
-    searchRecipes();
+    loadRecipes();
   }, []);
 
-  const searchRecipes = async () => {
-    const results = await executeAsync(async () => {
-      // Tarifleri ara
-      const searchResults = await RecipeService.searchRecipesByIngredients({
-        ingredients,
-        maxMissingIngredients: 8,
-      });
-      setSearchResults(searchResults);
-      
-      // Önerileri al
-      const ingredientSuggestions = await RecipeService.getSuggestedIngredients(
-        ingredients
-      );
-      setSuggestions(ingredientSuggestions);
-      
-      return searchResults;
-    });
-    
-    if (!results && error) {
-      Alert.alert("Hata", "Tarifler aranırken bir hata oluştu.");
-    }
-  };
+  const renderGridItem = ({ item, index }: { item: Recipe; index: number }) => (
+    <TouchableOpacity
+      style={[styles.gridItem, { backgroundColor: colors.surface }]}
+      onPress={() => handleRecipePress(item)}
+      activeOpacity={0.9}
+    >
+      <LinearGradient
+        colors={[colors.primary[400], colors.primary[600]]}
+        style={styles.gridItemImage}
+      >
+        <Ionicons name="restaurant" size={28} color="white" />
 
-  const suggestRandomRecipe = () => {
-    if (!searchResults) return;
-
-    const { exactMatches, nearMatches } = searchResults;
-
-    if (exactMatches.length === 0 && nearMatches.length === 0) return;
-
-    let selectedRecipe: Recipe;
-
-    // Ağırlıklı rastgele seçim: Tam eşleşenlere %70 şans, yakın eşleşenlere %30 şans
-    if (exactMatches.length > 0 && nearMatches.length > 0) {
-      const shouldPickExactMatch = Math.random() < 0.7;
-
-      if (shouldPickExactMatch) {
-        const randomIndex = Math.floor(Math.random() * exactMatches.length);
-        selectedRecipe = exactMatches[randomIndex];
-      } else {
-        const randomIndex = Math.floor(Math.random() * nearMatches.length);
-        selectedRecipe = nearMatches[randomIndex];
-      }
-    } else if (exactMatches.length > 0) {
-      // Sadece tam eşleşenler varsa
-      const randomIndex = Math.floor(Math.random() * exactMatches.length);
-      selectedRecipe = exactMatches[randomIndex];
-    } else {
-      // Sadece yakın eşleşenler varsa
-      const randomIndex = Math.floor(Math.random() * nearMatches.length);
-      selectedRecipe = nearMatches[randomIndex];
-    }
-
-    setRandomRecipe(selectedRecipe);
-    setShowRandomSuggestion(true);
-
-    // Biraz animasyon etkisi için kısa gecikme
-    setTimeout(() => {
-      navigation.navigate("RecipeDetail", {
-        recipeId: selectedRecipe.id,
-        recipeName: selectedRecipe.name,
-      });
-      // State'i temizle
-      setShowRandomSuggestion(false);
-      setRandomRecipe(null);
-    }, 1500);
-  };
-
-  const getSectionColors = (colorScheme: string) => {
-    switch (colorScheme) {
-      case "success":
-        return {
-          bg: colors.success[100],
-          icon: colors.success[600],
-          badge: colors.success[500],
-        };
-      case "warning":
-        return {
-          bg: colors.warning[100],
-          icon: colors.warning[600],
-          badge: colors.warning[500],
-        };
-      default:
-        return {
-          bg: colors.primary[100],
-          icon: colors.primary[600],
-          badge: colors.primary[500],
-        };
-    }
-  };
-
-  const renderSectionHeader = (
-    title: string,
-    count: number,
-    icon: string,
-    colorScheme: string = "primary"
-  ) => {
-    const sectionColors = getSectionColors(colorScheme);
-
-    return (
-      <Card variant="default" size="md" style={styles.sectionHeader}>
-        <View style={styles.sectionHeaderContent}>
-          <View
-            style={[styles.sectionIcon, { backgroundColor: sectionColors.bg }]}
-          >
-            <Ionicons name={icon as any} size={24} color={sectionColors.icon} />
-          </View>
-          <View style={styles.sectionInfo}>
-            <Text variant="h4" weight="bold" color="primary">
-              {title}
-            </Text>
-            <Text variant="bodySmall" color="muted">
-              {count} sonuç bulundu
-            </Text>
-          </View>
+        {/* Match Badge */}
+        {item.matchingIngredients && item.totalIngredients && (
           <View
             style={[
-              styles.sectionBadge,
-              { backgroundColor: sectionColors.badge },
+              styles.matchBadge,
+              {
+                backgroundColor:
+                  item.matchingIngredients === item.totalIngredients
+                    ? colors.semantic.success
+                    : colors.semantic.warning,
+              },
             ]}
           >
-            <Text
-              variant="bodySmall"
-              weight="semibold"
-              style={{ color: colors.neutral[0] }}
-            >
-              {count}
+            <Text variant="labelSmall" weight="600" style={{ color: "white" }}>
+              {Math.round(
+                (item.matchingIngredients / item.totalIngredients) * 100
+              )}
+              %
+            </Text>
+          </View>
+        )}
+      </LinearGradient>
+
+      <View style={styles.gridItemContent}>
+        <Text variant="labelLarge" weight="600" numberOfLines={2}>
+          {item.name}
+        </Text>
+
+        <View style={styles.gridItemStats}>
+          <View style={styles.gridItemStat}>
+            <Ionicons
+              name="time-outline"
+              size={12}
+              color={colors.text.secondary}
+            />
+            <Text variant="labelSmall" color="secondary">
+              {item.cookingTime || "30"}dk
+            </Text>
+          </View>
+
+          <View style={styles.gridItemStat}>
+            <Ionicons
+              name="people-outline"
+              size={12}
+              color={colors.text.secondary}
+            />
+            <Text variant="labelSmall" color="secondary">
+              {item.servings || "4"}
             </Text>
           </View>
         </View>
-      </Card>
-    );
-  };
 
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconContainer}>
-        <Ionicons
-          name="restaurant-outline"
-          size={48}
-          color={colors.neutral[400]}
-        />
+        {item.difficulty && (
+          <View
+            style={[
+              styles.difficultyIndicator,
+              {
+                backgroundColor:
+                  item.difficulty === "kolay"
+                    ? colors.semantic.success + "20"
+                    : item.difficulty === "orta"
+                    ? colors.semantic.warning + "20"
+                    : colors.semantic.error + "20",
+              },
+            ]}
+          >
+            <Text
+              variant="labelSmall"
+              weight="500"
+              style={{
+                color:
+                  item.difficulty === "kolay"
+                    ? colors.semantic.success
+                    : item.difficulty === "orta"
+                    ? colors.semantic.warning
+                    : colors.semantic.error,
+              }}
+            >
+              {item.difficulty}
+            </Text>
+          </View>
+        )}
       </View>
-      <View style={styles.emptyContent}>
-        <Text variant="h3" weight="bold" color="primary" align="center">
-          Tarif Bulunamadı
-        </Text>
-        <Text
-          variant="body"
-          color="secondary"
-          align="center"
-          style={styles.emptyDescription}
+    </TouchableOpacity>
+  );
+
+  const renderListItem = ({ item }: { item: Recipe }) => (
+    <RecipeCard
+      recipe={item}
+      variant="compact"
+      onPress={() => handleRecipePress(item)}
+    />
+  );
+
+  const renderFilterPanel = () => (
+    <Animated.View
+      style={[
+        styles.filterPanel,
+        {
+          backgroundColor: colors.surface,
+          maxHeight: filterAnimation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 300],
+          }),
+          opacity: filterAnimation,
+        },
+      ]}
+    >
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Filter Options */}
+        <View style={styles.filterSection}>
+          <Text
+            variant="labelLarge"
+            weight="600"
+            style={{ marginBottom: spacing.sm }}
+          >
+            Sonuç Tipi
+          </Text>
+          <View style={styles.filterOptions}>
+            {[
+              { key: "all", label: "Tümü" },
+              { key: "exact", label: "Tam Eşleşme" },
+              { key: "near", label: "Yakın Eşleşme" },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.filterOption,
+                  {
+                    backgroundColor:
+                      filterBy === option.key
+                        ? colors.primary[500]
+                        : "transparent",
+                    borderColor: colors.primary[500],
+                  },
+                ]}
+                onPress={() => setFilterBy(option.key as FilterOption)}
+              >
+                <Text
+                  variant="labelSmall"
+                  weight="500"
+                  style={{
+                    color:
+                      filterBy === option.key ? "white" : colors.primary[500],
+                  }}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Sort Options */}
+        <View style={styles.filterSection}>
+          <Text
+            variant="labelLarge"
+            weight="600"
+            style={{ marginBottom: spacing.sm }}
+          >
+            Sıralama
+          </Text>
+          <View style={styles.filterOptions}>
+            {[
+              { key: "relevance", label: "Uygunluk", icon: "star" },
+              { key: "name", label: "İsim", icon: "text" },
+              { key: "cookingTime", label: "Süre", icon: "time" },
+              { key: "rating", label: "Puan", icon: "heart" },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.key}
+                style={[
+                  styles.sortOption,
+                  {
+                    backgroundColor:
+                      sortBy === option.key
+                        ? colors.secondary[500]
+                        : colors.surface,
+                  },
+                ]}
+                onPress={() => setSortBy(option.key as SortOption)}
+              >
+                <Ionicons
+                  name={option.icon as any}
+                  size={16}
+                  color={sortBy === option.key ? "white" : colors.text.primary}
+                />
+                <Text
+                  variant="labelMedium"
+                  weight="500"
+                  style={{
+                    color:
+                      sortBy === option.key ? "white" : colors.text.primary,
+                  }}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Ingredient Tags */}
+        {ingredientTags.length > 0 && (
+          <View style={styles.filterSection}>
+            <Text
+              variant="labelLarge"
+              weight="600"
+              style={{ marginBottom: spacing.sm }}
+            >
+              Popüler Malzemeler
+            </Text>
+            <View style={styles.tagContainer}>
+              {ingredientTags.map((tag) => (
+                <TouchableOpacity
+                  key={tag}
+                  style={[
+                    styles.ingredientTag,
+                    {
+                      backgroundColor: selectedTags.includes(tag)
+                        ? colors.primary[500]
+                        : colors.primary[50],
+                      borderColor: colors.primary[300],
+                    },
+                  ]}
+                  onPress={() => toggleTag(tag)}
+                >
+                  <Text
+                    variant="labelSmall"
+                    weight="500"
+                    style={{
+                      color: selectedTags.includes(tag)
+                        ? "white"
+                        : colors.primary[600],
+                    }}
+                  >
+                    {tag}
+                  </Text>
+                  {selectedTags.includes(tag) && (
+                    <Ionicons name="checkmark" size={12} color="white" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Clear Filters */}
+        <TouchableOpacity
+          style={[
+            styles.clearFiltersButton,
+            { borderColor: colors.neutral[300] },
+          ]}
+          onPress={clearAllFilters}
         >
-          Bu malzemelerle yapılabilecek tarif bulunamadı. Farklı malzemeler
-          deneyebilirsiniz.
-        </Text>
-      </View>
+          <Ionicons name="refresh" size={16} color={colors.text.secondary} />
+          <Text variant="labelMedium" color="secondary">
+            Filtreleri Temizle
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </Animated.View>
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <LinearGradient
+        colors={[colors.primary[100], colors.primary[200]]}
+        style={styles.emptyIcon}
+      >
+        <Ionicons name="search-outline" size={60} color={colors.primary[500]} />
+      </LinearGradient>
+
+      <Text
+        variant="headlineSmall"
+        weight="600"
+        align="center"
+        style={{ marginVertical: spacing.lg }}
+      >
+        Tarif Bulunamadı
+      </Text>
+
+      <Text
+        variant="bodyMedium"
+        color="secondary"
+        align="center"
+        style={{ marginBottom: spacing.xl }}
+      >
+        Seçili filtrelere uygun tarif bulunamadı. Farklı filtreler deneyin.
+      </Text>
+
       <Button
         variant="outline"
-        size="md"
-        onPress={() => navigation.goBack()}
-        leftIcon={
-          <Ionicons name="arrow-back" size={18} color={colors.primary[500]} />
-        }
+        onPress={clearAllFilters}
+        leftIcon={<Ionicons name="refresh" size={20} />}
       >
-        Geri Dön
+        Filtreleri Temizle
       </Button>
     </View>
   );
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <StatusBar barStyle="light-content" />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary[500]} />
-          <View style={styles.loadingContent}>
-            <Text variant="h4" weight="semibold" color="primary" align="center">
-              Tarifler Aranıyor...
-            </Text>
-            <Text
-              variant="body"
-              color="secondary"
-              align="center"
-              style={{ marginTop: spacing[2] }}
-            >
-              Malzemelerinize uygun en iyi tarifleri buluyoruz
-            </Text>
-          </View>
+          <Text
+            variant="headlineSmall"
+            weight="600"
+            style={{ marginTop: spacing.md }}
+          >
+            Tarifler Yükleniyor...
+          </Text>
         </View>
-      </SafeAreaView>
-    );
-  }
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
-        <View style={styles.loadingContainer}>
-          <RecipeListSkeleton count={4} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const allRecipes = searchResults
-    ? [...searchResults.exactMatches, ...searchResults.nearMatches]
-    : [];
-
-  if (
-    !searchResults ||
-    (searchResults.exactMatches.length === 0 &&
-      searchResults.nearMatches.length === 0)
-  ) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
-        <NoSearchResultsEmpty 
-          onBrowseAll={() => navigation.navigate('AllRecipes')}
-        />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Header with ingredients */}
-      <Card variant="default" size="md" style={styles.ingredientsHeader}>
-        <View style={styles.ingredientsContent}>
-          <View style={styles.ingredientsTitle}>
-            <Ionicons name="search" size={16} color={colors.primary[500]} />
-            <Text
-              variant="caption"
-              weight="semibold"
-              color="muted"
-              style={styles.ingredientsLabel}
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <StatusBar barStyle="light-content" />
+
+      {/* Modern Hero Header */}
+      <LinearGradient
+        colors={[
+          colors.primary[500],
+          colors.primary[600],
+          colors.secondary[500],
+        ]}
+        style={styles.heroHeader}
+      >
+        <View style={styles.headerContainer}>
+          <View style={styles.headerLeft}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
             >
-              ARAMA YAPILAN MALZEMELER
+              <Ionicons name="arrow-back" size={24} color="white" />
+            </TouchableOpacity>
+
+            <View style={styles.headerInfo}>
+              <Text
+                variant="headlineSmall"
+                weight="700"
+                style={{ color: "white" }}
+              >
+                Tarif Sonuçları
+              </Text>
+              <Text
+                variant="bodyMedium"
+                style={{ color: "rgba(255,255,255,0.8)" }}
+              >
+                {processedRecipes.length} tarif bulundu
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.shareButton} onPress={shareResults}>
+            <Ionicons name="share-outline" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Search Stats */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <View
+              style={[
+                styles.statIcon,
+                { backgroundColor: "rgba(255,255,255,0.2)" },
+              ]}
+            >
+              <Ionicons name="restaurant" size={16} color="white" />
+            </View>
+            <Text variant="labelSmall" style={{ color: "white" }}>
+              {ingredients.length} malzeme
             </Text>
           </View>
-          <Text variant="body" color="primary" style={styles.ingredientsText}>
-            {ingredients.map((ingredient, index) => (
-              <React.Fragment key={index}>
-                <Text variant="body" weight="semibold" color="accent">
-                  {ingredient}
+
+          {searchResults && (
+            <>
+              <View style={styles.statItem}>
+                <View
+                  style={[
+                    styles.statIcon,
+                    { backgroundColor: "rgba(255,255,255,0.2)" },
+                  ]}
+                >
+                  <Ionicons name="checkmark-circle" size={16} color="white" />
+                </View>
+                <Text variant="labelSmall" style={{ color: "white" }}>
+                  {searchResults.exactMatches.length} tam eşleşme
                 </Text>
-                {index < ingredients.length - 1 && (
-                  <Text variant="body" color="muted">
-                    {" • "}
-                  </Text>
-                )}
-              </React.Fragment>
-            ))}
+              </View>
+
+              <View style={styles.statItem}>
+                <View
+                  style={[
+                    styles.statIcon,
+                    { backgroundColor: "rgba(255,255,255,0.2)" },
+                  ]}
+                >
+                  <Ionicons name="add-circle" size={16} color="white" />
+                </View>
+                <Text variant="labelSmall" style={{ color: "white" }}>
+                  {searchResults.nearMatches.length} yakın eşleşme
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
+      </LinearGradient>
+
+      {/* Ingredients Tags */}
+      <View
+        style={[
+          styles.ingredientsSection,
+          { backgroundColor: colors.background },
+        ]}
+      >
+        <View style={styles.ingredientsHeader}>
+          <Ionicons
+            name="restaurant-outline"
+            size={20}
+            color={colors.primary[500]}
+          />
+          <Text variant="labelLarge" weight="600">
+            Kullanılan Malzemeler
           </Text>
         </View>
-      </Card>
-
-      {/* Random Recipe Suggestion */}
-      {allRecipes.length > 0 && (
-        <Card variant="filled" size="md" style={styles.randomSuggestionCard}>
-          <View style={styles.randomSuggestionContent}>
-            <View style={styles.randomSuggestionHeader}>
-              <Ionicons name="sparkles" size={20} color={colors.warning[600]} />
-              <Text variant="bodyLarge" weight="semibold" color="primary">
-                Karar Veremiyor musunuz?
-              </Text>
-            </View>
-            <Text
-              variant="body"
-              color="secondary"
-              style={styles.randomSuggestionDesc}
-            >
-              Size rastgele bir tarif önerelim! Bazen şans da güzel sonuçlar
-              verir.
-            </Text>
-
-            {showRandomSuggestion && randomRecipe ? (
-              <View style={styles.randomRecipePreview}>
-                <View style={styles.randomRecipeInfo}>
-                  <Ionicons
-                    name="restaurant"
-                    size={16}
-                    color={colors.success[600]}
-                  />
-                  <Text variant="body" weight="semibold" color="success">
-                    {randomRecipe.name} öneriliyor...
-                  </Text>
-                </View>
-                <ActivityIndicator size="small" color={colors.success[500]} />
-              </View>
-            ) : (
-              <Button
-                variant="primary"
-                size="md"
-                onPress={suggestRandomRecipe}
-                leftIcon={<Ionicons name="dice" size={18} />}
-                style={styles.randomSuggestionButton}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.ingredientsContainer}>
+            {ingredients.map((ingredient, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.ingredientChip,
+                  { backgroundColor: colors.primary[50] },
+                ]}
               >
-                🎲 Bana Bir Yemek Öner
-              </Button>
-            )}
-          </View>
-        </Card>
-      )}
-
-      <FlatList
-        data={allRecipes}
-        renderItem={flatListOptimizations.createRenderItem(({ item, index }) => (
-          <View style={styles.recipeCardContainer}>
-            <RecipeCard
-              recipe={item}
-              variant={
-                searchResults.exactMatches.includes(item)
-                  ? "default"
-                  : "compact"
-              }
-              onPress={() =>
-                navigation.navigate("RecipeDetail", {
-                  recipeId: item.id,
-                  recipeName: item.name,
-                })
-              }
-            />
-          </View>
-        ))}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <PullToRefresh
-            refreshing={pullToRefresh.isRefreshing}
-            onRefresh={pullToRefresh.handleRefresh}
-            accessibilityLabel="Tarif sonuçlarını yenilemek için aşağı çekin"
-            title={pullToRefresh.refreshText}
-          />
-        }
-        // Performance optimizations
-        {...flatListOptimizations.optimizedProps}
-        ListHeaderComponent={() => (
-          <View style={styles.sectionsContainer}>
-            {/* Exact Matches Section */}
-            {searchResults.exactMatches.length > 0 && (
-              <>
-                {renderSectionHeader(
-                  "Hemen Yapabilirsiniz",
-                  searchResults.exactMatches.length,
-                  "checkmark-circle",
-                  "success"
-                )}
-                {searchResults.nearMatches.length > 0 && (
-                  <View style={{ height: spacing[2] }} />
-                )}
-              </>
-            )}
-
-            {/* Near Matches Section */}
-            {searchResults.nearMatches.length > 0 &&
-              renderSectionHeader(
-                searchResults.exactMatches.length > 0
-                  ? "Şunu Alırsan Bunları da Yapabilirsin"
-                  : "Önerilen Tarifler",
-                searchResults.nearMatches.length,
-                "add-circle",
-                "warning"
-              )}
-          </View>
-        )}
-        ListFooterComponent={() => (
-          <View style={styles.footerContainer}>
-            {/* Suggestions Section */}
-            {suggestions.length > 0 && (
-              <>
-                <View style={styles.divider} />
-                <Card
-                  variant="default"
-                  size="md"
-                  style={styles.suggestionsHeader}
+                <Text
+                  variant="labelSmall"
+                  weight="500"
+                  style={{ color: colors.primary[700] }}
                 >
-                  <View style={styles.suggestionsHeaderContent}>
-                    <View
-                      style={[
-                        styles.sectionIcon,
-                        { backgroundColor: colors.primary[100] },
-                      ]}
-                    >
-                      <Ionicons
-                        name="bulb"
-                        size={20}
-                        color={colors.primary[600]}
-                      />
-                    </View>
-                    <View style={styles.sectionInfo}>
-                      <Text variant="h4" weight="bold" color="primary">
-                        Önerilen Malzemeler
-                      </Text>
-                      <Text variant="bodySmall" color="secondary">
-                        Bu malzemeleri alarak daha fazla tarif yapabilirsiniz
-                      </Text>
-                    </View>
-                  </View>
-                </Card>
-
-                <FlatList
-                  data={suggestions}
-                  renderItem={({ item }) => (
-                    <SuggestionCard
-                      ingredient={item.ingredient}
-                      recipes={item.recipes}
-                      priority={item.priority}
-                      onPress={() => {
-                        // TODO: Alışveriş listesine ekleme fonksiyonu
-                        Alert.alert(
-                          "Özellik Geliştiriliyor",
-                          `${item.ingredient} alışveriş listesine ekleme özelliği yakında!`
-                        );
-                      }}
-                    />
-                  )}
-                  keyExtractor={(item) => item.ingredient}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{
-                    paddingHorizontal: spacing[4],
-                  }}
-                />
-              </>
-            )}
-
-            {/* Footer Info */}
-            <View style={styles.infoContainer}>
-              <View style={styles.infoHeader}>
-                <Ionicons
-                  name="information-circle"
-                  size={16}
-                  color={colors.primary[600]}
-                />
-                <Text variant="bodySmall" weight="semibold" color="accent">
-                  Bilgi
+                  {ingredient}
                 </Text>
               </View>
-              <Text
-                variant="caption"
-                style={{
-                  color: colors.primary[700],
-                  marginTop: spacing[1],
-                }}
-              >
-                Tarifler malzeme eşleşme oranına göre sıralanmıştır. En çok
-                eşleşen tarifler üstte görünür.
-              </Text>
-            </View>
+            ))}
           </View>
-        )}
-      />
+        </ScrollView>
+      </View>
+
+      {/* Controls */}
+      <View
+        style={[styles.controlsSection, { backgroundColor: colors.background }]}
+      >
+        {/* View Mode Toggle */}
+        <View style={styles.viewControls}>
+          <TouchableOpacity
+            style={[
+              styles.viewModeButton,
+              {
+                backgroundColor:
+                  viewMode === "grid" ? colors.primary[500] : colors.surface,
+              },
+            ]}
+            onPress={() => {
+              setViewMode("grid");
+              haptics.lightImpact();
+            }}
+          >
+            <Ionicons
+              name="grid"
+              size={20}
+              color={viewMode === "grid" ? "white" : colors.text.primary}
+            />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.viewModeButton,
+              {
+                backgroundColor:
+                  viewMode === "list" ? colors.primary[500] : colors.surface,
+              },
+            ]}
+            onPress={() => {
+              setViewMode("list");
+              haptics.lightImpact();
+            }}
+          >
+            <Ionicons
+              name="list"
+              size={20}
+              color={viewMode === "list" ? "white" : colors.text.primary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter Button */}
+        <TouchableOpacity
+          style={[
+            styles.filterButton,
+            {
+              backgroundColor: showFilters
+                ? colors.primary[500]
+                : colors.surface,
+            },
+          ]}
+          onPress={toggleFilters}
+        >
+          <Ionicons
+            name="options"
+            size={20}
+            color={showFilters ? "white" : colors.text.primary}
+          />
+          <Text
+            variant="labelMedium"
+            weight="500"
+            style={{
+              color: showFilters ? "white" : colors.text.primary,
+            }}
+          >
+            Filtrele
+          </Text>
+          {(filterBy !== "all" ||
+            selectedTags.length > 0 ||
+            sortBy !== "relevance") && (
+            <View
+              style={[
+                styles.filterIndicator,
+                { backgroundColor: colors.semantic.error },
+              ]}
+            />
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* Filter Panel */}
+      {renderFilterPanel()}
+
+      {/* Content */}
+      {processedRecipes.length === 0 ? (
+        renderEmpty()
+      ) : (
+        <FlatList
+          data={processedRecipes}
+          keyExtractor={(item) => item.id}
+          renderItem={viewMode === "grid" ? renderGridItem : renderListItem}
+          numColumns={viewMode === "grid" ? 2 : 1}
+          key={viewMode}
+          contentContainerStyle={[
+            styles.listContainer,
+            processedRecipes.length === 0 && styles.emptyListContainer,
+          ]}
+          columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
+          showsVerticalScrollIndicator={false}
+          refreshing={pullToRefresh.isRefreshing}
+          onRefresh={pullToRefresh.handleRefresh}
+          onEndReached={() => {}}
+          onEndReachedThreshold={0.5}
+          getItemLayout={(data, index) => ({
+            length: viewMode === "grid" ? 200 : 140,
+            offset: (viewMode === "grid" ? 200 : 140) * index,
+            index,
+          })}
+          ItemSeparatorComponent={() =>
+            viewMode === "list" ? <View style={{ height: 12 }} /> : null
+          }
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -533,153 +847,261 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
-  },
-  loadingContainer: {
-    flex: 1,
-    paddingTop: spacing[8],
-  },
-  loadingContent: {
-    marginTop: spacing[4],
-    alignItems: "center",
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing[8],
-  },
-  emptyIconContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.neutral[100],
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing[4],
-  },
-  emptyContent: {
-    alignItems: "center",
-    marginBottom: spacing[4],
-  },
-  emptyDescription: {
-    marginTop: spacing[2],
-    maxWidth: 280,
-  },
-  ingredientsHeader: {
-    margin: spacing[4],
-    marginBottom: 0,
-  },
-  ingredientsContent: {
-    gap: spacing[2],
-  },
-  ingredientsTitle: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
-  },
-  ingredientsLabel: {
-    textTransform: "uppercase",
-  },
-  ingredientsText: {
-    flexWrap: "wrap",
-  },
-  sectionsContainer: {
-    padding: spacing[4],
-    paddingBottom: spacing[2],
-    gap: spacing[3],
-  },
-  sectionHeader: {
-    marginBottom: spacing[2],
-  },
-  sectionHeaderContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[3],
-  },
-  sectionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sectionInfo: {
-    flex: 1,
-  },
-  sectionBadge: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1],
-    borderRadius: borderRadius.full,
-  },
-  recipeCardContainer: {
-    paddingHorizontal: spacing[4],
-  },
-  footerContainer: {
-    gap: spacing[4],
-    padding: spacing[4],
-    paddingBottom: spacing[8],
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border.medium,
-    marginVertical: spacing[2],
-  },
-  suggestionsHeader: {
-    marginBottom: spacing[3],
-  },
-  suggestionsHeaderContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[3],
-  },
-  infoContainer: {
-    backgroundColor: colors.primary[50],
-    padding: spacing[4],
-    borderRadius: borderRadius.xl,
-    borderWidth: 1,
-    borderColor: colors.primary[200],
-  },
-  infoHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
   },
 
-  // Random Suggestion Styles
-  randomSuggestionCard: {
-    margin: spacing[4],
-    marginTop: spacing[3],
-    marginBottom: spacing[2],
+  // Hero Header
+  heroHeader: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.xl,
+    ...elevation.medium,
   },
-  randomSuggestionContent: {
-    gap: spacing[3],
-  },
-  randomSuggestionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing[2],
-  },
-  randomSuggestionDesc: {
-    lineHeight: 20,
-  },
-  randomSuggestionButton: {
-    alignSelf: "flex-start",
-  },
-  randomRecipePreview: {
+  headerContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.success[50],
-    padding: spacing[3],
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.success[200],
+    marginBottom: spacing.lg,
   },
-  randomRecipeInfo: {
+  headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing[2],
+    flex: 1,
+  },
+  headerInfo: {
+    marginLeft: spacing.md,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shareButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Stats
+  statsContainer: {
+    flexDirection: "row",
+    gap: spacing.lg,
+  },
+  statItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+  },
+  statIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Ingredients Section
+  ingredientsSection: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    ...elevation.low,
+  },
+  ingredientsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  ingredientsContainer: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    paddingRight: spacing.lg,
+  },
+  ingredientChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: colors.primary[200],
+  },
+
+  // Controls Section
+  controlsSection: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    ...elevation.low,
+  },
+  viewControls: {
+    flexDirection: "row",
+    backgroundColor: colors.light.surface,
+    borderRadius: borderRadius.medium,
+    padding: spacing.xs,
+  },
+  viewModeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  filterButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.medium,
+    gap: spacing.xs,
+    position: "relative",
+    ...elevation.low,
+  },
+  filterIndicator: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+
+  // Filter Panel
+  filterPanel: {
+    marginHorizontal: spacing.lg,
+    borderRadius: borderRadius.large,
+    padding: spacing.md,
+    overflow: "hidden",
+    ...elevation.medium,
+  },
+  filterSection: {
+    marginBottom: spacing.lg,
+  },
+  filterOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  filterOption: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.medium,
+    borderWidth: 1,
+  },
+  sortOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.full,
+    gap: spacing.xs,
+    ...elevation.low,
+  },
+  tagContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  ingredientTag: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    gap: spacing.tiny,
+  },
+  clearFiltersButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.medium,
+    borderWidth: 1,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+
+  // Content
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xl,
+  },
+  listContainer: {
+    padding: spacing.md,
+  },
+  emptyListContainer: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  gridRow: {
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.xs,
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxxl,
+  },
+  emptyIcon: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.lg,
+  },
+
+  // Grid Items
+  gridItem: {
+    width: (screenWidth - spacing.lg * 3) / 2,
+    borderRadius: borderRadius.large,
+    overflow: "hidden",
+    marginBottom: spacing.md,
+    ...elevation.low,
+  },
+  gridItemImage: {
+    height: 120,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  matchBadge: {
+    position: "absolute",
+    top: spacing.xs,
+    left: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.tiny,
+    borderRadius: borderRadius.small,
+  },
+  gridItemContent: {
+    padding: spacing.md,
+  },
+  gridItemStats: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: spacing.xs,
+  },
+  gridItemStat: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.tiny,
+  },
+  difficultyIndicator: {
+    alignSelf: "flex-start",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.tiny,
+    borderRadius: borderRadius.full,
+    marginTop: spacing.xs,
   },
 });
 

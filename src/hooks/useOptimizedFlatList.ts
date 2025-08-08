@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef } from 'react';
 import { Platform, ListRenderItem, ViewToken } from 'react-native';
+import { Logger } from '../services/LoggerService';
 
 interface OptimizedFlatListOptions<T> {
   /** Item height (sabit yükseklik varsa) */

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -7,19 +7,21 @@ import {
   Alert,
   Linking,
   ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { StackNavigationProp } from '@react-navigation/stack';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { StackNavigationProp } from "@react-navigation/stack";
 
-import { Button, Card, Text } from '../components/ui';
-import { colors, spacing, borderRadius } from '../theme/design-tokens';
-import { usePremium } from '../contexts/PremiumContext';
+import { Button, Card, Text } from "../components/ui";
+import { colors, spacing, borderRadius } from "../theme/design-tokens";
+import { usePremium } from "../contexts/PremiumContext";
 
 interface SubscriptionScreenProps {
   navigation: StackNavigationProp<any>;
 }
 
-const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) => {
+const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
+  navigation,
+}) => {
   const {
     isPremium,
     isLoading,
@@ -35,7 +37,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
 
   useEffect(() => {
     navigation.setOptions({
-      title: '👑 Premium Yönetimi',
+      title: "👑 Premium Yönetimi",
     });
   }, []);
 
@@ -44,7 +46,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
     try {
       await refreshStatus();
     } catch (error) {
-      Alert.alert('Hata', 'Durum güncellenirken bir hata oluştu.');
+      Alert.alert("Hata", "Durum güncellenirken bir hata oluştu.");
     } finally {
       setIsRefreshing(false);
     }
@@ -55,19 +57,19 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
       const success = await restorePurchases();
       if (success) {
         Alert.alert(
-          '✅ Başarılı',
-          'Satın alımlarınız başarıyla geri yüklendi!',
-          [{ text: 'Tamam' }]
+          "✅ Başarılı",
+          "Satın alımlarınız başarıyla geri yüklendi!",
+          [{ text: "Tamam" }]
         );
       } else {
         Alert.alert(
-          'ℹ️ Bilgi',
-          'Bu hesapta aktif premium abonelik bulunamadı.',
-          [{ text: 'Tamam' }]
+          "ℹ️ Bilgi",
+          "Bu hesapta aktif premium abonelik bulunamadı.",
+          [{ text: "Tamam" }]
         );
       }
     } catch (error) {
-      Alert.alert('Hata', 'Satın alımlar geri yüklenirken bir hata oluştu.');
+      Alert.alert("Hata", "Satın alımlar geri yüklenirken bir hata oluştu.");
     }
   };
 
@@ -75,18 +77,18 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
     try {
       const url = getSubscriptionManagementURL();
       const supported = await Linking.canOpenURL(url);
-      
+
       if (supported) {
         await Linking.openURL(url);
       } else {
         Alert.alert(
-          'Bilgi',
-          'Abonelik yönetimi için App Store uygulamasını açın.',
-          [{ text: 'Tamam' }]
+          "Bilgi",
+          "Abonelik yönetimi için App Store uygulamasını açın.",
+          [{ text: "Tamam" }]
         );
       }
     } catch (error) {
-      Alert.alert('Hata', 'Abonelik yönetimi açılırken bir hata oluştu.');
+      Alert.alert("Hata", "Abonelik yönetimi açılırken bir hata oluştu.");
     }
   };
 
@@ -96,12 +98,26 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
         <Card variant="filled" size="lg" style={styles.statusCard}>
           <View style={styles.statusContent}>
             <View style={styles.statusIcon}>
-              <Ionicons name="diamond-outline" size={32} color={colors.neutral[500]} />
+              <Ionicons
+                name="diamond-outline"
+                size={32}
+                color={colors.neutral[500]}
+              />
             </View>
-            <Text variant="h3" weight="bold" align="center" color="primary">
+            <Text
+              variant="headlineMedium"
+              weight="bold"
+              align="center"
+              color="primary"
+            >
               Premium Değilsiniz
             </Text>
-            <Text variant="body" align="center" color="secondary" style={styles.statusDescription}>
+            <Text
+              variant="bodyMedium"
+              align="center"
+              color="secondary"
+              style={styles.statusDescription}
+            >
               Premium özeliklerden yararlanmak için abonelik satın alın.
             </Text>
           </View>
@@ -110,27 +126,51 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
     }
 
     return (
-      <Card variant="elevated" size="lg" style={[styles.statusCard, styles.premiumCard]}>
+      <Card
+        variant="elevated"
+        size="lg"
+        style={StyleSheet.flatten([styles.statusCard, styles.premiumCard])}
+      >
         <View style={styles.statusContent}>
           <View style={[styles.statusIcon, styles.premiumIcon]}>
             <Ionicons name="diamond" size={32} color={colors.primary[500]} />
           </View>
-          
+
           {isInFreeTrial ? (
             <>
-              <Text variant="h3" weight="bold" align="center" color="primary">
+              <Text
+                variant="headlineMedium"
+                weight="bold"
+                align="center"
+                color="primary"
+              >
                 🎁 Ücretsiz Deneme
               </Text>
-              <Text variant="body" align="center" color="secondary" style={styles.statusDescription}>
+              <Text
+                variant="bodyMedium"
+                align="center"
+                color="secondary"
+                style={styles.statusDescription}
+              >
                 Premium özelliklerini ücretsiz deniyorsunuz!
               </Text>
             </>
           ) : (
             <>
-              <Text variant="h3" weight="bold" align="center" color="primary">
+              <Text
+                variant="headlineMedium"
+                weight="bold"
+                align="center"
+                color="primary"
+              >
                 👑 Premium Aktif
               </Text>
-              <Text variant="body" align="center" color="secondary" style={styles.statusDescription}>
+              <Text
+                variant="bodyMedium"
+                align="center"
+                color="secondary"
+                style={styles.statusDescription}
+              >
                 Tüm premium özelliklerden yararlanabilirsiniz.
               </Text>
             </>
@@ -139,9 +179,11 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
           {subscriptionInfo?.expirationDate && (
             <View style={styles.expirationInfo}>
               <Ionicons name="calendar" size={16} color={colors.neutral[600]} />
-              <Text variant="caption" color="secondary">
-                {subscriptionInfo.willRenew ? 'Yenilenir: ' : 'Bitiş: '}
-                {subscriptionInfo.expirationDate ? subscriptionInfo.expirationDate.toLocaleDateString('tr-TR') : 'Belirtilmemiş'}
+              <Text variant="labelSmall" color="secondary">
+                {subscriptionInfo.willRenew ? "Yenilenir: " : "Bitiş: "}
+                {subscriptionInfo.expirationDate
+                  ? subscriptionInfo.expirationDate.toLocaleDateString("tr-TR")
+                  : "Belirtilmemiş"}
               </Text>
             </View>
           )}
@@ -155,47 +197,69 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
 
     return (
       <Card variant="default" size="lg" style={styles.detailsCard}>
-        <Text variant="h4" weight="semibold" style={styles.sectionTitle}>
+        <Text
+          variant="headlineSmall"
+          weight="semibold"
+          style={styles.sectionTitle}
+        >
           📋 Abonelik Detayları
         </Text>
 
         <View style={styles.detailsList}>
           <View style={styles.detailItem}>
-            <Text variant="body" color="secondary">Durum:</Text>
-            <Text variant="body" weight="semibold" color="primary">
-              {isInFreeTrial ? 'Ücretsiz Deneme' : 'Aktif'}
+            <Text variant="bodyMedium" color="secondary">
+              Durum:
+            </Text>
+            <Text variant="bodyMedium" weight="semibold" color="primary">
+              {isInFreeTrial ? "Ücretsiz Deneme" : "Aktif"}
             </Text>
           </View>
 
           {subscriptionInfo.productIdentifier && (
             <View style={styles.detailItem}>
-              <Text variant="body" color="secondary">Plan:</Text>
-              <Text variant="body" weight="semibold" color="primary">
-                {subscriptionInfo.productIdentifier.includes('monthly') ? 'Aylık' : 'Yıllık'}
+              <Text variant="bodyMedium" color="secondary">
+                Plan:
+              </Text>
+              <Text variant="bodyMedium" weight="semibold" color="primary">
+                {subscriptionInfo.productIdentifier.includes("monthly")
+                  ? "Aylık"
+                  : "Yıllık"}
               </Text>
             </View>
           )}
 
           <View style={styles.detailItem}>
-            <Text variant="body" color="secondary">Otomatik Yenileme:</Text>
-            <Text variant="body" weight="semibold" color={subscriptionInfo.willRenew ? "success" : "warning"}>
-              {subscriptionInfo.willRenew ? 'Açık' : 'Kapalı'}
+            <Text variant="bodyMedium" color="secondary">
+              Otomatik Yenileme:
+            </Text>
+            <Text
+              variant="bodyMedium"
+              weight="semibold"
+              color={subscriptionInfo.willRenew ? "success" : "warning"}
+            >
+              {subscriptionInfo.willRenew ? "Açık" : "Kapalı"}
             </Text>
           </View>
 
           {subscriptionInfo.originalPurchaseDate && (
             <View style={styles.detailItem}>
-              <Text variant="body" color="secondary">Başlangıç:</Text>
-              <Text variant="body" weight="semibold" color="primary">
-                {subscriptionInfo.originalPurchaseDate.toLocaleDateString('tr-TR')}
+              <Text variant="bodyMedium" color="secondary">
+                Başlangıç:
+              </Text>
+              <Text variant="bodyMedium" weight="semibold" color="primary">
+                {subscriptionInfo.originalPurchaseDate.toLocaleDateString(
+                  "tr-TR"
+                )}
               </Text>
             </View>
           )}
 
           <View style={styles.detailItem}>
-            <Text variant="body" color="secondary">Ortam:</Text>
-            <Text variant="body" weight="semibold" color="primary">
-              {subscriptionInfo.isSandbox ? 'Test' : 'Canlı'}
+            <Text variant="bodyMedium" color="secondary">
+              Ortam:
+            </Text>
+            <Text variant="bodyMedium" weight="semibold" color="primary">
+              {subscriptionInfo.isSandbox ? "Test" : "Canlı"}
             </Text>
           </View>
         </View>
@@ -208,7 +272,11 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary[500]} />
-          <Text variant="body" color="secondary" style={styles.loadingText}>
+          <Text
+            variant="bodyMedium"
+            color="secondary"
+            style={styles.loadingText}
+          >
             Abonelik durumu kontrol ediliyor...
           </Text>
         </View>
@@ -239,7 +307,11 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
 
         {/* Quick Actions */}
         <Card variant="default" size="lg" style={styles.actionsCard}>
-          <Text variant="h4" weight="semibold" style={styles.sectionTitle}>
+          <Text
+            variant="headlineSmall"
+            weight="semibold"
+            style={styles.sectionTitle}
+          >
             ⚡ Hızlı İşlemler
           </Text>
 
@@ -289,8 +361,14 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({ navigation }) =
         <Card variant="filled" size="lg" style={styles.helpCard}>
           <View style={styles.helpContent}>
             <Ionicons name="help-circle" size={24} color={colors.info[500]} />
-            <Text variant="body" align="center" color="secondary" style={styles.helpText}>
-              Abonelik ile ilgili sorunlarınız için destek ekibimizle iletişime geçebilirsiniz.
+            <Text
+              variant="bodyMedium"
+              align="center"
+              color="secondary"
+              style={styles.helpText}
+            >
+              Abonelik ile ilgili sorunlarınız için destek ekibimizle iletişime
+              geçebilirsiniz.
             </Text>
           </View>
         </Card>
@@ -309,15 +387,15 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: spacing[4],
-    alignItems: 'flex-start',
+    alignItems: "flex-start",
   },
   backButton: {
     padding: spacing[2],
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     gap: spacing[4],
   },
   loadingText: {
@@ -333,7 +411,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary[50],
   },
   statusContent: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing[3],
   },
   statusIcon: {
@@ -341,8 +419,8 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     backgroundColor: colors.neutral[100],
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   premiumIcon: {
     backgroundColor: colors.primary[100],
@@ -352,8 +430,8 @@ const styles = StyleSheet.create({
     maxWidth: 280,
   },
   expirationInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing[1],
     marginTop: spacing[2],
     paddingTop: spacing[3],
@@ -370,9 +448,9 @@ const styles = StyleSheet.create({
     gap: spacing[3],
   },
   detailItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingVertical: spacing[2],
     borderBottomWidth: 1,
     borderBottomColor: colors.neutral[100],
@@ -390,12 +468,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   helpContent: {
-    alignItems: 'center',
+    alignItems: "center",
     gap: spacing[3],
   },
   helpText: {
     lineHeight: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
 

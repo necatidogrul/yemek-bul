@@ -1,4 +1,5 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
       "Bash(npx tsc:*)",
@@ -8,9 +9,41 @@
       "WebFetch(domain:www.revenuecat.com)",
       "Bash(npx expo install:*)",
       "Bash(mv:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(ls:*)",
+      "Bash(npm run ios:*)",
+      "Bash(npm start)",
+      "Bash(rm:*)",
+      "Bash(pod install:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npx react-native start:*)",
+      "Bash(npx watchman watch-del-all:*)",
+      "Bash(taskkill:*)",
+      "Bash(TASKKILL /F /PID 37176)",
+      "Bash(powershell:*)",
+      "Bash(findstr:*)",
+      "Bash(npm ls:*)",
+      "Bash(TASKKILL /F /PID 19368)",
+      "Bash(npm run clean-console:*)",
+      "Bash(git checkout:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(TASKKILL /F /IM node.exe)",
+      "Bash(npx @supabase/mcp-server-supabase@latest:*)",
+      "Bash(npm cache clean:*)",
+      "Bash(where:*)",
+      "Bash(npm bin:*)",
+      "Bash(npm config:*)",
+      "Bash(dir:*)",
+      "Bash(node:*)",
+      "Bash(claude mcp add supabase:*)",
+      "Bash(claude mcp remove:*)",
+      "Bash(claude mcp:*)",
+      "Bash(set SUPABASE_ACCESS_TOKEN=sbp_a75632640cd185876740d644d52963053fbb57a9)",
+      "Bash(npm run env:test:*)",
+      "Bash(npm run:*)"
     ],
     "deny": []
   },
-  "$schema": "https://json.schemastore.org/claude-code-settings.json"
+  "enableAllProjectMcpServers": false,
+  "mcpServers": {}
 }

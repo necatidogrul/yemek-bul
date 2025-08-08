@@ -72,6 +72,85 @@ export interface Database {
           created_at?: string;
         };
       };
+      user_credits: {
+        Row: {
+          id: string;
+          user_id: string;
+          total_credits: number;
+          used_credits: number;
+          remaining_credits: number;
+          daily_free_credits: number;
+          daily_free_used: number;
+          last_daily_reset: string;
+          lifetime_credits_earned: number;
+          lifetime_credits_spent: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          total_credits?: number;
+          used_credits?: number;
+          remaining_credits?: number;
+          daily_free_credits?: number;
+          daily_free_used?: number;
+          last_daily_reset?: string;
+          lifetime_credits_earned?: number;
+          lifetime_credits_spent?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          total_credits?: number;
+          used_credits?: number;
+          remaining_credits?: number;
+          daily_free_credits?: number;
+          daily_free_used?: number;
+          last_daily_reset?: string;
+          lifetime_credits_earned?: number;
+          lifetime_credits_spent?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+      credit_transactions: {
+        Row: {
+          id: string;
+          user_id: string;
+          transaction_type: 'earn' | 'spend' | 'purchase' | 'bonus' | 'daily_free';
+          amount: number;
+          description: string;
+          related_action: string | null;
+          package_id: string | null;
+          receipt_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          transaction_type: 'earn' | 'spend' | 'purchase' | 'bonus' | 'daily_free';
+          amount: number;
+          description: string;
+          related_action?: string | null;
+          package_id?: string | null;
+          receipt_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          transaction_type?: 'earn' | 'spend' | 'purchase' | 'bonus' | 'daily_free';
+          amount?: number;
+          description?: string;
+          related_action?: string | null;
+          package_id?: string | null;
+          receipt_id?: string | null;
+          created_at?: string;
+        };
+      };
     };
   };
 }

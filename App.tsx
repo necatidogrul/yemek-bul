@@ -9,6 +9,7 @@ import { RevenueCatService } from "./src/services/RevenueCatService";
 import { ThemeProvider } from "./src/contexts/ThemeContext";
 import { ToastProvider } from "./src/contexts/ToastContext";
 import { PremiumProvider } from "./src/contexts/PremiumContext";
+import { CreditProvider } from "./src/contexts/CreditContext"; // EKLENDİ
 import { TourProvider } from "./src/contexts/TourContext";
 import { HapticProvider } from "./src/hooks/useHaptics";
 
@@ -22,28 +23,31 @@ import { ErrorBoundary } from "./src/components/error/ErrorBoundary";
 // Screens
 import OnboardingScreen from "./src/screens/OnboardingScreen";
 
-// Import themed navigators  
+// Import themed navigators
 import { MainTabNavigator } from "./src/components/navigation/ThemedNavigators";
 
 // Re-export navigation types for backward compatibility
-export type { 
-  HomeStackParamList, 
-  FavoritesStackParamList, 
-  AllRecipesStackParamList, 
-  TabParamList 
+export type {
+  HomeStackParamList,
+  FavoritesStackParamList,
+  HistoryStackParamList,
+  TabParamList,
 } from "./src/components/navigation/ThemedNavigators";
 
 // For backward compatibility
-export type RootStackParamList = import("./src/components/navigation/ThemedNavigators").HomeStackParamList;
+export type RootStackParamList =
+  import("./src/components/navigation/ThemedNavigators").HomeStackParamList;
 
 export default function App(): React.ReactElement {
-  const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<boolean | null>(null);
+  const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<
+    boolean | null
+  >(null);
   const [isRevenueCatReady, setIsRevenueCatReady] = useState(false);
 
   useEffect(() => {
     initializeApp();
   }, []);
-  
+
   const initializeApp = async () => {
     try {
       // Initialize RevenueCat first
@@ -53,11 +57,11 @@ export default function App(): React.ReactElement {
         await RevenueCatService.loginAnonymously();
         setIsRevenueCatReady(true);
       }
-      
+
       // Then check onboarding status
       await checkOnboardingStatus();
     } catch (error) {
-      console.error('App initialization error:', error);
+      console.error("App initialization error:", error);
       // Continue with app even if RevenueCat fails
       setIsRevenueCatReady(false);
       await checkOnboardingStatus();
@@ -67,23 +71,21 @@ export default function App(): React.ReactElement {
   const checkOnboardingStatus = async () => {
     try {
       const preferences = await UserPreferencesService.getUserPreferences();
-      console.log('🔍 Onboarding status check:', {
+      console.log("🔍 Onboarding status check:", {
         onboardingCompleted: preferences.onboardingCompleted,
-        fullPreferences: preferences
+        fullPreferences: preferences,
       });
-      
+
       // DEVELOPMENT ONLY: Force onboarding to show for testing
       if (__DEV__) {
-        // Uncomment the line below to force show onboarding every time
-        // setIsOnboardingCompleted(false); return;
-        
-        // OR uncomment to reset onboarding once and then comment back
-        // await AsyncStorage.removeItem('onboarding_completed'); 
-        // await AsyncStorage.removeItem('user_preferences');
-        // console.log('🔄 Reset onboarding for testing');
-        // setIsOnboardingCompleted(false); return;
+        // Reset onboarding for development
+        await AsyncStorage.removeItem("onboarding_completed");
+        await AsyncStorage.removeItem("user_preferences");
+        console.log("🔄 Reset onboarding for testing");
+        setIsOnboardingCompleted(false);
+        return;
       }
-      
+
       setIsOnboardingCompleted(preferences.onboardingCompleted);
     } catch (error) {
       console.error("Onboarding check error:", error);
@@ -92,15 +94,18 @@ export default function App(): React.ReactElement {
   };
 
   const handleOnboardingComplete = async () => {
-    console.log('🎉 Onboarding completed, updating state');
+    console.log("🎉 Onboarding completed, updating state");
     setIsOnboardingCompleted(true);
-    
+
     // Double-check that it was actually saved
     try {
       const preferences = await UserPreferencesService.getUserPreferences();
-      console.log('✅ Verified onboarding status after completion:', preferences.onboardingCompleted);
+      console.log(
+        "✅ Verified onboarding status after completion:",
+        preferences.onboardingCompleted
+      );
     } catch (error) {
-      console.error('Error verifying onboarding completion:', error);
+      console.error("Error verifying onboarding completion:", error);
     }
   };
 
@@ -108,7 +113,7 @@ export default function App(): React.ReactElement {
   if (isOnboardingCompleted === null) {
     return <></>;
   }
-  
+
   // Show loading if RevenueCat is not ready yet
   if (!isRevenueCatReady) {
     // You can show a loading screen here if needed
@@ -144,12 +149,14 @@ export default function App(): React.ReactElement {
             <ToastProvider>
               <GlobalErrorHandler>
                 <PremiumProvider>
-                  <TourProvider>
-                    <NavigationContainer>
-                      <MainTabNavigator />
-                    </NavigationContainer>
-                    <TourOverlay />
-                  </TourProvider>
+                  <CreditProvider>
+                    <TourProvider>
+                      <NavigationContainer>
+                        <MainTabNavigator />
+                      </NavigationContainer>
+                      <TourOverlay />
+                    </TourProvider>
+                  </CreditProvider>
                 </PremiumProvider>
                 <ToastContainer />
                 <ThemedStatusBar />

@@ -20,7 +20,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.yemekbulucu",
+      "bundleIdentifier": "com.yemekbulucu.app",
       "buildNumber": "1",
       "requireFullScreen": false,
       "infoPlist": {

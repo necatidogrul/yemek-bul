@@ -7,16 +7,18 @@ import {
   ViewStyle,
   TextStyle,
   TextInputProps,
+  Animated,
 } from "react-native";
 import {
-  colors,
   typography,
   spacing,
   borderRadius,
+  shadows,
 } from "../../theme/design-tokens";
+import { useThemedStyles } from "../../hooks/useThemedStyles";
 
-type InputVariant = "default" | "filled" | "outlined";
-type InputSize = "sm" | "md" | "lg";
+type InputVariant = "default" | "filled" | "outline" | "modern";
+type InputSize = "sm" | "md" | "lg" | "xl";
 
 interface InputProps extends Omit<TextInputProps, "style"> {
   label?: string;
@@ -39,7 +41,7 @@ const Input: React.FC<InputProps> = ({
   placeholder,
   value,
   onChangeText,
-  variant = "outlined",
+  variant = "outline",
   size = "md",
   disabled = false,
   error,
@@ -50,13 +52,16 @@ const Input: React.FC<InputProps> = ({
   inputStyle,
   ...props
 }) => {
+  const { colors } = useThemedStyles();
   const [isFocused, setIsFocused] = useState(false);
+  const [animatedValue] = useState(new Animated.Value(0));
 
   const getContainerStyles = (): ViewStyle => {
     const baseStyles: ViewStyle = {
       flexDirection: "row",
       alignItems: "center",
-      borderRadius: borderRadius.lg,
+      borderRadius: variant === "modern" ? borderRadius.xl : borderRadius.lg,
+      position: "relative",
     };
 
     // Size styles
@@ -73,6 +78,10 @@ const Input: React.FC<InputProps> = ({
         height: 56,
         paddingHorizontal: spacing[5],
       },
+      xl: {
+        height: 64,
+        paddingHorizontal: spacing[6],
+      },
     };
 
     // Variant styles
@@ -83,13 +92,19 @@ const Input: React.FC<InputProps> = ({
         borderColor: colors.border.medium,
       },
       filled: {
-        backgroundColor: colors.background.secondary,
+        backgroundColor: colors.neutral[100],
         borderWidth: 0,
       },
-      outlined: {
+      outline: {
         backgroundColor: colors.surface.primary,
-        borderWidth: 1.5,
+        borderWidth: 2,
         borderColor: colors.border.medium,
+      },
+      modern: {
+        backgroundColor: colors.surface.primary,
+        borderWidth: 2,
+        borderColor: colors.neutral[200],
+        ...shadows.sm,
       },
     };
 
@@ -98,6 +113,7 @@ const Input: React.FC<InputProps> = ({
       ? {
           borderColor: colors.primary[500],
           backgroundColor: colors.surface.primary,
+          ...(variant === "modern" ? shadows.md : {}),
         }
       : {};
 
@@ -105,6 +121,8 @@ const Input: React.FC<InputProps> = ({
     const errorStyles: ViewStyle = error
       ? {
           borderColor: colors.error[500],
+          backgroundColor:
+            variant === "modern" ? colors.error[50] : colors.surface.primary,
         }
       : {};
 
@@ -112,7 +130,7 @@ const Input: React.FC<InputProps> = ({
     const disabledStyles: ViewStyle = disabled
       ? {
           backgroundColor: colors.neutral[100],
-          borderColor: colors.border.light,
+          borderColor: colors.neutral[200],
           opacity: 0.6,
         }
       : {};
@@ -132,8 +150,9 @@ const Input: React.FC<InputProps> = ({
       flex: 1,
       fontFamily: typography.fontFamily.sans,
       fontSize: typography.fontSize.base,
-      color: colors.neutral[900],
-      paddingVertical: 0, // Remove default padding
+      color: colors.text.primary,
+      paddingVertical: 0,
+      fontWeight: variant === "modern" ? ("500" as const) : ("400" as const),
     };
 
     // Size text styles
@@ -147,11 +166,14 @@ const Input: React.FC<InputProps> = ({
       lg: {
         fontSize: typography.fontSize.lg,
       },
+      xl: {
+        fontSize: typography.fontSize.xl,
+      },
     };
 
     const disabledTextStyles: TextStyle = disabled
       ? {
-          color: colors.neutral[400],
+          color: colors.text.tertiary,
         }
       : {};
 
@@ -163,27 +185,86 @@ const Input: React.FC<InputProps> = ({
   };
 
   const getLabelStyles = (): TextStyle => ({
-    fontSize: typography.fontSize.sm,
-    fontWeight: typography.fontWeight.medium,
-    color: colors.neutral[700],
-    marginBottom: spacing[1.5],
+    fontSize:
+      variant === "modern" ? typography.fontSize.base : typography.fontSize.sm,
+    fontWeight: "600" as const,
+    color: error
+      ? colors.error[600]
+      : isFocused
+      ? colors.primary[600]
+      : colors.text.secondary,
+    marginBottom: spacing[2],
   });
 
   const getErrorStyles = (): TextStyle => ({
     fontSize: typography.fontSize.sm,
-    color: colors.error[500],
-    marginTop: spacing[1],
+    fontWeight: "500" as const,
+    color: colors.error[600],
+    marginTop: spacing[1.5],
   });
 
   const iconSpacing = spacing[2];
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    Animated.timing(animatedValue, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    Animated.timing(animatedValue, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const animatedBorderColor = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: [colors.border.medium, colors.primary[500]],
+  });
+
+  const getPlaceholderColor = () => {
+    if (error) return colors.error[400];
+    if (disabled) return colors.text.tertiary;
+    return colors.text.tertiary;
+  };
 
   return (
     <View style={style}>
       {label && <Text style={getLabelStyles()}>{label}</Text>}
 
       <View style={getContainerStyles()}>
+        {/* Modern variant focus border animation */}
+        {variant === "modern" && (
+          <Animated.View
+            style={{
+              position: "absolute",
+              top: -2,
+              left: -2,
+              right: -2,
+              bottom: -2,
+              borderRadius: borderRadius.xl + 2,
+              borderWidth: 2,
+              borderColor: error ? colors.error[500] : animatedBorderColor,
+              opacity: isFocused ? 1 : 0,
+            }}
+          />
+        )}
+
         {leftIcon && (
-          <View style={{ marginRight: iconSpacing }}>{leftIcon}</View>
+          <View
+            style={{
+              marginRight: iconSpacing,
+              opacity: disabled ? 0.5 : 1,
+            }}
+          >
+            {leftIcon}
+          </View>
         )}
 
         <TextInput
@@ -191,25 +272,40 @@ const Input: React.FC<InputProps> = ({
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={colors.neutral[400]}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          placeholderTextColor={getPlaceholderColor()}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           editable={!disabled}
+          selectionColor={colors.primary[500]}
           {...props}
         />
 
         {rightIcon && (
           <TouchableOpacity
-            style={{ marginLeft: iconSpacing }}
+            style={{
+              marginLeft: iconSpacing,
+              opacity: disabled ? 0.5 : 1,
+            }}
             onPress={onRightIconPress}
-            disabled={!onRightIconPress}
+            disabled={!onRightIconPress || disabled}
+            activeOpacity={0.7}
           >
             {rightIcon}
           </TouchableOpacity>
         )}
       </View>
 
-      {error && <Text style={getErrorStyles()}>{error}</Text>}
+      {error && (
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginTop: spacing[1.5],
+          }}
+        >
+          <Text style={getErrorStyles()}>{error}</Text>
+        </View>
+      )}
     </View>
   );
 };

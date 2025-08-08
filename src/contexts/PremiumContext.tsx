@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { RevenueCatService, SubscriptionInfo, OfferingInfo } from '../services/RevenueCatService';
+import { Logger } from '../services/LoggerService';
 
 interface PremiumContextType {
   isPremium: boolean;

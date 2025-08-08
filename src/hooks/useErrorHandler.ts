@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useToast } from '../contexts/ToastContext';
+import { Logger } from '../services/LoggerService';
 
 export interface ErrorHandlerOptions {
   showToast?: boolean;

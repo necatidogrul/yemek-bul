@@ -5,10 +5,12 @@ import Purchases, {
   PURCHASES_ERROR_CODE,
   PurchasesError 
 } from 'react-native-purchases';
+import { Logger } from '../services/LoggerService';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { REVENUECAT_CONFIG } from '../config/revenuecat.config';
 import { MockRevenueCatService } from './MockRevenueCatService';
+import { shouldUseMockServices, debugLog, ENV } from '../config/environment';
 
 // Import configuration
 const {
@@ -57,7 +59,7 @@ export interface PurchasePackageInfo {
 export class RevenueCatService {
   private static isInitialized = false;
   private static currentUserId: string | null = null;
-  private static isMockMode = DEVELOPMENT.MOCK_MODE;
+  private static isMockMode = shouldUseMockServices();
 
   // Mock mode helper methods
   static enableMockMode(): void {
@@ -107,8 +109,8 @@ export class RevenueCatService {
       }
       
       if (apiKey.includes('PUT_YOUR_')) {
-        if (__DEV__) {
-          console.warn('RevenueCat API key not configured. Enabling mock mode. Check REVENUECAT_SETUP.md for instructions.');
+        if (ENV === 'development') {
+          debugLog('RevenueCat API key not configured. Enabling mock mode. Check REVENUECAT_SETUP.md for instructions.');
           this.isMockMode = true;
           return this.initialize(); // Re-initialize in mock mode
         } else {
@@ -124,8 +126,8 @@ export class RevenueCatService {
       return true;
     } catch (error) {
       console.error('❌ RevenueCat initialization error:', error);
-      if (__DEV__) {
-        console.warn('Falling back to mock mode for development');
+      if (ENV === 'development') {
+        debugLog('Falling back to mock mode for development');
         this.isMockMode = true;
         return this.initialize(); // Re-initialize in mock mode
       }
@@ -405,7 +407,7 @@ export class RevenueCatService {
           success: false, 
           error: 'Satın alma iptal edildi' 
         };
-      } else if (error.code === PURCHASES_ERROR_CODE.PURCHASE_IN_PROGRESS_ERROR) {
+      } else if (error.code === 'PURCHASE_IN_PROGRESS_ERROR') {
         return { 
           success: false, 
           error: 'Ödeme beklemede. Lütfen daha sonra tekrar kontrol edin.' 
@@ -535,6 +537,124 @@ export class RevenueCatService {
       return MockRevenueCatService.isReady();
     }
     return this.isInitialized;
+  }
+
+  /**
+   * Purchase credit package
+   */
+  static async purchaseCredits(packageId: string): Promise<{
+    success: boolean;
+    credits?: number;
+    error?: string;
+  }> {
+    if (this.isMockMode) {
+      return MockRevenueCatService.purchaseCredits(packageId);
+    }
+
+    try {
+      const offerings = await Purchases.getOfferings();
+      
+      if (!offerings.current) {
+        return { 
+          success: false, 
+          error: 'Kredi paketleri bulunamadı' 
+        };
+      }
+
+      // Find the credit package
+      const creditPackage = offerings.current.availablePackages.find(
+        pkg => pkg.identifier === packageId
+      );
+      
+      if (!creditPackage) {
+        return { 
+          success: false, 
+          error: 'Kredi paketi bulunamadı' 
+        };
+      }
+
+      console.log(`🛒 Purchasing credit package: ${packageId}`);
+      const { customerInfo } = await Purchases.purchasePackage(creditPackage);
+      
+      // Extract credits from package identifier or use default mapping
+      const creditsMap: { [key: string]: number } = {
+        'credits_starter': 10,
+        'credits_popular': 30, // 25 + 5 bonus
+        'credits_premium': 75, // 60 + 15 bonus
+        'credits_bulk': 200    // 150 + 50 bonus
+      };
+      
+      const credits = creditsMap[packageId] || 10;
+      
+      return { 
+        success: true, 
+        credits 
+      };
+    } catch (error: any) {
+      console.error('❌ Credit purchase error:', error);
+      
+      if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+        return { 
+          success: false, 
+          error: 'Satın alma iptal edildi' 
+        };
+      }
+      
+      return { 
+        success: false, 
+        error: 'Kredi satın alma sırasında bir hata oluştu' 
+      };
+    }
+  }
+
+  /**
+   * Get user's current tier based on their premium subscription
+   */
+  static async getCurrentPremiumTier(): Promise<string | null> {
+    if (this.isMockMode) {
+      return MockRevenueCatService.getCurrentPremiumTier();
+    }
+
+    try {
+      const customerInfo = await Purchases.getCustomerInfo();
+      const activeEntitlements = Object.keys(customerInfo.entitlements.active);
+      
+      // Map entitlements to tier IDs
+      if (activeEntitlements.includes('pro_premium')) return 'pro';
+      if (activeEntitlements.includes('standard_premium')) return 'standard';
+      if (activeEntitlements.includes('basic_premium')) return 'basic';
+      
+      return null; // Free tier
+    } catch (error) {
+      console.error('❌ Get current tier error:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Check if user has specific premium feature
+   */
+  static async hasFeature(featureId: string): Promise<boolean> {
+    if (this.isMockMode) {
+      return MockRevenueCatService.hasFeature(featureId);
+    }
+
+    try {
+      const tier = await this.getCurrentPremiumTier();
+      if (!tier) return false;
+      
+      // Feature mapping based on tiers
+      const tierFeatures: { [key: string]: string[] } = {
+        'basic': ['favorites', 'history', 'ai_monthly', 'increased_limits'],
+        'standard': ['favorites', 'history', 'ai_monthly', 'increased_limits', 'community_pool', 'cloud_sync', 'high_limits'],
+        'pro': ['all_features'] // Pro has everything
+      };
+      
+      return tierFeatures[tier]?.includes(featureId) || tierFeatures[tier]?.includes('all_features') || false;
+    } catch (error) {
+      console.error('❌ Feature check error:', error);
+      return false;
+    }
   }
 
   /**

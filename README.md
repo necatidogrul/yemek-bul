@@ -1,6 +1,13 @@
-# 🍽️ Yemek Bulucu
+# 🍳 Yemek Bulucu - AI Recipe Finder
 
-Evdeki malzemelerinizle ne pişirebileceğinizi keşfetmenizi sağlayan akıllı tarif önerme uygulaması.
+> Transform your available ingredients into delicious Turkish meals with AI-powered recipe suggestions.
+
+[![App Store](https://img.shields.io/badge/App%20Store-Available-blue?style=for-the-badge&logo=app-store)](https://apps.apple.com/app/yemek-bulucu)
+[![Google Play](https://img.shields.io/badge/Google%20Play-Available-green?style=for-the-badge&logo=google-play)](https://play.google.com/store/apps/details?id=com.yemekbulucu.app)
+[![Version](https://img.shields.io/badge/Version-1.0.0-orange?style=for-the-badge)]()
+[![Turkish](https://img.shields.io/badge/Language-Turkish-red?style=for-the-badge)]()
+
+Production-ready mobile application for AI-powered Turkish recipe discovery. Built with React Native, TypeScript, and modern mobile architecture.
 
 ## 📱 Özellikler
 

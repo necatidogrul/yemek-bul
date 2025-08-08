@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { Logger } from '../../services/LoggerService';
 import { Ionicons } from '@expo/vector-icons';
 import { Button, Card, Text } from '../ui';
 import { colors, spacing, borderRadius } from '../../theme/design-tokens';

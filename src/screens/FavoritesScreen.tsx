@@ -1,62 +1,64 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   FlatList,
   SafeAreaView,
   StyleSheet,
   ActivityIndicator,
+  TouchableOpacity,
+  Dimensions,
+  StatusBar,
+  TextInput,
+  Animated,
 } from "react-native";
+import { Logger } from "../services/LoggerService";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { FavoritesStackParamList } from "../../App";
 import { Recipe } from "../types/Recipe";
 import { FavoritesService } from "../services/FavoritesService";
+import { useCreditContext } from "../contexts/CreditContext";
 
 // UI Components
-import { Button, Card, Text, NoFavoritesEmpty, Loading } from "../components/ui";
+import { Button, Card, Text } from "../components/ui";
 import { RecipeCard } from "../components/ui/RecipeCard";
 import { PullToRefresh } from "../components/ui/PullToRefresh";
 import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
-import { spacing, borderRadius, colors } from "../theme/design-tokens";
-import { useThemedStyles } from "../hooks/useThemedStyles";
+import { useTheme } from "../contexts/ThemeContext";
+import { spacing, borderRadius, elevation } from "../contexts/ThemeContext";
 import PaywallModal from "../components/premium/PaywallModal";
 import { usePremiumGuard } from "../hooks/usePremiumGuard";
 import { usePremium } from "../contexts/PremiumContext";
+import { useToast } from "../contexts/ToastContext";
+import { useHaptics } from "../hooks/useHaptics";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 type FavoritesScreenProps = {
   navigation: StackNavigationProp<FavoritesStackParamList, "FavoritesMain">;
 };
 
+type ViewMode = "list" | "grid";
+type SortOption = "recent" | "name" | "cookingTime";
+type FilterOption = "all" | "easy" | "medium" | "hard";
+
 const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const [favorites, setFavorites] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("recent");
+  const [filterBy, setFilterBy] = useState<FilterOption>("all");
+  const [showFilters, setShowFilters] = useState(false);
 
-  // Pull-to-refresh hook'unu kullan
-  const pullToRefresh = usePullToRefresh({
-    onRefresh: async () => {
-      await loadFavorites();
-    },
-    enabled: true,
-    hapticFeedback: true,
-    refreshingText: 'Favoriler yenileniyor...',
-    pullToRefreshText: 'Favorileri yenilemek için aşağı çekin',
-    releaseToRefreshText: 'Favorileri yenilemek için bırakın',
-  });
-
-  // FlatList performance optimizasyonları
-  const flatListOptimizations = useOptimizedFlatList<Recipe>({
-    estimatedItemSize: 200, // Default RecipeCard yüksekliği
-    enableGetItemLayout: false,
-    keyExtractor: (item) => item.id,
-    viewabilityConfig: {
-      itemVisiblePercentThreshold: 50,
-      minimumViewTime: 100,
-    },
-  });
-  
-  const { colors } = useThemedStyles();
+  const { colors } = useTheme();
+  const { userCredits, canAfford } = useCreditContext();
   const { isPremium } = usePremium();
+  const { showSuccess, showError, showWarning } = useToast();
+  const haptics = useHaptics();
+
   const {
     showPaywall,
     currentFeature,
@@ -66,158 +68,535 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     hidePaywall,
   } = usePremiumGuard();
 
-  useEffect(() => {
-    checkAccessAndLoadFavorites();
-  }, [isPremium]);
-  
-  const checkAccessAndLoadFavorites = async () => {
-    if (!checkPremiumFeature('favorites')) {
-      return; // Paywall will be shown automatically
-    }
-    loadFavorites();
-  };
+  // Animation for filter panel
+  const filterAnimation = useState(new Animated.Value(0))[0];
 
-  const loadFavorites = async () => {
+  // Filtering and sorting logic
+  const filteredFavorites = useMemo(() => {
+    let result = [...favorites];
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      result = result.filter(
+        (recipe) =>
+          recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          recipe.ingredients?.some((ingredient) =>
+            ingredient.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+      );
+    }
+
+    // Apply difficulty filter
+    if (filterBy !== "all") {
+      const difficultyMap = {
+        easy: ["Kolay", "Easy"],
+        medium: ["Orta", "Medium"],
+        hard: ["Zor", "Hard"],
+      };
+      result = result.filter((recipe) =>
+        difficultyMap[filterBy].includes(recipe.difficulty || "")
+      );
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "cookingTime":
+          return (a.cookingTime || 30) - (b.cookingTime || 30);
+        case "recent":
+        default:
+          return (
+            new Date(b.createdAt || 0).getTime() -
+            new Date(a.createdAt || 0).getTime()
+          );
+      }
+    });
+
+    return result;
+  }, [favorites, searchQuery, sortBy, filterBy]);
+
+  const { isRefreshing, handleRefresh } = usePullToRefresh({
+    onRefresh: loadFavorites,
+  });
+
+  const { optimizedProps, onEndReached } = useOptimizedFlatList<Recipe>({
+    enableGetItemLayout: true,
+    itemHeight: viewMode === "grid" ? 180 : 120,
+    keyExtractor: (item) => item.id,
+  });
+
+  async function loadFavorites() {
     try {
       setIsLoading(true);
-      const favoriteRecipes = await FavoritesService.getFavoriteRecipes();
-      setFavorites(favoriteRecipes);
+      const favRecipes = await FavoritesService.getFavoriteRecipes();
+      setFavorites(favRecipes);
+      Logger.info(`Loaded ${favRecipes.length} favorite recipes`);
     } catch (error) {
-      console.error("Error loading favorites:", error);
+      Logger.error("Failed to load favorites:", error);
+      showError("Favoriler yüklenemedi");
     } finally {
       setIsLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      loadFavorites();
+    });
+
+    loadFavorites();
+    return unsubscribe;
+  }, [navigation]);
 
   const handleRecipePress = (recipe: Recipe) => {
+    // Premium users can view favorites freely
+    // Free users need credit only for AI-generated recipe details
+    if (!isPremium && recipe.aiGenerated && !canAfford("favorite_view")) {
+      showWarning("AI tarif detaylarını görüntülemek için kredi gerekli");
+      return;
+    }
+
     navigation.navigate("RecipeDetail", {
       recipeId: recipe.id,
       recipeName: recipe.name,
     });
   };
 
-  const handleExploreRecipes = () => {
-    // Navigate to all recipes screen  
-    navigation.getParent()?.navigate('AllRecipesTab');
+  const toggleFilters = () => {
+    const toValue = showFilters ? 0 : 1;
+    setShowFilters(!showFilters);
+
+    Animated.spring(filterAnimation, {
+      toValue,
+      useNativeDriver: false,
+      tension: 100,
+      friction: 8,
+    }).start();
   };
 
-  const renderHeader = () => (
-    <Card variant="filled" size="lg" style={styles.headerCard}>
-      <View style={styles.headerContent}>
-        <View style={styles.headerIcon}>
-          <Ionicons name="heart" size={28} color={colors.error[500]} />
-        </View>
-        <View style={styles.headerText}>
-          <Text variant="h4" weight="bold" color="primary">
-            Favori Tariflerim
-          </Text>
-          <Text variant="bodySmall" color="secondary">
-            {favorites.length} adet favori tarifiniz var
-          </Text>
-        </View>
-        {favorites.length > 0 && (
-          <View style={styles.headerBadge}>
-            <Text variant="caption" weight="bold" style={styles.badgeText}>
-              {favorites.length}
-            </Text>
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSortBy("recent");
+    setFilterBy("all");
+    haptics.selection();
+  };
+
+  const renderGridItem = ({ item, index }: { item: Recipe; index: number }) => (
+    <TouchableOpacity
+      style={[styles.gridItem, { backgroundColor: colors.surface }]}
+      onPress={() => handleRecipePress(item)}
+      activeOpacity={0.9}
+    >
+      <LinearGradient
+        colors={[colors.primary[400], colors.primary[600]]}
+        style={styles.gridItemImage}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      >
+        <Ionicons name="restaurant" size={32} color="white" />
+
+        {/* Premium Badge - removed (not in Recipe type) */}
+
+        {/* Difficulty Badge */}
+        {item.difficulty && (
+          <View
+            style={[
+              styles.difficultyBadge,
+              {
+                backgroundColor:
+                  item.difficulty === "kolay"
+                    ? colors.semantic.success
+                    : item.difficulty === "orta"
+                    ? colors.semantic.warning
+                    : colors.semantic.error,
+              },
+            ]}
+          >
+            <Ionicons
+              name={
+                item.difficulty === "kolay"
+                  ? "checkmark"
+                  : item.difficulty === "orta"
+                  ? "pause"
+                  : "alert"
+              }
+              size={10}
+              color="white"
+            />
           </View>
         )}
+      </LinearGradient>
+
+      <View style={styles.gridItemContent}>
+        <Text variant="labelLarge" weight="600" numberOfLines={2}>
+          {item.name}
+        </Text>
+
+        <View style={styles.gridItemStats}>
+          <View style={styles.gridItemStat}>
+            <Ionicons
+              name="time-outline"
+              size={12}
+              color={colors.text.secondary}
+            />
+            <Text variant="labelSmall" color="secondary">
+              {item.cookingTime || "30"}dk
+            </Text>
+          </View>
+
+          <View style={styles.gridItemStat}>
+            <Ionicons
+              name="people-outline"
+              size={12}
+              color={colors.text.secondary}
+            />
+            <Text variant="labelSmall" color="secondary">
+              {item.servings || "4"}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.favoriteIcon,
+            { backgroundColor: colors.semantic.error + "20" },
+          ]}
+          onPress={async () => {
+            const success = await FavoritesService.removeFromFavorites(item.id);
+            if (success) {
+              haptics.notificationSuccess();
+              showSuccess("Tarif favorilerden çıkarıldı");
+              loadFavorites(); // Refresh list
+            } else {
+              showError("Tarif çıkarılırken hata oluştu");
+            }
+          }}
+        >
+          <Ionicons name="heart" size={14} color={colors.semantic.error} />
+        </TouchableOpacity>
       </View>
-    </Card>
+    </TouchableOpacity>
   );
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
-          <View style={styles.loadingContent}>
-            <Text variant="h4" weight="semibold" color="primary" align="center">
-              Favoriler Yükleniyor...
-            </Text>
-            <Text
-              variant="body"
-              color="secondary"
-              align="center"
-              style={{ marginTop: spacing[2] }}
+  const renderListItem = ({ item }: { item: Recipe }) => (
+    <RecipeCard
+      recipe={item}
+      variant="compact"
+      onPress={() => handleRecipePress(item)}
+    />
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <LinearGradient
+        colors={[colors.primary[100], colors.primary[200]]}
+        style={styles.emptyIcon}
+      >
+        <Ionicons name="heart-outline" size={60} color={colors.primary[500]} />
+      </LinearGradient>
+
+      <Text
+        variant="headlineSmall"
+        weight="600"
+        align="center"
+        style={{ marginVertical: spacing.lg }}
+      >
+        {searchQuery || filterBy !== "all"
+          ? "Sonuç Bulunamadı"
+          : "Henüz Favori Yok"}
+      </Text>
+
+      <Text
+        variant="bodyMedium"
+        color="secondary"
+        align="center"
+        style={{ marginBottom: spacing.xl }}
+      >
+        {searchQuery || filterBy !== "all"
+          ? "Arama kriterlerinize uygun favori tarif bulunamadı"
+          : "Beğendiğin tarifleri favorilere ekleyerek burada görebilirsin"}
+      </Text>
+
+      {!searchQuery && filterBy === "all" && (
+        <Button
+          variant="primary"
+          onPress={() => navigation.getParent()?.navigate("HomeTab" as any)}
+          leftIcon={<Ionicons name="search" size={20} color="white" />}
+        >
+          Tarifler Keşfet
+        </Button>
+      )}
+
+      {(searchQuery || filterBy !== "all") && (
+        <Button
+          variant="outline"
+          onPress={clearFilters}
+          leftIcon={<Ionicons name="refresh" size={20} />}
+        >
+          Filtreleri Temizle
+        </Button>
+      )}
+    </View>
+  );
+
+  const renderFilterPanel = () => (
+    <Animated.View
+      style={[
+        styles.filterPanel,
+        {
+          backgroundColor: colors.surface,
+          maxHeight: filterAnimation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 200],
+          }),
+          opacity: filterAnimation,
+        },
+      ]}
+    >
+      <View style={styles.filterRow}>
+        <Text variant="labelMedium" weight="600">
+          Sıralama:
+        </Text>
+        <View style={styles.filterOptions}>
+          {[
+            { key: "recent", label: "En Yeni" },
+            { key: "name", label: "İsim" },
+            { key: "cookingTime", label: "Süre" },
+          ].map((option) => (
+            <TouchableOpacity
+              key={option.key}
+              style={[
+                styles.filterOption,
+                {
+                  backgroundColor:
+                    sortBy === option.key ? colors.primary[500] : "transparent",
+                  borderColor: colors.primary[500],
+                },
+              ]}
+              onPress={() => setSortBy(option.key as SortOption)}
             >
-              Favori tarifleriniz getiriliyor
-            </Text>
-          </View>
+              <Text
+                variant="labelSmall"
+                weight="500"
+                style={{
+                  color: sortBy === option.key ? "white" : colors.primary[500],
+                }}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-      </SafeAreaView>
-    );
-  }
+      </View>
 
-  if (favorites.length === 0) {
-    return (
-      <SafeAreaView style={styles.container}>{renderEmptyState()}</SafeAreaView>
-    );
-  }
+      <View style={styles.filterRow}>
+        <Text variant="labelMedium" weight="600">
+          Zorluk:
+        </Text>
+        <View style={styles.filterOptions}>
+          {[
+            { key: "all", label: "Tümü" },
+            { key: "easy", label: "Kolay" },
+            { key: "medium", label: "Orta" },
+            { key: "hard", label: "Zor" },
+          ].map((option) => (
+            <TouchableOpacity
+              key={option.key}
+              style={[
+                styles.filterOption,
+                {
+                  backgroundColor:
+                    filterBy === option.key
+                      ? colors.secondary[500]
+                      : "transparent",
+                  borderColor: colors.secondary[500],
+                },
+              ]}
+              onPress={() => setFilterBy(option.key as FilterOption)}
+            >
+              <Text
+                variant="labelSmall"
+                weight="500"
+                style={{
+                  color:
+                    filterBy === option.key ? "white" : colors.secondary[500],
+                }}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
 
-  // Show loading state
-  if (isLoading && favorites.length === 0) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
-        <Loading size="large" text="Favoriler yükleniyor..." />
-      </SafeAreaView>
-    );
-  }
-
-  // Show empty state if no favorites
-  if (!isLoading && favorites.length === 0) {
-    return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
-        <NoFavoritesEmpty onExplore={handleExploreRecipes} />
-        
-        {/* Premium Paywall Modal */}
-        {currentFeature && (
-          <PaywallModal
-            visible={showPaywall}
-            onClose={hidePaywall}
-            feature={currentFeature}
-            title={paywallTitle}
-            description={paywallDescription}
-          />
-        )}
-      </SafeAreaView>
-    );
-  }
+      <TouchableOpacity
+        style={[
+          styles.clearFiltersButton,
+          { borderColor: colors.neutral[300] },
+        ]}
+        onPress={clearFilters}
+      >
+        <Ionicons name="refresh" size={16} color={colors.text.secondary} />
+        <Text variant="labelMedium" color="secondary">
+          Temizle
+        </Text>
+      </TouchableOpacity>
+    </Animated.View>
+  );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.secondary }]}>
-      <FlatList
-        data={favorites}
-        renderItem={flatListOptimizations.createRenderItem(({ item }) => (
-          <View style={styles.recipeCardContainer}>
-            <RecipeCard recipe={item} onPress={() => handleRecipePress(item)} />
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+
+      {/* Header */}
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <Text variant="displaySmall" weight="700">
+              Favorilerim
+            </Text>
+            <Text variant="bodyMedium" color="secondary">
+              {filteredFavorites.length} tarif
+            </Text>
           </View>
-        ))}
-        showsVerticalScrollIndicator={false}
-        ListHeaderComponent={renderHeader}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <PullToRefresh
-            refreshing={pullToRefresh.isRefreshing || isLoading}
-            onRefresh={pullToRefresh.handleRefresh}
-            accessibilityLabel="Favoriler listesini yenilemek için aşağı çekin"
-            title={pullToRefresh.refreshText}
-          />
-        }
-        // Performance optimizations
-        {...flatListOptimizations.optimizedProps}
-      />
-      
-      {/* Premium Paywall Modal */}
-      {currentFeature && (
-        <PaywallModal
-          visible={showPaywall}
-          onClose={hidePaywall}
-          feature={currentFeature}
-          title={paywallTitle}
-          description={paywallDescription}
+
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                {
+                  backgroundColor:
+                    viewMode === "grid" ? colors.primary[500] : colors.surface,
+                },
+              ]}
+              onPress={() => {
+                setViewMode("grid");
+                haptics.selection();
+              }}
+            >
+              <Ionicons
+                name="grid"
+                size={20}
+                color={viewMode === "grid" ? "white" : colors.text.primary}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.headerButton,
+                {
+                  backgroundColor:
+                    viewMode === "list" ? colors.primary[500] : colors.surface,
+                },
+              ]}
+              onPress={() => {
+                setViewMode("list");
+                haptics.selection();
+              }}
+            >
+              <Ionicons
+                name="list"
+                size={20}
+                color={viewMode === "list" ? "white" : colors.text.primary}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Search and Filter */}
+        <View style={styles.searchContainer}>
+          <View
+            style={[styles.searchInput, { backgroundColor: colors.surface }]}
+          >
+            <Ionicons name="search" size={20} color={colors.text.secondary} />
+            <TextInput
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Favorilerde ara..."
+              placeholderTextColor={colors.text.secondary}
+              style={[styles.searchText, { color: colors.text.primary }]}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery("")}>
+                <Ionicons
+                  name="close-circle"
+                  size={20}
+                  color={colors.text.secondary}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              {
+                backgroundColor: showFilters
+                  ? colors.primary[500]
+                  : colors.surface,
+              },
+            ]}
+            onPress={toggleFilters}
+          >
+            <Ionicons
+              name="options"
+              size={20}
+              color={showFilters ? "white" : colors.text.primary}
+            />
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter Panel */}
+        {renderFilterPanel()}
+      </View>
+
+      {/* Content */}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <Text
+            variant="bodyMedium"
+            color="secondary"
+            style={{ marginTop: spacing.md }}
+          >
+            Favoriler yükleniyor...
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredFavorites}
+          renderItem={viewMode === "grid" ? renderGridItem : renderListItem}
+          numColumns={viewMode === "grid" ? 2 : 1}
+          key={viewMode} // Force re-render when switching modes
+          contentContainerStyle={[
+            styles.listContainer,
+            filteredFavorites.length === 0 && styles.emptyListContainer,
+          ]}
+          columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
+          showsVerticalScrollIndicator={false}
+          refreshing={isRefreshing}
+          onRefresh={handleRefresh}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.5}
+          {...optimizedProps}
+          ListEmptyComponent={renderEmpty}
+          ItemSeparatorComponent={() =>
+            viewMode === "list" ? <View style={{ height: spacing.sm }} /> : null
+          }
         />
       )}
+
+      <PaywallModal
+        visible={showPaywall}
+        onClose={hidePaywall}
+        feature={(currentFeature || "general") as any}
+        title={paywallTitle}
+        description={paywallDescription}
+      />
     </SafeAreaView>
   );
 };
@@ -225,81 +604,186 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.secondary,
   },
-  loadingContainer: {
+
+  // Header
+  header: {
+    paddingHorizontal: spacing.component.section.paddingX,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+    ...elevation.low,
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing.lg,
+  },
+  headerLeft: {
     flex: 1,
+  },
+  headerRight: {
+    flexDirection: "row",
+    gap: spacing.xs,
+  },
+  headerButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
     justifyContent: "center",
-    alignItems: "center",
-    padding: spacing[6],
+    ...elevation.low,
   },
-  loadingContent: {
-    marginTop: spacing[4],
-    alignItems: "center",
+
+  // Search
+  searchContainer: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
-  emptyContainer: {
+  searchInput: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing[8],
-  },
-  emptyIconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.neutral[100],
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: spacing[6],
-  },
-  emptyContent: {
-    alignItems: "center",
-    marginBottom: spacing[6],
-    maxWidth: 300,
-  },
-  emptyDescription: {
-    marginTop: spacing[3],
-    lineHeight: 24,
-  },
-  exploreButton: {
-    minWidth: 200,
-  },
-  listContent: {
-    padding: spacing[4],
-    paddingBottom: spacing[8],
-  },
-  headerCard: {
-    marginBottom: spacing[6],
-  },
-  headerContent: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing[3],
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.medium,
+    gap: spacing.sm,
+    ...elevation.low,
   },
-  headerIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.error[50],
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerText: {
+  searchText: {
     flex: 1,
+    fontSize: 16,
   },
-  headerBadge: {
-    backgroundColor: colors.error[500],
-    width: 32,
-    height: 32,
-    borderRadius: borderRadius.full,
+  filterButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    ...elevation.low,
+  },
+
+  // Filter Panel
+  filterPanel: {
+    borderRadius: borderRadius.large,
+    padding: spacing.md,
+    gap: spacing.md,
+    overflow: "hidden",
+    ...elevation.medium,
+  },
+  filterRow: {
+    gap: spacing.sm,
+  },
+  filterOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.xs,
+  },
+  filterOption: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.medium,
+    borderWidth: 1,
+  },
+  clearFiltersButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.medium,
+    borderWidth: 1,
+    gap: spacing.xs,
+  },
+
+  // Content
+  loadingContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: spacing.xl,
+  },
+  listContainer: {
+    padding: spacing.md,
+  },
+  emptyListContainer: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  gridRow: {
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.xs,
+  },
+
+  // Grid Items
+  gridItem: {
+    width: (screenWidth - spacing.md * 3) / 2,
+    borderRadius: borderRadius.large,
+    overflow: "hidden",
+    marginBottom: spacing.md,
+    ...elevation.low,
+  },
+  gridItemImage: {
+    height: 120,
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+  },
+  premiumBadge: {
+    position: "absolute",
+    top: spacing.xs,
+    left: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.tiny,
+    borderRadius: borderRadius.small,
+  },
+  difficultyBadge: {
+    position: "absolute",
+    top: spacing.xs,
+    right: spacing.xs,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
-  badgeText: {
-    color: colors.neutral[0],
+  gridItemContent: {
+    padding: spacing.md,
+    position: "relative",
   },
-  recipeCardContainer: {
-    marginBottom: spacing[3],
+  gridItemStats: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: spacing.xs,
+  },
+  gridItemStat: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.tiny,
+  },
+  favoriteIcon: {
+    position: "absolute",
+    top: spacing.xs,
+    right: spacing.xs,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Empty State
+  emptyContainer: {
+    alignItems: "center",
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxxl,
+  },
+  emptyIcon: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

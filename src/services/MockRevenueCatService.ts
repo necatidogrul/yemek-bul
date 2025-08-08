@@ -1,6 +1,7 @@
 // Mock RevenueCat Service for development/testing without real RevenueCat setup
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SubscriptionInfo, OfferingInfo, PurchasePackageInfo } from './RevenueCatService';
+import { Logger } from '../services/LoggerService';
 
 const MOCK_STORAGE_KEY = 'mock_premium_status';
 
@@ -205,5 +206,28 @@ export class MockRevenueCatService {
   static async resetMockData(): Promise<void> {
     await AsyncStorage.multiRemove([MOCK_STORAGE_KEY, 'mock_user_id']);
     console.log('🧪 Mock data reset');
+  }
+
+  static async purchaseCredits(packageId: string): Promise<{
+    success: boolean;
+    credits?: number;
+    error?: string;
+  }> {
+    console.log(`🧪 Mock credit purchase: ${packageId}`);
+    // Simulate successful credit purchase
+    return {
+      success: true,
+      credits: 100
+    };
+  }
+
+  static async getCurrentPremiumTier(): Promise<string | null> {
+    const info = await this.getSubscriptionInfo();
+    return info.isPremium ? 'premium' : null;
+  }
+
+  static async hasFeature(featureId: string): Promise<boolean> {
+    const info = await this.getSubscriptionInfo();
+    return info.isPremium;
   }
 }

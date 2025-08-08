@@ -2,31 +2,25 @@ import React from "react";
 import {
   TouchableOpacity,
   Text,
-  StyleSheet,
   ViewStyle,
   TextStyle,
   ActivityIndicator,
   View,
 } from "react-native";
-import {
-  colors,
-  typography,
-  spacing,
-  borderRadius,
-  shadows,
-} from "../../theme/design-tokens";
+import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "../../contexts/ThemeContext";
 import { useHaptics } from "../../hooks/useHaptics";
 import { useAccessibility } from "../../hooks/useAccessibility";
-import { useDynamicType, scaleSpacing } from "../../hooks/useDynamicType";
 
-// Button Variants
+// Modern Button Variants - Simplified for Professional Design
 type ButtonVariant =
   | "primary"
   | "secondary"
   | "outline"
   | "ghost"
   | "destructive";
-type ButtonSize = "sm" | "md" | "lg" | "xl";
+
+type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -68,76 +62,70 @@ const Button: React.FC<ButtonProps> = ({
   accessibilityState,
   testID,
 }) => {
+  const { colors, typography, spacing, elevation, borderRadius, animation } =
+    useTheme();
   const haptics = useHaptics();
   const { generateHint, shouldReduceMotion } = useAccessibility();
-  const { scale, isAccessibilitySize } = useDynamicType();
   const getButtonStyles = (): ViewStyle => {
     const baseStyles: ViewStyle = {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      borderRadius: borderRadius.lg,
-      ...shadows.sm,
+      borderRadius: borderRadius.button,
+      overflow: "hidden",
+      minHeight: spacing.component.button.minHeight,
     };
 
-    // Size styles with accessibility considerations
+    // Professional size styles with consistent spacing
     const sizeStyles: Record<ButtonSize, ViewStyle> = {
       sm: {
-        height: Math.max(36, isAccessibilitySize ? 44 : 36), // Minimum 44pt for accessibility
-        paddingHorizontal: scaleSpacing(spacing[3], scale),
-        minWidth: 64,
-      },
-      md: {
-        height: Math.max(44, scaleSpacing(44, scale)), // Always maintain minimum touch target
-        paddingHorizontal: scaleSpacing(spacing[4], scale),
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.xs,
         minWidth: 80,
       },
-      lg: {
-        height: Math.max(44, scaleSpacing(52, scale)),
-        paddingHorizontal: scaleSpacing(spacing[6], scale),
-        minWidth: 96,
+      md: {
+        paddingHorizontal: spacing.component.button.paddingX,
+        paddingVertical: spacing.component.button.paddingY,
+        minWidth: 120,
       },
-      xl: {
-        height: Math.max(44, scaleSpacing(60, scale)),
-        paddingHorizontal: scaleSpacing(spacing[8], scale),
-        minWidth: 112,
+      lg: {
+        paddingHorizontal: spacing.xl,
+        paddingVertical: spacing.md,
+        minHeight: 56,
+        minWidth: 160,
       },
     };
 
-    // Variant styles
+    // Modern variant styles - Clean & Professional
     const variantStyles: Record<ButtonVariant, ViewStyle> = {
       primary: {
         backgroundColor: colors.primary[500],
-        borderWidth: 0,
+        ...elevation.medium,
       },
       secondary: {
         backgroundColor: colors.secondary[500],
-        borderWidth: 0,
+        ...elevation.low,
       },
       outline: {
-        backgroundColor: "transparent",
+        backgroundColor: colors.surface,
         borderWidth: 1.5,
-        borderColor: colors.primary[500],
-        shadowOpacity: 0,
-        elevation: 0,
+        borderColor: colors.border.medium,
+        ...elevation.low,
       },
       ghost: {
         backgroundColor: "transparent",
-        borderWidth: 0,
-        shadowOpacity: 0,
-        elevation: 0,
+        ...elevation.none,
       },
       destructive: {
-        backgroundColor: colors.error[500],
-        borderWidth: 0,
+        backgroundColor: colors.semantic.error,
+        ...elevation.medium,
       },
     };
 
-    // Disabled styles
+    // Enhanced disabled styles
     const disabledStyles: ViewStyle = {
-      opacity: 0.5,
-      shadowOpacity: 0,
-      elevation: 0,
+      opacity: 0.6,
+      ...elevation.none,
     };
 
     // Full width
@@ -154,44 +142,36 @@ const Button: React.FC<ButtonProps> = ({
 
   const getTextStyles = (): TextStyle => {
     const baseTextStyles: TextStyle = {
-      fontFamily: typography.fontFamily.sans,
-      fontWeight: typography.fontWeight.semibold,
       textAlign: "center",
+      fontWeight: "600",
     };
 
-    // Size text styles
+    // Modern typography sizing
     const sizeTextStyles: Record<ButtonSize, TextStyle> = {
       sm: {
-        fontSize: typography.fontSize.sm,
-        lineHeight: typography.fontSize.sm * typography.lineHeight.tight,
+        ...typography.label.medium,
       },
       md: {
-        fontSize: typography.fontSize.base,
-        lineHeight: typography.fontSize.base * typography.lineHeight.tight,
+        ...typography.label.large,
       },
       lg: {
-        fontSize: typography.fontSize.lg,
-        lineHeight: typography.fontSize.lg * typography.lineHeight.tight,
-      },
-      xl: {
-        fontSize: typography.fontSize.xl,
-        lineHeight: typography.fontSize.xl * typography.lineHeight.tight,
+        ...typography.headline.small,
       },
     };
 
-    // Variant text styles
+    // Professional text colors
     const variantTextStyles: Record<ButtonVariant, TextStyle> = {
       primary: {
         color: colors.neutral[0],
       },
       secondary: {
-        color: colors.neutral[900],
+        color: colors.neutral[0],
       },
       outline: {
-        color: colors.primary[500],
+        color: colors.text.primary,
       },
       ghost: {
-        color: colors.primary[500],
+        color: colors.text.accent,
       },
       destructive: {
         color: colors.neutral[0],
@@ -209,11 +189,12 @@ const Button: React.FC<ButtonProps> = ({
     const iconSizes = {
       sm: 16,
       md: 18,
-      lg: 20,
-      xl: 22,
+      lg: 22,
     };
     return iconSizes[size];
   };
+
+  // Removed gradient system for cleaner, more professional look
 
   const handlePress = async () => {
     if (!disabled && !loading && onPress) {
@@ -225,20 +206,20 @@ const Button: React.FC<ButtonProps> = ({
     }
   };
 
-  const iconSpacing = spacing[2];
+  const iconSpacing = spacing.xs;
 
   // Generate accessibility props
   const getAccessibilityLabel = (): string => {
     if (accessibilityLabel) return accessibilityLabel;
-    if (typeof children === 'string') return children;
-    return 'Button';
+    if (typeof children === "string") return children;
+    return "Button";
   };
 
   const getAccessibilityHint = (): string | undefined => {
     if (accessibilityHint) return accessibilityHint;
-    if (disabled) return 'Button is disabled';
-    if (loading) return 'Button is loading';
-    return generateHint('button_press');
+    if (disabled) return "Button is disabled";
+    if (loading) return "Button is loading";
+    return generateHint("button_press");
   };
 
   const getAccessibilityState = () => {
@@ -249,27 +230,14 @@ const Button: React.FC<ButtonProps> = ({
     };
   };
 
-  return (
-    <TouchableOpacity
-      style={[getButtonStyles(), style]}
-      onPress={handlePress}
-      disabled={disabled || loading}
-      activeOpacity={shouldReduceMotion() ? 1 : 0.8}
-      nativeID={nativeID}
-      // Accessibility props
-      accessible={true}
-      accessibilityRole="button"
-      accessibilityLabel={getAccessibilityLabel()}
-      accessibilityHint={getAccessibilityHint()}
-      accessibilityState={getAccessibilityState()}
-      testID={testID}
-    >
+  const buttonContent = (
+    <>
       {loading ? (
         <ActivityIndicator
           size="small"
           color={
             variant === "outline" || variant === "ghost"
-              ? colors.primary[500]
+              ? colors.text.primary
               : colors.neutral[0]
           }
         />
@@ -286,6 +254,26 @@ const Button: React.FC<ButtonProps> = ({
           )}
         </>
       )}
+    </>
+  );
+
+  // Clean button without gradients for professional look
+
+  return (
+    <TouchableOpacity
+      style={[getButtonStyles(), style]}
+      onPress={handlePress}
+      disabled={disabled || loading}
+      activeOpacity={shouldReduceMotion() ? 1 : 0.85}
+      // Accessibility props
+      accessible={true}
+      accessibilityRole="button"
+      accessibilityLabel={getAccessibilityLabel()}
+      accessibilityHint={getAccessibilityHint()}
+      accessibilityState={getAccessibilityState()}
+      testID={testID}
+    >
+      {buttonContent}
     </TouchableOpacity>
   );
 };
