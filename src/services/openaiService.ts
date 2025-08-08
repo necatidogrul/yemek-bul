@@ -1,5 +1,4 @@
 import { Recipe } from '../types/Recipe';
-import { Logger } from '../services/LoggerService';
 
 export interface RecipeGenerationRequest {
   ingredients: string[];

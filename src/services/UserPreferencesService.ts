@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Logger } from '../services/LoggerService';
 
 export interface UserPreferences {
   dietaryRestrictions: string[];
@@ -37,7 +36,7 @@ export class UserPreferencesService {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
       const onboardingCompleted = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED);
-      
+
       if (stored) {
         try {
           const preferences = JSON.parse(stored);
@@ -54,7 +53,7 @@ export class UserPreferencesService {
           };
         }
       }
-      
+
       return {
         ...DEFAULT_PREFERENCES,
         onboardingCompleted: onboardingCompleted === 'true',
@@ -82,13 +81,13 @@ export class UserPreferencesService {
     try {
       const current = await this.getUserPreferences();
       const updated = { ...current, ...preferences };
-      
+
       await AsyncStorage.setItem(STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(updated));
-      
+
       if (preferences.onboardingCompleted !== undefined) {
         await AsyncStorage.setItem(
-          STORAGE_KEYS.ONBOARDING_COMPLETED, 
-          preferences.onboardingCompleted.toString()
+          STORAGE_KEYS.ONBOARDING_COMPLETED,
+          preferences.onboardingCompleted.toString(),
         );
       }
     } catch (error) {

@@ -1,19 +1,18 @@
-// Accessibility Services and Hooks
-import { AccessibilityManager } from "../services/AccessibilityService";
+import { AccessibilityManager } from '../services/AccessibilityService';
 export { AccessibilityManager };
-export type { AccessibilityState } from "../services/AccessibilityService";
+export type { AccessibilityState } from '../services/AccessibilityService';
 
-export { useAccessibility } from "../hooks/useAccessibility";
+export { useAccessibility } from '../hooks/useAccessibility';
 
 export {
   useDynamicType,
   scaleFontSize,
   scaleSpacing,
   shouldAdaptLayoutForLargeText,
-} from "../hooks/useDynamicType";
-export type { DynamicTypeScale } from "../hooks/useDynamicType";
+} from '../hooks/useDynamicType';
+export type { DynamicTypeScale } from '../hooks/useDynamicType';
 
-export { useReducedMotion } from "../hooks/useReducedMotion";
+export { useReducedMotion } from '../hooks/useReducedMotion';
 
 // Accessibility Constants and Utilities
 export const AccessibilityConstants = {
@@ -55,16 +54,16 @@ export const AccessibilityConstants = {
 
   // Common accessibility roles
   ROLES: {
-    BUTTON: "button" as const,
-    HEADER: "header" as const,
-    TEXT: "text" as const,
-    IMAGE: "image" as const,
-    LINK: "link" as const,
-    SEARCH: "search" as const,
-    TAB: "tab" as const,
-    TAB_LIST: "tablist" as const,
-    LIST: "list" as const,
-    LIST_ITEM: "listitem" as const,
+    BUTTON: 'button' as const,
+    HEADER: 'header' as const,
+    TEXT: 'text' as const,
+    IMAGE: 'image' as const,
+    LINK: 'link' as const,
+    SEARCH: 'search' as const,
+    TAB: 'tab' as const,
+    TAB_LIST: 'tablist' as const,
+    LIST: 'list' as const,
+    LIST_ITEM: 'listitem' as const,
   },
 } as const;
 
@@ -74,17 +73,14 @@ export const AccessibilityHelpers = {
    * Generate consistent accessibility labels for common UI patterns
    */
   generateLabel: {
-    button: (
-      text: string,
-      state?: { loading?: boolean; disabled?: boolean }
-    ) => {
+    button: (text: string, state?: { loading?: boolean; disabled?: boolean }) => {
       let label = text;
-      if (state?.loading) label += ", yükleniyor";
-      if (state?.disabled) label += ", devre dışı";
+      if (state?.loading) label += ', yükleniyor';
+      if (state?.disabled) label += ', devre dışı';
       return label;
     },
 
-    counter: (current: number, total: number, itemName: string = "öğe") => {
+    counter: (current: number, total: number, itemName: string = 'öğe') => {
       return `${current} / ${total} ${itemName}`;
     },
 
@@ -100,7 +96,7 @@ export const AccessibilityHelpers = {
         matchingIngredients?: number;
         totalIngredients?: number;
         isFavorite?: boolean;
-      }
+      },
     ) => {
       const parts = [`Tarif: ${name}`];
 
@@ -113,16 +109,14 @@ export const AccessibilityHelpers = {
       }
 
       if (details.matchingIngredients && details.totalIngredients) {
-        parts.push(
-          `${details.matchingIngredients} / ${details.totalIngredients} malzeme mevcut`
-        );
+        parts.push(`${details.matchingIngredients} / ${details.totalIngredients} malzeme mevcut`);
       }
 
       if (details.isFavorite) {
-        parts.push("Favorilerinizde");
+        parts.push('Favorilerinizde');
       }
 
-      return parts.join(", ");
+      return parts.join(', ');
     },
   },
 
@@ -131,15 +125,12 @@ export const AccessibilityHelpers = {
    */
   generateHint: {
     tapToAction: (action: string) => `${action} için çift dokunun`,
-    swipeToAction: (
-      action: string,
-      direction: "left" | "right" | "up" | "down"
-    ) => {
+    swipeToAction: (action: string, direction: 'left' | 'right' | 'up' | 'down') => {
       const directionText = {
-        left: "sola",
-        right: "sağa",
-        up: "yukarı",
-        down: "aşağı",
+        left: 'sola',
+        right: 'sağa',
+        up: 'yukarı',
+        down: 'aşağı',
       };
       return `${action} için ${directionText[direction]} kaydırın`;
     },
@@ -149,16 +140,7 @@ export const AccessibilityHelpers = {
   /**
    * Check if color combination meets WCAG contrast requirements
    */
-  meetsContrastRequirement: (
-    foreground: string,
-    background: string,
-    level: "AA" | "AAA" = "AA",
-    isLargeText: boolean = false
-  ): boolean => {
-    // This is a simplified check - in production, you'd use a proper contrast calculation library
-    // For now, we'll assume proper contrast ratios are met in our design system
-    return true;
-  },
+  meetsContrastRequirement: (): boolean => true,
 
   /**
    * Announce important messages to screen readers

@@ -1,38 +1,23 @@
-import React, { useState } from "react";
-import {
-  View,
-  StyleSheet,
-  Modal,
-  TouchableOpacity,
-  Dimensions,
-  ScrollView,
-  Alert,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from 'react';
+import { View, StyleSheet, Modal, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // UI Components
-import { Text, Button, Card } from "../ui";
-import { useThemedStyles } from "../../hooks/useThemedStyles";
-import { spacing, borderRadius, shadows } from "../../theme/design-tokens";
+import { Text, Button, Card } from '../ui';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
+import { spacing, borderRadius, shadows } from '../../theme/design-tokens';
 
 // Types & Services
-import { CREDIT_PACKAGES } from "../../types/Credit";
-import { PREMIUM_TIERS, PremiumTier } from "../../types/Premium";
-
-const { width, height } = Dimensions.get("window");
+import { CREDIT_PACKAGES } from '../../types/Credit';
+import { PREMIUM_TIERS } from '../../types/Premium';
 
 interface CreditUpgradeModalProps {
   visible: boolean;
   onClose: () => void;
   onPurchaseCredits: (packageId: string) => Promise<void>;
   onUpgradePremium: (tierId: string, yearly?: boolean) => Promise<void>;
-  trigger?:
-    | "ai_limit"
-    | "search_limit"
-    | "recipe_limit"
-    | "favorites_blocked"
-    | "general";
+  trigger?: 'ai_limit' | 'search_limit' | 'recipe_limit' | 'favorites_blocked' | 'general';
   userId: string;
 }
 
@@ -41,53 +26,52 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
   onClose,
   onPurchaseCredits,
   onUpgradePremium,
-  trigger = "general",
-  userId,
+  trigger = 'general',
 }) => {
   const { colors } = useThemedStyles();
-  const [activeTab, setActiveTab] = useState<"credits" | "premium">("credits");
+  const [activeTab, setActiveTab] = useState<'credits' | 'premium'>('credits');
   const [loading, setLoading] = useState<string | null>(null);
 
   const getTriggerContent = () => {
     switch (trigger) {
-      case "ai_limit":
+      case 'ai_limit':
         return {
-          title: "🤖 AI Tarif Hakkın Bitti!",
-          subtitle: "Daha fazla AI tarif için kredi al",
-          description: "Yapay zeka ile özel tarifler oluşturmaya devam et",
-          icon: "sparkles",
+          title: '🤖 AI Tarif Hakkın Bitti!',
+          subtitle: 'Daha fazla AI tarif için kredi al',
+          description: 'Yapay zeka ile özel tarifler oluşturmaya devam et',
+          icon: 'sparkles',
           primaryColor: colors.primary[500],
         };
-      case "search_limit":
+      case 'search_limit':
         return {
-          title: "🔍 Günlük Arama Sınırı!",
-          subtitle: "Daha fazla arama yapmak için",
-          description: "Bugün 5 arama hakkını kullandın",
-          icon: "search",
+          title: '🔍 Günlük Arama Sınırı!',
+          subtitle: 'Daha fazla arama yapmak için',
+          description: 'Bugün 5 arama hakkını kullandın',
+          icon: 'search',
           primaryColor: colors.warning[500],
         };
-      case "recipe_limit":
+      case 'recipe_limit':
         return {
-          title: "👀 Tarif Görüntüleme Sınırı!",
-          subtitle: "Daha fazla tarif görmek için",
-          description: "Bugün 5 tarif görüntüleme hakkını kullandın",
-          icon: "eye",
+          title: '👀 Tarif Görüntüleme Sınırı!',
+          subtitle: 'Daha fazla tarif görmek için',
+          description: 'Bugün 5 tarif görüntüleme hakkını kullandın',
+          icon: 'eye',
           primaryColor: colors.info[500],
         };
-      case "favorites_blocked":
+      case 'favorites_blocked':
         return {
-          title: "❤️ Favoriler Premium Özellik!",
-          subtitle: "Tarifleri kaydetmek için",
-          description: "Favori tariflerini saklamak için premium gerekli",
-          icon: "heart",
+          title: '❤️ Favoriler Premium Özellik!',
+          subtitle: 'Tarifleri kaydetmek için',
+          description: 'Favori tariflerini saklamak için premium gerekli',
+          icon: 'heart',
           primaryColor: colors.error[500],
         };
       default:
         return {
-          title: "🚀 Daha Fazla Özellik!",
+          title: '🚀 Daha Fazla Özellik!',
           subtitle: "Yemek Bulucu'nun tüm gücünü keşfet",
-          description: "Premium özelliklere erişim sağla",
-          icon: "rocket",
+          description: 'Premium özelliklere erişim sağla',
+          icon: 'rocket',
           primaryColor: colors.primary[500],
         };
     }
@@ -101,7 +85,7 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
       await onPurchaseCredits(packageId);
       onClose();
     } catch (error) {
-      Alert.alert("Hata", "Satın alma işlemi başarısız oldu");
+      Alert.alert('Hata', 'Satın alma işlemi başarısız oldu');
     } finally {
       setLoading(null);
     }
@@ -109,11 +93,11 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
 
   const handlePremiumUpgrade = async (tierId: string, yearly = false) => {
     try {
-      setLoading(tierId + (yearly ? "_yearly" : "_monthly"));
+      setLoading(tierId + (yearly ? '_yearly' : '_monthly'));
       await onUpgradePremium(tierId, yearly);
       onClose();
     } catch (error) {
-      Alert.alert("Hata", "Abonelik işlemi başarısız oldu");
+      Alert.alert('Hata', 'Abonelik işlemi başarısız oldu');
     } finally {
       setLoading(null);
     }
@@ -129,31 +113,20 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
             styles.packageCard,
             pkg.popular ? styles.popularCard : {},
             {
-              borderColor: pkg.popular
-                ? colors.success[300]
-                : colors.border.medium,
+              borderColor: pkg.popular ? colors.success[300] : colors.border.medium,
             },
           ]}
         >
           {pkg.popular && (
-            <View
-              style={[
-                styles.popularBadge,
-                { backgroundColor: colors.success[500] },
-              ]}
-            >
-              <Text variant="caption" weight="bold" style={{ color: "white" }}>
+            <View style={[styles.popularBadge, { backgroundColor: colors.success[500] }]}>
+              <Text variant="caption" weight="bold" style={{ color: 'white' }}>
                 EN POPÜLER
               </Text>
             </View>
           )}
 
           <View style={styles.packageHeader}>
-            <Text
-              variant="h6"
-              weight="bold"
-              style={{ color: colors.text.primary }}
-            >
+            <Text variant="h6" weight="bold" style={{ color: colors.text.primary }}>
               {pkg.name}
             </Text>
             <Text variant="body" style={{ color: colors.text.secondary }}>
@@ -162,16 +135,11 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
           </View>
 
           <View style={styles.priceContainer}>
-            <Text
-              variant="h4"
-              weight="bold"
-              style={{ color: content.primaryColor }}
-            >
+            <Text variant="h4" weight="bold" style={{ color: content.primaryColor }}>
               ₺{pkg.price}
             </Text>
             <Text variant="caption" style={{ color: colors.text.secondary }}>
-              ≈ ₺
-              {(pkg.price / (pkg.credits + (pkg.bonusCredits || 0))).toFixed(1)}
+              ≈ ₺{(pkg.price / (pkg.credits + (pkg.bonusCredits || 0))).toFixed(1)}
               /kredi
             </Text>
             {pkg.bonusCredits && (
@@ -197,7 +165,7 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
             size="sm"
             onPress={() => handleCreditPurchase(pkg.id)}
             loading={loading === pkg.id}
-            style={{ marginTop: "auto" }}
+            style={{ marginTop: 'auto' }}
           >
             Kredi Al
           </Button>
@@ -208,7 +176,7 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
 
   const renderPremiumTiers = () => (
     <View style={styles.premiumContainer}>
-      {PREMIUM_TIERS.map((tier) => (
+      {PREMIUM_TIERS.map(tier => (
         <Card
           key={tier.id}
           variant="elevated"
@@ -216,20 +184,13 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
             styles.premiumCard,
             tier.popular ? styles.popularCard : {},
             {
-              borderColor: tier.popular
-                ? colors.primary[300]
-                : colors.border.medium,
+              borderColor: tier.popular ? colors.primary[300] : colors.border.medium,
             },
           ]}
         >
           {tier.popular && (
-            <View
-              style={[
-                styles.popularBadge,
-                { backgroundColor: colors.primary[500] },
-              ]}
-            >
-              <Text variant="caption" weight="bold" style={{ color: "white" }}>
+            <View style={[styles.popularBadge, { backgroundColor: colors.primary[500] }]}>
+              <Text variant="caption" weight="bold" style={{ color: 'white' }}>
                 ÖNERİLEN
               </Text>
             </View>
@@ -240,11 +201,7 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
               {tier.badge}
             </Text>
             <View>
-              <Text
-                variant="h6"
-                weight="bold"
-                style={{ color: colors.text.primary }}
-              >
+              <Text variant="h6" weight="bold" style={{ color: colors.text.primary }}>
                 {tier.name}
               </Text>
               <Text variant="caption" style={{ color: colors.text.secondary }}>
@@ -255,18 +212,14 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
 
           <View style={styles.premiumPricing}>
             <View style={styles.pricingOption}>
-              <Text
-                variant="h5"
-                weight="bold"
-                style={{ color: colors.primary[600] }}
-              >
+              <Text variant="h5" weight="bold" style={{ color: colors.primary[600] }}>
                 ₺{tier.monthlyPrice}/ay
               </Text>
               <Button
                 variant="outline"
                 size="sm"
                 onPress={() => handlePremiumUpgrade(tier.id, false)}
-                loading={loading === tier.id + "_monthly"}
+                loading={loading === tier.id + '_monthly'}
               >
                 Aylık
               </Button>
@@ -275,17 +228,10 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
             {tier.yearlyPrice && (
               <View style={styles.pricingOption}>
                 <View>
-                  <Text
-                    variant="h5"
-                    weight="bold"
-                    style={{ color: colors.success[600] }}
-                  >
+                  <Text variant="h5" weight="bold" style={{ color: colors.success[600] }}>
                     ₺{tier.yearlyPrice}/yıl
                   </Text>
-                  <Text
-                    variant="caption"
-                    style={{ color: colors.success[600] }}
-                  >
+                  <Text variant="caption" style={{ color: colors.success[600] }}>
                     2 ay ücretsiz!
                   </Text>
                 </View>
@@ -293,7 +239,7 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
                   variant="primary"
                   size="sm"
                   onPress={() => handlePremiumUpgrade(tier.id, true)}
-                  loading={loading === tier.id + "_yearly"}
+                  loading={loading === tier.id + '_yearly'}
                 >
                   Yıllık
                 </Button>
@@ -302,13 +248,9 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
           </View>
 
           <View style={styles.featuresList}>
-            {tier.features.slice(0, 3).map((feature) => (
+            {tier.features.slice(0, 3).map(feature => (
               <View key={feature.id} style={styles.featureItem}>
-                <Ionicons
-                  name="checkmark-circle"
-                  size={16}
-                  color={colors.success[500]}
-                />
+                <Ionicons name="checkmark-circle" size={16} color={colors.success[500]} />
                 <Text
                   variant="caption"
                   style={{
@@ -334,37 +276,19 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={onClose}
     >
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: colors.background.primary },
-        ]}
-      >
+      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
         {/* Header */}
-        <View
-          style={[styles.header, { borderBottomColor: colors.border.medium }]}
-        >
+        <View style={[styles.header, { borderBottomColor: colors.border.medium }]}>
           <View style={styles.headerContent}>
             <LinearGradient
-              colors={[
-                content.primaryColor + "20",
-                content.primaryColor + "10",
-              ]}
+              colors={[content.primaryColor + '20', content.primaryColor + '10']}
               style={styles.headerIcon}
             >
-              <Ionicons
-                name={content.icon as any}
-                size={24}
-                color={content.primaryColor}
-              />
+              <Ionicons name={content.icon as any} size={24} color={content.primaryColor} />
             </LinearGradient>
 
             <View style={styles.headerText}>
-              <Text
-                variant="h5"
-                weight="bold"
-                style={{ color: colors.text.primary }}
-              >
+              <Text variant="h5" weight="bold" style={{ color: colors.text.primary }}>
                 {content.title}
               </Text>
               <Text variant="body" style={{ color: colors.text.secondary }}>
@@ -379,27 +303,21 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
         </View>
 
         {/* Tab Navigation */}
-        <View
-          style={[
-            styles.tabContainer,
-            { backgroundColor: colors.surface.secondary },
-          ]}
-        >
+        <View style={[styles.tabContainer, { backgroundColor: colors.surface.secondary }]}>
           <TouchableOpacity
             style={[
               styles.tab,
-              activeTab === "credits" && {
+              activeTab === 'credits' && {
                 backgroundColor: colors.primary[500],
               },
             ]}
-            onPress={() => setActiveTab("credits")}
+            onPress={() => setActiveTab('credits')}
           >
             <Text
               variant="bodySmall"
               weight="medium"
               style={{
-                color:
-                  activeTab === "credits" ? "white" : colors.text.secondary,
+                color: activeTab === 'credits' ? 'white' : colors.text.secondary,
               }}
             >
               💎 Kredi Paketleri
@@ -409,18 +327,17 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
           <TouchableOpacity
             style={[
               styles.tab,
-              activeTab === "premium" && {
+              activeTab === 'premium' && {
                 backgroundColor: colors.primary[500],
               },
             ]}
-            onPress={() => setActiveTab("premium")}
+            onPress={() => setActiveTab('premium')}
           >
             <Text
               variant="bodySmall"
               weight="medium"
               style={{
-                color:
-                  activeTab === "premium" ? "white" : colors.text.secondary,
+                color: activeTab === 'premium' ? 'white' : colors.text.secondary,
               }}
             >
               🚀 Premium Abonelik
@@ -442,9 +359,7 @@ export const CreditUpgradeModal: React.FC<CreditUpgradeModalProps> = ({
             {content.description}
           </Text>
 
-          {activeTab === "credits"
-            ? renderCreditPackages()
-            : renderPremiumTiers()}
+          {activeTab === 'credits' ? renderCreditPackages() : renderPremiumTiers()}
 
           <View style={styles.bottomSpacing} />
         </ScrollView>
@@ -458,24 +373,24 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[4],
     borderBottomWidth: 1,
   },
   headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   headerIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: spacing[3],
   },
   headerText: {
@@ -485,7 +400,7 @@ const styles = StyleSheet.create({
     padding: spacing[2],
   },
   tabContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     margin: spacing[4],
     borderRadius: borderRadius.lg,
     padding: spacing[1],
@@ -495,7 +410,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[4],
     borderRadius: borderRadius.md,
-    alignItems: "center",
+    alignItems: 'center',
   },
   content: {
     flex: 1,
@@ -507,14 +422,14 @@ const styles = StyleSheet.create({
   packageCard: {
     padding: spacing[4],
     borderWidth: 2,
-    position: "relative",
+    position: 'relative',
   },
   popularCard: {
     borderWidth: 2,
     ...shadows.md,
   },
   popularBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: -8,
     left: spacing[4],
     paddingHorizontal: spacing[3],
@@ -523,11 +438,11 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   packageHeader: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: spacing[3],
   },
   priceContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     marginBottom: spacing[3],
   },
   premiumContainer: {
@@ -536,11 +451,11 @@ const styles = StyleSheet.create({
   premiumCard: {
     padding: spacing[4],
     borderWidth: 2,
-    position: "relative",
+    position: 'relative',
   },
   tierHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing[4],
     gap: spacing[3],
   },
@@ -549,17 +464,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   pricingOption: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: spacing[2],
   },
   featuresList: {
     gap: spacing[2],
   },
   featureItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   bottomSpacing: {
     height: spacing[8],

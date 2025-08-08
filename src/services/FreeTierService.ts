@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { FREE_TIER_LIMITS, FREE_LIFETIME_CREDITS } from '../types/Credit';
-import { Logger } from '../services/LoggerService';
+import { FREE_TIER_LIMITS } from '../types/Credit';
 
 export interface FreeTierUsage {
   userId: string;
@@ -17,7 +16,7 @@ const STORAGE_KEYS = {
   LIFETIME_AI_USED: 'lifetime_ai_used',
   DAILY_SEARCHES: 'daily_searches',
   DAILY_RECIPE_VIEWS: 'daily_recipe_views',
-  LAST_DAILY_RESET: 'last_daily_reset'
+  LAST_DAILY_RESET: 'last_daily_reset',
 } as const;
 
 export class FreeTierService {
@@ -27,7 +26,7 @@ export class FreeTierService {
   static async getFreeTierUsage(userId: string): Promise<FreeTierUsage> {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEYS.FREE_TIER_USAGE);
-      
+
       if (stored) {
         const usage = JSON.parse(stored);
         const resetUsage = await this.resetDailyUsageIfNeeded(usage);
@@ -54,7 +53,7 @@ export class FreeTierService {
       lifetimeAIUsed: 0,
       lastDailyReset: now,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
 
     await this.saveFreeTierUsage(usage);
@@ -66,15 +65,18 @@ export class FreeTierService {
    */
   private static async saveFreeTierUsage(usage: FreeTierUsage): Promise<void> {
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.FREE_TIER_USAGE, JSON.stringify({
-        userId: usage.userId,
-        dailySearches: usage.dailySearches,
-        dailyRecipeViews: usage.dailyRecipeViews,
-        lifetimeAIUsed: usage.lifetimeAIUsed,
-        lastDailyReset: usage.lastDailyReset.toISOString(),
-        createdAt: usage.createdAt.toISOString(),
-        updatedAt: usage.updatedAt.toISOString()
-      }));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.FREE_TIER_USAGE,
+        JSON.stringify({
+          userId: usage.userId,
+          dailySearches: usage.dailySearches,
+          dailyRecipeViews: usage.dailyRecipeViews,
+          lifetimeAIUsed: usage.lifetimeAIUsed,
+          lastDailyReset: usage.lastDailyReset.toISOString(),
+          createdAt: usage.createdAt.toISOString(),
+          updatedAt: usage.updatedAt.toISOString(),
+        }),
+      );
     } catch (error) {
       console.error('Error saving free tier usage:', error);
       throw error;
@@ -97,7 +99,7 @@ export class FreeTierService {
         dailySearches: 0,
         dailyRecipeViews: 0,
         lastDailyReset: now.toISOString(),
-        updatedAt: now.toISOString()
+        updatedAt: now.toISOString(),
       };
 
       await AsyncStorage.setItem(STORAGE_KEYS.FREE_TIER_USAGE, JSON.stringify(resetUsage));
@@ -122,7 +124,7 @@ export class FreeTierService {
     return {
       canSearch: usage.dailySearches < limit,
       remaining,
-      limit
+      limit,
     };
   }
 
@@ -141,7 +143,7 @@ export class FreeTierService {
     return {
       canView: usage.dailyRecipeViews < limit,
       remaining,
-      limit
+      limit,
     };
   }
 
@@ -162,7 +164,7 @@ export class FreeTierService {
       canUse: usage.lifetimeAIUsed < limit,
       remaining,
       limit,
-      used: usage.lifetimeAIUsed
+      used: usage.lifetimeAIUsed,
     };
   }
 
@@ -171,7 +173,7 @@ export class FreeTierService {
    */
   static async recordSearchUsage(userId: string): Promise<void> {
     const usage = await this.getFreeTierUsage(userId);
-    
+
     if (usage.dailySearches >= FREE_TIER_LIMITS.dailySearches) {
       throw new Error('Daily search limit exceeded');
     }
@@ -188,7 +190,7 @@ export class FreeTierService {
    */
   static async recordRecipeViewUsage(userId: string): Promise<void> {
     const usage = await this.getFreeTierUsage(userId);
-    
+
     if (usage.dailyRecipeViews >= FREE_TIER_LIMITS.dailyRecipeViews) {
       throw new Error('Daily recipe view limit exceeded');
     }
@@ -197,7 +199,9 @@ export class FreeTierService {
     usage.updatedAt = new Date();
     await this.saveFreeTierUsage(usage);
 
-    console.log(`👁️ Recipe view recorded: ${usage.dailyRecipeViews}/${FREE_TIER_LIMITS.dailyRecipeViews}`);
+    console.log(
+      `👁️ Recipe view recorded: ${usage.dailyRecipeViews}/${FREE_TIER_LIMITS.dailyRecipeViews}`,
+    );
   }
 
   /**
@@ -205,7 +209,7 @@ export class FreeTierService {
    */
   static async recordAIUsage(userId: string): Promise<void> {
     const usage = await this.getFreeTierUsage(userId);
-    
+
     if (usage.lifetimeAIUsed >= FREE_TIER_LIMITS.lifetimeAICredits) {
       throw new Error('Lifetime AI limit exceeded');
     }
@@ -214,7 +218,9 @@ export class FreeTierService {
     usage.updatedAt = new Date();
     await this.saveFreeTierUsage(usage);
 
-    console.log(`🤖 AI usage recorded: ${usage.lifetimeAIUsed}/${FREE_TIER_LIMITS.lifetimeAICredits} (LIFETIME)`);
+    console.log(
+      `🤖 AI usage recorded: ${usage.lifetimeAIUsed}/${FREE_TIER_LIMITS.lifetimeAICredits} (LIFETIME)`,
+    );
   }
 
   /**
@@ -226,7 +232,7 @@ export class FreeTierService {
   }> {
     return {
       canAccess: false,
-      maxAllowed: FREE_TIER_LIMITS.maxFavorites
+      maxAllowed: FREE_TIER_LIMITS.maxFavorites,
     };
   }
 
@@ -237,7 +243,7 @@ export class FreeTierService {
     canAccess: boolean;
   }> {
     return {
-      canAccess: FREE_TIER_LIMITS.hasSearchHistory
+      canAccess: FREE_TIER_LIMITS.hasSearchHistory,
     };
   }
 
@@ -251,24 +257,24 @@ export class FreeTierService {
     resetTime: Date;
   }> {
     const usage = await this.getFreeTierUsage(userId);
-    
+
     return {
       searches: {
         used: usage.dailySearches,
         limit: FREE_TIER_LIMITS.dailySearches,
-        remaining: Math.max(0, FREE_TIER_LIMITS.dailySearches - usage.dailySearches)
+        remaining: Math.max(0, FREE_TIER_LIMITS.dailySearches - usage.dailySearches),
       },
       recipeViews: {
         used: usage.dailyRecipeViews,
         limit: FREE_TIER_LIMITS.dailyRecipeViews,
-        remaining: Math.max(0, FREE_TIER_LIMITS.dailyRecipeViews - usage.dailyRecipeViews)
+        remaining: Math.max(0, FREE_TIER_LIMITS.dailyRecipeViews - usage.dailyRecipeViews),
       },
       aiUsage: {
         used: usage.lifetimeAIUsed,
         limit: FREE_TIER_LIMITS.lifetimeAICredits,
-        remaining: Math.max(0, FREE_TIER_LIMITS.lifetimeAICredits - usage.lifetimeAIUsed)
+        remaining: Math.max(0, FREE_TIER_LIMITS.lifetimeAICredits - usage.lifetimeAIUsed),
       },
-      resetTime: this.getNextDailyReset()
+      resetTime: this.getNextDailyReset(),
     };
   }
 
@@ -307,7 +313,7 @@ export class FreeTierService {
       lifetimeAIUsed: stored.lifetimeAIUsed || 0,
       lastDailyReset: new Date(stored.lastDailyReset),
       createdAt: new Date(stored.createdAt),
-      updatedAt: new Date(stored.updatedAt)
+      updatedAt: new Date(stored.updatedAt),
     };
   }
 }

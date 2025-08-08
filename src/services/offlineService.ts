@@ -1,4 +1,4 @@
-import { Logger } from "./LoggerService";
+import { Logger } from './LoggerService';
 
 /**
  * Offline Service - Progressive Web App Features
@@ -33,38 +33,35 @@ export class OfflineService {
    * Service Worker'ı başlat
    */
   private async initializeServiceWorker(): Promise<void> {
-    if ("serviceWorker" in navigator) {
+    if ('serviceWorker' in navigator) {
       try {
-        Logger.info("🚀 Registering service worker...");
+        Logger.info('🚀 Registering service worker...');
 
-        this.swRegistration = await navigator.serviceWorker.register("/sw.js", {
-          scope: "/",
+        this.swRegistration = await navigator.serviceWorker.register('/sw.js', {
+          scope: '/',
         });
 
-        Logger.info("✅ Service Worker registered:", this.swRegistration.scope);
+        Logger.info('✅ Service Worker registered:', this.swRegistration.scope);
 
         // Service Worker güncellemelerini dinle
-        this.swRegistration.addEventListener("updatefound", () => {
-          Logger.info("🔄 Service Worker update found");
+        this.swRegistration.addEventListener('updatefound', () => {
+          Logger.info('🔄 Service Worker update found');
           const newWorker = this.swRegistration!.installing;
 
           if (newWorker) {
-            newWorker.addEventListener("statechange", () => {
-              if (
-                newWorker.state === "installed" &&
-                navigator.serviceWorker.controller
-              ) {
-                Logger.info("✨ New Service Worker available");
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                Logger.info('✨ New Service Worker available');
                 this.showUpdateAvailableNotification();
               }
             });
           }
         });
       } catch (error) {
-        Logger.error("❌ Service Worker registration failed:", error);
+        Logger.error('❌ Service Worker registration failed:', error);
       }
     } else {
-      Logger.warn("⚠️ Service Worker not supported");
+      Logger.warn('⚠️ Service Worker not supported');
     }
   }
 
@@ -73,12 +70,12 @@ export class OfflineService {
    */
   private setupEventListeners(): void {
     // Online/Offline durumunu dinle
-    window.addEventListener("online", this.handleOnline.bind(this));
-    window.addEventListener("offline", this.handleOffline.bind(this));
+    window.addEventListener('online', this.handleOnline.bind(this));
+    window.addEventListener('offline', this.handleOffline.bind(this));
 
     // App install prompt'u dinle
-    window.addEventListener("beforeinstallprompt", (e) => {
-      Logger.info("📱 App install prompt available");
+    window.addEventListener('beforeinstallprompt', e => {
+      Logger.info('📱 App install prompt available');
       e.preventDefault();
       this.deferredPrompt = e;
       this.isAppInstallable = true;
@@ -86,17 +83,17 @@ export class OfflineService {
     });
 
     // App install edilince
-    window.addEventListener("appinstalled", () => {
-      Logger.info("✅ App installed successfully");
+    window.addEventListener('appinstalled', () => {
+      Logger.info('✅ App installed successfully');
       this.deferredPrompt = null;
       this.isAppInstallable = false;
       this.hideInstallButton();
     });
 
     // Visibility change (background/foreground)
-    document.addEventListener("visibilitychange", () => {
+    document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
-        Logger.info("👀 App became visible - checking for updates");
+        Logger.info('👀 App became visible - checking for updates');
         this.checkForUpdates();
         this.syncWhenOnline();
       }
@@ -107,7 +104,7 @@ export class OfflineService {
    * Online durumuna geçince
    */
   private async handleOnline(): Promise<void> {
-    Logger.info("🌐 App is online");
+    Logger.info('🌐 App is online');
 
     // UI güncelle
     this.updateConnectionStatus(true);
@@ -123,7 +120,7 @@ export class OfflineService {
    * Offline durumuna geçince
    */
   private handleOffline(): void {
-    Logger.info("📱 App is offline");
+    Logger.info('📱 App is offline');
 
     // UI güncelle
     this.updateConnectionStatus(false);
@@ -142,18 +139,18 @@ export class OfflineService {
       // Service Worker'a background sync mesajı gönder
       if (this.swRegistration && this.swRegistration.active) {
         this.swRegistration.active.postMessage({
-          type: "BACKGROUND_SYNC",
+          type: 'BACKGROUND_SYNC',
         });
       }
 
       // Local data'yı server'a sync et
       const userId = this.getCurrentUserId();
       if (userId) {
-        const { RecipeService } = await import("./recipeService");
+        const { RecipeService } = await import('./recipeService');
         await RecipeService.syncLocalDataToServer(userId);
       }
     } catch (error) {
-      Logger.error("❌ Sync failed:", error);
+      Logger.error('❌ Sync failed:', error);
     }
   }
 
@@ -164,7 +161,7 @@ export class OfflineService {
     // Service Worker'a cache refresh mesajı gönder
     if (this.swRegistration && this.swRegistration.active) {
       this.swRegistration.active.postMessage({
-        type: "REFRESH_STALE_CACHE",
+        type: 'REFRESH_STALE_CACHE',
       });
     }
   }
@@ -176,9 +173,9 @@ export class OfflineService {
     if (this.swRegistration) {
       try {
         await this.swRegistration.update();
-        Logger.info("🔄 Checked for Service Worker updates");
+        Logger.info('🔄 Checked for Service Worker updates');
       } catch (error) {
-        Logger.warn("⚠️ Update check failed:", error);
+        Logger.warn('⚠️ Update check failed:', error);
       }
     }
   }
@@ -195,14 +192,14 @@ export class OfflineService {
       this.deferredPrompt.prompt();
       const { outcome } = await this.deferredPrompt.userChoice;
 
-      Logger.info("📱 Install prompt result:", outcome);
+      Logger.info('📱 Install prompt result:', outcome);
 
       this.deferredPrompt = null;
       this.isAppInstallable = false;
 
-      return outcome === "accepted";
+      return outcome === 'accepted';
     } catch (error) {
-      Logger.error("❌ Install prompt failed:", error);
+      Logger.error('❌ Install prompt failed:', error);
       return false;
     }
   }
@@ -211,25 +208,25 @@ export class OfflineService {
    * Push notification izni iste
    */
   async requestNotificationPermission(): Promise<boolean> {
-    if (!("Notification" in window)) {
-      Logger.warn("⚠️ Notifications not supported");
+    if (!('Notification' in window)) {
+      Logger.warn('⚠️ Notifications not supported');
       return false;
     }
 
-    if (Notification.permission === "granted") {
+    if (Notification.permission === 'granted') {
       return true;
     }
 
-    if (Notification.permission === "denied") {
+    if (Notification.permission === 'denied') {
       return false;
     }
 
     try {
       const permission = await Notification.requestPermission();
-      Logger.info("🔔 Notification permission:", permission);
-      return permission === "granted";
+      Logger.info('🔔 Notification permission:', permission);
+      return permission === 'granted';
     } catch (error) {
-      Logger.error("❌ Notification permission request failed:", error);
+      Logger.error('❌ Notification permission request failed:', error);
       return false;
     }
   }
@@ -237,14 +234,11 @@ export class OfflineService {
   /**
    * Local notification göster
    */
-  showLocalNotification(
-    title: string,
-    options: NotificationOptions = {}
-  ): void {
-    if (Notification.permission === "granted") {
+  showLocalNotification(title: string, options: NotificationOptions = {}): void {
+    if (Notification.permission === 'granted') {
       const notification = new Notification(title, {
-        icon: "/icons/icon-192x192.png",
-        badge: "/icons/icon-96x96.png",
+        icon: '/icons/icon-192x192.png',
+        badge: '/icons/icon-96x96.png',
         ...options,
       });
 
@@ -257,26 +251,26 @@ export class OfflineService {
    * Service Worker'dan mesaj al
    */
   private setupServiceWorkerMessages(): void {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.addEventListener("message", (event) => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', event => {
         const { type, data } = event.data;
 
         switch (type) {
-          case "CACHE_UPDATED":
-            Logger.info("📦 Cache updated:", data);
+          case 'CACHE_UPDATED':
+            Logger.info('📦 Cache updated:', data);
             this.showCacheUpdateNotification();
             break;
 
-          case "SYNC_COMPLETED":
-            Logger.info("🔄 Background sync completed:", data);
+          case 'SYNC_COMPLETED':
+            Logger.info('🔄 Background sync completed:', data);
             break;
 
-          case "OFFLINE_FALLBACK":
-            Logger.info("📱 Using offline fallback:", data);
+          case 'OFFLINE_FALLBACK':
+            Logger.info('📱 Using offline fallback:', data);
             break;
 
           default:
-            Logger.info("📨 Service Worker message:", type, data);
+            Logger.info('📨 Service Worker message:', type, data);
         }
       });
     }
@@ -284,46 +278,46 @@ export class OfflineService {
 
   // UI Helper Methods
   private updateConnectionStatus(isOnline: boolean): void {
-    const event = new CustomEvent("connectionStatusChanged", {
+    const event = new CustomEvent('connectionStatusChanged', {
       detail: { isOnline },
     });
     window.dispatchEvent(event);
   }
 
   private showInstallButton(): void {
-    const event = new CustomEvent("showInstallPrompt");
+    const event = new CustomEvent('showInstallPrompt');
     window.dispatchEvent(event);
   }
 
   private hideInstallButton(): void {
-    const event = new CustomEvent("hideInstallPrompt");
+    const event = new CustomEvent('hideInstallPrompt');
     window.dispatchEvent(event);
   }
 
   private showUpdateAvailableNotification(): void {
-    this.showLocalNotification("Güncelleme Mevcut", {
+    this.showLocalNotification('Güncelleme Mevcut', {
       body: "Yemek Bulucu'nun yeni sürümü mevcut. Sayfayı yenileyin.",
-      tag: "app-update",
+      tag: 'app-update',
       requireInteraction: true,
     });
   }
 
   private showOfflineNotification(): void {
-    this.showLocalNotification("Çevrimdışı Mod", {
-      body: "İnternet bağlantınız yok. Kaydedilmiş tarifler kullanılabilir.",
-      tag: "offline-mode",
+    this.showLocalNotification('Çevrimdışı Mod', {
+      body: 'İnternet bağlantınız yok. Kaydedilmiş tarifler kullanılabilir.',
+      tag: 'offline-mode',
     });
   }
 
   private showCacheUpdateNotification(): void {
     // Silent notification - sadece console log
-    Logger.info("✨ Tarifler güncellendi");
+    Logger.info('✨ Tarifler güncellendi');
   }
 
   private getCurrentUserId(): string | null {
     // Kullanıcı ID'sini localStorage'dan al
     try {
-      const userSession = localStorage.getItem("user_session");
+      const userSession = localStorage.getItem('user_session');
       return userSession ? JSON.parse(userSession).userId : null;
     } catch {
       return null;
@@ -341,14 +335,14 @@ export class OfflineService {
 
   async updateApp(): Promise<void> {
     if (this.swRegistration && this.swRegistration.waiting) {
-      this.swRegistration.waiting.postMessage({ type: "SKIP_WAITING" });
+      this.swRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
       window.location.reload();
     }
   }
 
   async clearCache(): Promise<void> {
     if (this.swRegistration && this.swRegistration.active) {
-      this.swRegistration.active.postMessage({ type: "CLEAR_CACHE" });
+      this.swRegistration.active.postMessage({ type: 'CLEAR_CACHE' });
     }
   }
 

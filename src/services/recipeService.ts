@@ -25,7 +25,7 @@ export class RecipeService {
       const { ingredients, maxMissingIngredients = 10, userId, useAI = false, userAgent, ipAddress, sessionId } = request;
 
       const isOnline = await MobileStorageService.isOnline();
-      console.log('🔍 Recipe search started:', { ingredients, useAI, userId, offline: !isOnline });
+      console.log('🔍 Recipe search started:', { ingredients, useAI, offline: !isOnline });
 
       // 0. ÖNCE AsyncStorage'dan kontrol et (Mobile Offline-First)
       const cachedResult = await MobileStorageService.getCachedSearchResult(ingredients);
@@ -663,7 +663,7 @@ export class RecipeService {
       // Kullanıcı geçmişine kaydet
       await this.recordUserRecipeHistory(userId, aiResponse.recipes, ingredients, aiResponse.totalTokensUsed);
 
-      console.log(`💎 Credit AI generation: ${creditCheck.userCredits.remainingCredits - 1} credits remaining`);
+      console.log(`💎 Credit AI generation completed`);
       
       return {
         exactMatches: aiResponse.recipes,
@@ -745,7 +745,7 @@ export class RecipeService {
       }));
 
       await supabase.from('user_recipe_history').insert(historyEntries);
-      console.log('✅ User recipe history recorded');
+      console.log('✅ Recipe history recorded successfully');
     } catch (error) {
       console.warn('⚠️ Failed to record user history:', error);
     }

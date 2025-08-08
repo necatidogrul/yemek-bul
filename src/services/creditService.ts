@@ -7,6 +7,7 @@ import {
   FREE_DAILY_CREDITS,
 } from "../types/Credit";
 import { Logger } from "../services/LoggerService";
+import { logSupabaseQuery, logCreditOperation } from "../utils/dataPrivacy";
 
 export class CreditService {
   /**
@@ -42,10 +43,12 @@ export class CreditService {
         .select()
         .single();
 
+      logSupabaseQuery('INSERT', 'user_credits', { data }, error);
+
       if (error) {
         Logger.error(
           "[CreditService] 💥 Failed to create user credits in database:",
-          error
+          error.message
         );
 
         // Return offline version instead of throwing
@@ -381,13 +384,14 @@ export class CreditService {
         relatedAction: action,
       });
 
-      console.log(
-        `✅ Credit spent: User ${userId}, Action: ${action}, Credits: ${creditsNeeded}`
+      Logger.info(
+        `✅ Credit spent successfully`,
+        { action, creditsNeeded }
       );
 
       return { success: true, transaction };
     } catch (error) {
-      console.error("Spend credits error:", error);
+      Logger.error("Spend credits error:", error);
       return { success: false };
     }
   }
@@ -515,13 +519,14 @@ export class CreditService {
         receiptId,
       });
 
-      console.log(
-        `✅ Credits added: User ${userId}, Amount: ${amount}, Type: ${type}`
+      Logger.info(
+        `✅ Credits added successfully`,
+        { amount, type }
       );
 
       return { success: true, transaction };
     } catch (error) {
-      console.error("Add credits error:", error);
+      Logger.error("Add credits error:", error);
       return { success: false };
     }
   }
@@ -580,7 +585,7 @@ export class CreditService {
 
       return (data || []).map(this.mapDatabaseToTransaction);
     } catch (error) {
-      console.error("Get user transactions error:", error);
+      Logger.error("Get user transactions error:", error);
       return [];
     }
   }

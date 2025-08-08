@@ -8,7 +8,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "env:dev": "node scripts/set-environment.js dev",
-    "env:test": "node scripts/set-environment.js test", 
+    "env:test": "node scripts/set-environment.js test",
     "env:prod": "node scripts/set-environment.js prod",
     "clean-console": "node scripts/remove-console-logs.js",
     "prebuild": "npm run clean-console",
@@ -19,10 +19,13 @@
     "submit:ios": "eas submit --platform ios",
     "submit:android": "eas submit --platform android",
     "test": "echo \"Tests not implemented yet\" && exit 1",
-    "lint": "echo \"Linting not configured yet\"",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json}\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-native-community/netinfo": "11.4.1",
@@ -45,6 +48,7 @@
     "lodash": "^4.17.21",
     "lottie-react-native": "^7.2.2",
     "react": "19.0.0",
+    "react-dom": "^19.0.0",
     "react-native": "0.79.5",
     "react-native-device-info": "^14.0.4",
     "react-native-get-random-values": "^1.11.0",
@@ -54,7 +58,8 @@
     "react-native-screens": "~4.11.1",
     "react-native-skeleton-placeholder": "^5.2.4",
     "react-native-svg": "^15.11.2",
-    "react-native-vector-icons": "^10.3.0"
+    "react-native-vector-icons": "^10.3.0",
+    "react-native-web": "^0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

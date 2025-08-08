@@ -1,9 +1,8 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Device from "expo-device";
-import { Recipe } from "../types/Recipe";
-import { Logger } from '../services/LoggerService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Device from 'expo-device';
+import { Recipe } from '../types/Recipe';
 
-const FAVORITES_KEY = "user_favorites";
+const FAVORITES_KEY = 'user_favorites';
 const FREE_FAVORITES_LIMIT = 3; // Ücretsiz kullanıcılar için limit
 
 export class FavoritesService {
@@ -17,27 +16,24 @@ export class FavoritesService {
 
     try {
       // Try to get stored device ID first
-      let deviceId = await AsyncStorage.getItem("device_id");
+      let deviceId = await AsyncStorage.getItem('device_id');
 
       if (!deviceId) {
         // Generate new device ID using device info
-        const deviceName = Device.deviceName || "unknown";
-        const modelName = Device.modelName || "unknown";
+        const deviceName = Device.deviceName || 'unknown';
+        const modelName = Device.modelName || 'unknown';
         const timestamp = Date.now();
 
-        deviceId = `${deviceName}_${modelName}_${timestamp}`.replace(
-          /[^a-zA-Z0-9_]/g,
-          "_"
-        );
+        deviceId = `${deviceName}_${modelName}_${timestamp}`.replace(/[^a-zA-Z0-9_]/g, '_');
 
         // Store for future use
-        await AsyncStorage.setItem("device_id", deviceId);
+        await AsyncStorage.setItem('device_id', deviceId);
       }
 
       this.deviceId = deviceId;
       return deviceId;
     } catch (error) {
-      console.error("Error getting device ID:", error);
+      console.error('Error getting device ID:', error);
       // Fallback to timestamp-based ID
       const fallbackId = `device_${Date.now()}`;
       this.deviceId = fallbackId;
@@ -55,7 +51,7 @@ export class FavoritesService {
       const favorites = JSON.parse(favoritesJson);
       return Array.isArray(favorites) ? favorites : [];
     } catch (error) {
-      console.error("Error reading favorites from storage:", error);
+      console.error('Error reading favorites from storage:', error);
       return [];
     }
   }
@@ -67,46 +63,52 @@ export class FavoritesService {
       await AsyncStorage.setItem(FAVORITES_KEY, favoritesJson);
       return true;
     } catch (error) {
-      console.error("Error saving favorites to storage:", error);
+      console.error('Error saving favorites to storage:', error);
       return false;
     }
   }
 
   // Check if user can add more favorites
-  static async canAddFavorite(isPremium: boolean): Promise<{canAdd: boolean, message?: string}> {
+  static async canAddFavorite(isPremium: boolean): Promise<{ canAdd: boolean; message?: string }> {
     try {
       if (isPremium) {
         return { canAdd: true };
       }
 
       const currentCount = await this.getFavoriteCount();
-      
+
       if (currentCount >= FREE_FAVORITES_LIMIT) {
-        return { 
-          canAdd: false, 
-          message: `Ücretsiz versiyonda en fazla ${FREE_FAVORITES_LIMIT} tarif favorilerinize ekleyebilirsiniz. Premium'a geçerek sınırsız favori ekleyebilirsiniz.` 
+        return {
+          canAdd: false,
+          message: `Ücretsiz versiyonda en fazla ${FREE_FAVORITES_LIMIT} tarif favorilerinize ekleyebilirsiniz. Premium'a geçerek sınırsız favori ekleyebilirsiniz.`,
         };
       }
 
       return { canAdd: true };
     } catch (error) {
-      console.error("Error checking favorite limit:", error);
-      return { canAdd: false, message: "Bir hata oluştu." };
+      console.error('Error checking favorite limit:', error);
+      return { canAdd: false, message: 'Bir hata oluştu.' };
     }
   }
 
   // Add recipe to favorites with premium check
-  static async addToFavorites(recipe: Recipe, isPremium: boolean = false): Promise<{success: boolean, message?: string}> {
+  static async addToFavorites(
+    recipe: Recipe,
+    isPremium: boolean = false,
+  ): Promise<{ success: boolean; message?: string }> {
     try {
       const favorites = await this.getFavoritesFromStorage();
-      
+
       // Check if already exists
       const existingIndex = favorites.findIndex(fav => fav.id === recipe.id);
       if (existingIndex >= 0) {
         // Update existing favorite
         favorites[existingIndex] = { ...recipe, isFavorite: true };
         const success = await this.saveFavoritesToStorage(favorites);
-        return { success, message: success ? "Tarif favorilerinizde güncellendi." : "Güncellenirken hata oluştu." };
+        return {
+          success,
+          message: success ? 'Tarif favorilerinizde güncellendi.' : 'Güncellenirken hata oluştu.',
+        };
       }
 
       // Check limit for new additions
@@ -118,14 +120,14 @@ export class FavoritesService {
       // Add new favorite
       favorites.push({ ...recipe, isFavorite: true });
       const success = await this.saveFavoritesToStorage(favorites);
-      
-      return { 
-        success, 
-        message: success ? "Tarif favorilerinize eklendi!" : "Eklenirken hata oluştu." 
+
+      return {
+        success,
+        message: success ? 'Tarif favorilerinize eklendi!' : 'Eklenirken hata oluştu.',
       };
     } catch (error) {
-      console.error("Error in addToFavorites:", error);
-      return { success: false, message: "Bir hata oluştu." };
+      console.error('Error in addToFavorites:', error);
+      return { success: false, message: 'Bir hata oluştu.' };
     }
   }
 
@@ -136,34 +138,37 @@ export class FavoritesService {
       const filteredFavorites = favorites.filter(fav => fav.id !== recipeId);
       return await this.saveFavoritesToStorage(filteredFavorites);
     } catch (error) {
-      console.error("Error in removeFromFavorites:", error);
+      console.error('Error in removeFromFavorites:', error);
       return false;
     }
   }
 
   // Toggle favorite status with premium check
-  static async toggleFavorite(recipe: Recipe, isPremium: boolean = false): Promise<{success: boolean, message?: string, isAdded?: boolean}> {
+  static async toggleFavorite(
+    recipe: Recipe,
+    isPremium: boolean = false,
+  ): Promise<{ success: boolean; message?: string; isAdded?: boolean }> {
     try {
       const isFavorite = await this.isFavorite(recipe.id);
 
       if (isFavorite) {
         const success = await this.removeFromFavorites(recipe.id);
-        return { 
-          success, 
+        return {
+          success,
           isAdded: false,
-          message: success ? "Tarif favorilerden çıkarıldı." : "Çıkarılırken hata oluştu." 
+          message: success ? 'Tarif favorilerden çıkarıldı.' : 'Çıkarılırken hata oluştu.',
         };
       } else {
         const result = await this.addToFavorites(recipe, isPremium);
-        return { 
-          success: result.success, 
+        return {
+          success: result.success,
           isAdded: result.success,
-          message: result.message 
+          message: result.message,
         };
       }
     } catch (error) {
-      console.error("Error in toggleFavorite:", error);
-      return { success: false, message: "Bir hata oluştu." };
+      console.error('Error in toggleFavorite:', error);
+      return { success: false, message: 'Bir hata oluştu.' };
     }
   }
 
@@ -173,7 +178,7 @@ export class FavoritesService {
       const favorites = await this.getFavoritesFromStorage();
       return favorites.some(fav => fav.id === recipeId);
     } catch (error) {
-      console.error("Error in isFavorite:", error);
+      console.error('Error in isFavorite:', error);
       return false;
     }
   }
@@ -184,7 +189,7 @@ export class FavoritesService {
       const favorites = await this.getFavoritesFromStorage();
       return favorites.map(recipe => ({ ...recipe, isFavorite: true }));
     } catch (error) {
-      console.error("Error in getFavoriteRecipes:", error);
+      console.error('Error in getFavoriteRecipes:', error);
       return [];
     }
   }
@@ -195,7 +200,7 @@ export class FavoritesService {
       const favorites = await this.getFavoritesFromStorage();
       return favorites.length;
     } catch (error) {
-      console.error("Error in getFavoriteCount:", error);
+      console.error('Error in getFavoriteCount:', error);
       return 0;
     }
   }
@@ -210,7 +215,7 @@ export class FavoritesService {
       const currentCount = await this.getFavoriteCount();
       return Math.max(0, FREE_FAVORITES_LIMIT - currentCount);
     } catch (error) {
-      console.error("Error getting remaining slots:", error);
+      console.error('Error getting remaining slots:', error);
       return 0;
     }
   }
@@ -220,15 +225,15 @@ export class FavoritesService {
     try {
       const favorites = await this.getFavoritesFromStorage();
       const existingIndex = favorites.findIndex(fav => fav.id === recipe.id);
-      
+
       if (existingIndex >= 0) {
         favorites[existingIndex] = { ...recipe, isFavorite: true };
         return await this.saveFavoritesToStorage(favorites);
       }
-      
+
       return false; // Recipe not found in favorites
     } catch (error) {
-      console.error("Error in updateFavoriteRecipe:", error);
+      console.error('Error in updateFavoriteRecipe:', error);
       return false;
     }
   }
@@ -239,7 +244,7 @@ export class FavoritesService {
       await AsyncStorage.removeItem(FAVORITES_KEY);
       return true;
     } catch (error) {
-      console.error("Error in clearAllFavorites:", error);
+      console.error('Error in clearAllFavorites:', error);
       return false;
     }
   }
@@ -250,7 +255,7 @@ export class FavoritesService {
       const favorites = await this.getFavoritesFromStorage();
       return JSON.stringify(favorites, null, 2);
     } catch (error) {
-      console.error("Error in exportFavorites:", error);
+      console.error('Error in exportFavorites:', error);
       return null;
     }
   }
@@ -264,7 +269,7 @@ export class FavoritesService {
       }
       return false;
     } catch (error) {
-      console.error("Error in importFavorites:", error);
+      console.error('Error in importFavorites:', error);
       return false;
     }
   }

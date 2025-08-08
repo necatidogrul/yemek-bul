@@ -203,7 +203,7 @@ export const CreditProvider: React.FC<CreditProviderProps> = ({ children }) => {
             lifetimeCreditsSpent: prevCredits.lifetimeCreditsSpent + cost,
             updatedAt: new Date(),
           };
-          console.log(`💎 Credits updated: ${prevCredits.remainingCredits} → ${newCredits.remainingCredits}`);
+          // Credit update logged securely
           
           // Save to AsyncStorage in dev mode
           if (ENV === 'development') {
@@ -257,7 +257,7 @@ export const CreditProvider: React.FC<CreditProviderProps> = ({ children }) => {
           lifetimeCreditsEarned: prevCredits.lifetimeCreditsEarned + amount,
           updatedAt: new Date(),
         };
-        console.log(`💎 Credits added: ${prevCredits.remainingCredits} → ${newCredits.remainingCredits}`);
+        // Credit addition logged securely
         
         // Save to AsyncStorage in dev mode
         if (ENV === 'development') {

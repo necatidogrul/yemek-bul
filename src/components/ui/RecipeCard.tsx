@@ -1,40 +1,40 @@
-import React, { memo } from "react";
-import { TouchableOpacity, View, StyleSheet, Dimensions } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { Recipe } from "../../types/Recipe";
-import Card from "./Card";
-import Text from "./Text";
-import { FavoriteButton } from "./FavoriteButton";
-import { OptimizedImage } from "./OptimizedImage";
-import { useTheme } from "../../contexts/ThemeContext";
-import { spacing, borderRadius, shadows } from "../../contexts/ThemeContext";
+import React, { memo } from 'react';
+import { TouchableOpacity, View, StyleSheet, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Recipe } from '../../types/Recipe';
+import Card from './Card';
+import Text from './Text';
+import { FavoriteButton } from './FavoriteButton';
+import { OptimizedImage } from './OptimizedImage';
+import { useTheme } from '../../contexts/ThemeContext';
+import { spacing, borderRadius, shadows } from '../../contexts/ThemeContext';
 
-const { width: screenWidth } = Dimensions.get("window");
+const { width: screenWidth } = Dimensions.get('window');
 
 interface RecipeCardProps {
   recipe: Recipe;
-  variant?: "default" | "compact" | "featured" | "grid";
+  variant?: 'default' | 'compact' | 'featured' | 'grid';
   onPress: () => void;
 }
 
 const RecipeCardComponent: React.FC<RecipeCardProps> = ({
   recipe,
-  variant = "default",
+  variant = 'default',
   onPress,
 }) => {
   const { colors, spacing, borderRadius, elevation } = useTheme();
 
   const getDifficultyColor = (difficulty?: string) => {
     switch (difficulty?.toLowerCase()) {
-      case "easy":
-      case "kolay":
+      case 'easy':
+      case 'kolay':
         return colors.semantic.success;
-      case "medium":
-      case "orta":
+      case 'medium':
+      case 'orta':
         return colors.semantic.warning;
-      case "hard":
-      case "zor":
+      case 'hard':
+      case 'zor':
         return colors.semantic.error;
       default:
         return colors.neutral[400];
@@ -43,25 +43,23 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
 
   const getDifficultyIcon = (difficulty?: string) => {
     switch (difficulty?.toLowerCase()) {
-      case "easy":
-      case "kolay":
-        return "checkmark-circle";
-      case "medium":
-      case "orta":
-        return "pause-circle";
-      case "hard":
-      case "zor":
-        return "alert-circle";
+      case 'easy':
+      case 'kolay':
+        return 'checkmark-circle';
+      case 'medium':
+      case 'orta':
+        return 'pause-circle';
+      case 'hard':
+      case 'zor':
+        return 'alert-circle';
       default:
-        return "help-circle";
+        return 'help-circle';
     }
   };
 
   const getMatchPercentage = () => {
     if (!recipe.matchingIngredients || !recipe.totalIngredients) return 0;
-    return Math.round(
-      (recipe.matchingIngredients / recipe.totalIngredients) * 100
-    );
+    return Math.round((recipe.matchingIngredients / recipe.totalIngredients) * 100);
   };
 
   const getMatchColor = (percentage: number) => {
@@ -70,18 +68,14 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
     return colors.semantic.error;
   };
 
-  const isCompact = variant === "compact";
-  const isFeatured = variant === "featured";
-  const isGrid = variant === "grid";
+  const isCompact = variant === 'compact';
+  const isFeatured = variant === 'featured';
+  const isGrid = variant === 'grid';
   const matchPercentage = getMatchPercentage();
 
   if (isGrid) {
     return (
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.8}
-        style={styles.gridContainer}
-      >
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.gridContainer}>
         <Card variant="elevated" size="md" style={styles.gridCard}>
           {/* Image Placeholder with Gradient */}
           <View style={styles.gridImageContainer}>
@@ -96,16 +90,9 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
 
             {/* Match Badge */}
             <View
-              style={[
-                styles.gridMatchBadge,
-                { backgroundColor: getMatchColor(matchPercentage) },
-              ]}
+              style={[styles.gridMatchBadge, { backgroundColor: getMatchColor(matchPercentage) }]}
             >
-              <Text
-                variant="labelSmall"
-                weight="600"
-                style={{ color: "white" }}
-              >
+              <Text variant="labelSmall" weight="600" style={{ color: 'white' }}>
                 %{matchPercentage}
               </Text>
             </View>
@@ -118,36 +105,23 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
 
           {/* Content */}
           <View style={styles.gridContent}>
-            <Text
-              variant="bodyLarge"
-              weight="semibold"
-              numberOfLines={2}
-              style={styles.gridTitle}
-            >
+            <Text variant="bodyLarge" weight="semibold" numberOfLines={2} style={styles.gridTitle}>
               {recipe.name}
             </Text>
 
             {/* Stats Row */}
             <View style={styles.gridStats}>
               <View style={styles.gridStatItem}>
-                <Ionicons
-                  name="time-outline"
-                  size={14}
-                  color={colors.neutral[500]}
-                />
+                <Ionicons name="time-outline" size={14} color={colors.neutral[500]} />
                 <Text variant="caption" color="secondary">
-                  {recipe.cookingTime || "30"}dk
+                  {recipe.cookingTime || '30'}dk
                 </Text>
               </View>
 
               <View style={styles.gridStatItem}>
-                <Ionicons
-                  name="people-outline"
-                  size={14}
-                  color={colors.neutral[500]}
-                />
+                <Ionicons name="people-outline" size={14} color={colors.neutral[500]} />
                 <Text variant="caption" color="secondary">
-                  {recipe.servings || "4"}
+                  {recipe.servings || '4'}
                 </Text>
               </View>
             </View>
@@ -158,9 +132,7 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
                 style={[
                   styles.gridDifficultyBadge,
                   {
-                    backgroundColor: `${getDifficultyColor(
-                      recipe.difficulty
-                    )}20`,
+                    backgroundColor: `${getDifficultyColor(recipe.difficulty)}20`,
                   },
                 ]}
               >
@@ -202,7 +174,7 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
             {/* Featured Badge */}
             <View style={styles.featuredBadge}>
               <Ionicons name="star" size={16} color="white" />
-              <Text variant="caption" weight="bold" style={{ color: "white" }}>
+              <Text variant="caption" weight="bold" style={{ color: 'white' }}>
                 Öne Çıkan
               </Text>
             </View>
@@ -214,10 +186,10 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
                 { backgroundColor: getMatchColor(matchPercentage) },
               ]}
             >
-              <Text variant="h6" weight="bold" style={{ color: "white" }}>
+              <Text variant="h6" weight="bold" style={{ color: 'white' }}>
                 %{matchPercentage}
               </Text>
-              <Text variant="caption" style={{ color: "white" }}>
+              <Text variant="caption" style={{ color: 'white' }}>
                 Eşleşme
               </Text>
             </View>
@@ -236,9 +208,7 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
                     style={[
                       styles.featuredDifficultyBadge,
                       {
-                        backgroundColor: `${getDifficultyColor(
-                          recipe.difficulty
-                        )}20`,
+                        backgroundColor: `${getDifficultyColor(recipe.difficulty)}20`,
                       },
                     ]}
                   >
@@ -264,16 +234,11 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
             {/* Enhanced Stats */}
             <View style={styles.featuredStatsContainer}>
               <View style={styles.featuredStatCard}>
-                <View
-                  style={[
-                    styles.featuredStatIcon,
-                    { backgroundColor: colors.primary[50] },
-                  ]}
-                >
+                <View style={[styles.featuredStatIcon, { backgroundColor: colors.primary[50] }]}>
                   <Ionicons name="time" size={18} color={colors.primary[500]} />
                 </View>
                 <Text variant="bodySmall" weight="semibold">
-                  {recipe.cookingTime || "30"} dk
+                  {recipe.cookingTime || '30'} dk
                 </Text>
                 <Text variant="caption" color="secondary">
                   Hazırlık
@@ -287,14 +252,10 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
                     { backgroundColor: colors.semantic.success[50] },
                   ]}
                 >
-                  <Ionicons
-                    name="people"
-                    size={18}
-                    color={colors.semantic.success[500]}
-                  />
+                  <Ionicons name="people" size={18} color={colors.semantic.success[500]} />
                 </View>
                 <Text variant="bodySmall" weight="semibold">
-                  {recipe.servings || "4"} kişi
+                  {recipe.servings || '4'} kişi
                 </Text>
                 <Text variant="caption" color="secondary">
                   Porsiyon
@@ -321,18 +282,11 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
 
             {/* Action Button */}
             <TouchableOpacity
-              style={[
-                styles.featuredActionButton,
-                { backgroundColor: colors.primary[500] },
-              ]}
+              style={[styles.featuredActionButton, { backgroundColor: colors.primary[500] }]}
               onPress={onPress}
               activeOpacity={0.8}
             >
-              <Text
-                variant="bodyLarge"
-                weight="semibold"
-                style={{ color: "white" }}
-              >
+              <Text variant="bodyLarge" weight="semibold" style={{ color: 'white' }}>
                 Tarifi İncele
               </Text>
               <Ionicons name="arrow-forward" size={20} color="white" />
@@ -348,14 +302,14 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <Card
         variant="elevated"
-        size={isCompact ? "md" : "lg"}
+        size={isCompact ? 'md' : 'lg'}
         style={[styles.card, isCompact ? styles.compactCard : {}]}
       >
         {/* Modern Header */}
         <View style={styles.header}>
           <View style={styles.titleSection}>
             <Text
-              variant={isCompact ? "h6" : "h5"}
+              variant={isCompact ? 'h6' : 'h5'}
               weight="semibold"
               numberOfLines={2}
               style={styles.title}
@@ -365,16 +319,10 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
 
             {/* Match Score Pill */}
             <View
-              style={[
-                styles.matchPill,
-                { backgroundColor: `${getMatchColor(matchPercentage)}20` },
-              ]}
+              style={[styles.matchPill, { backgroundColor: `${getMatchColor(matchPercentage)}20` }]}
             >
               <View
-                style={[
-                  styles.matchDot,
-                  { backgroundColor: getMatchColor(matchPercentage) },
-                ]}
+                style={[styles.matchDot, { backgroundColor: getMatchColor(matchPercentage) }]}
               />
               <Text
                 variant="caption"
@@ -387,29 +335,17 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
           </View>
 
           <View style={styles.headerActions}>
-            <FavoriteButton
-              recipe={recipe}
-              size={isCompact ? "small" : "medium"}
-            />
+            <FavoriteButton recipe={recipe} size={isCompact ? 'small' : 'medium'} />
           </View>
         </View>
 
         {/* Image Container */}
-        <View
-          style={[
-            styles.imageContainer,
-            isCompact && styles.compactImageContainer,
-          ]}
-        >
+        <View style={[styles.imageContainer, isCompact && styles.compactImageContainer]}>
           <LinearGradient
             colors={[colors.neutral[100], colors.neutral[200]]}
             style={styles.imageGradient}
           >
-            <Ionicons
-              name="image-outline"
-              size={isCompact ? 28 : 36}
-              color={colors.neutral[400]}
-            />
+            <Ionicons name="image-outline" size={isCompact ? 28 : 36} color={colors.neutral[400]} />
           </LinearGradient>
 
           {/* Difficulty Badge on Image */}
@@ -425,7 +361,7 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
                 size={12}
                 color="white"
               />
-              <Text variant="caption" weight="bold" style={{ color: "white" }}>
+              <Text variant="caption" weight="bold" style={{ color: 'white' }}>
                 {recipe.difficulty}
               </Text>
             </View>
@@ -435,21 +371,12 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
         {/* Enhanced Stats */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
-            <View
-              style={[
-                styles.statIconContainer,
-                { backgroundColor: colors.primary[50] },
-              ]}
-            >
-              <Ionicons
-                name="time-outline"
-                size={16}
-                color={colors.primary[500]}
-              />
+            <View style={[styles.statIconContainer, { backgroundColor: colors.primary[50] }]}>
+              <Ionicons name="time-outline" size={16} color={colors.primary[500]} />
             </View>
             <View style={styles.statTextContainer}>
               <Text variant="bodySmall" weight="semibold">
-                {recipe.cookingTime || "30"} dk
+                {recipe.cookingTime || '30'} dk
               </Text>
               <Text variant="caption" color="secondary">
                 Süre
@@ -458,21 +385,12 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
           </View>
 
           <View style={styles.statBox}>
-            <View
-              style={[
-                styles.statIconContainer,
-                { backgroundColor: colors.success[50] },
-              ]}
-            >
-              <Ionicons
-                name="people-outline"
-                size={16}
-                color={colors.success[500]}
-              />
+            <View style={[styles.statIconContainer, { backgroundColor: colors.success[50] }]}>
+              <Ionicons name="people-outline" size={16} color={colors.success[500]} />
             </View>
             <View style={styles.statTextContainer}>
               <Text variant="bodySmall" weight="semibold">
-                {recipe.servings || "4"} kişi
+                {recipe.servings || '4'} kişi
               </Text>
               <Text variant="caption" color="secondary">
                 Porsiyon
@@ -481,17 +399,8 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
           </View>
 
           <View style={styles.statBox}>
-            <View
-              style={[
-                styles.statIconContainer,
-                { backgroundColor: colors.warning[50] },
-              ]}
-            >
-              <Ionicons
-                name="restaurant-outline"
-                size={16}
-                color={colors.semantic.warning[500]}
-              />
+            <View style={[styles.statIconContainer, { backgroundColor: colors.warning[50] }]}>
+              <Ionicons name="restaurant-outline" size={16} color={colors.semantic.warning[500]} />
             </View>
             <View style={styles.statTextContainer}>
               <Text variant="bodySmall" weight="semibold">
@@ -516,40 +425,25 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
             ]}
           >
             <View style={styles.missingHeader}>
-              <Ionicons
-                name="alert-circle"
-                size={16}
-                color={colors.semantic.warning[500]}
-              />
-              <Text
-                variant="bodySmall"
-                weight="medium"
-                style={{ color: colors.warning[700] }}
-              >
+              <Ionicons name="alert-circle" size={16} color={colors.semantic.warning[500]} />
+              <Text variant="bodySmall" weight="medium" style={{ color: colors.warning[700] }}>
                 {recipe.missingIngredients.length} eksik malzeme
               </Text>
             </View>
             <Text variant="caption" color="secondary" numberOfLines={1}>
-              {recipe.missingIngredients.slice(0, 2).join(", ")}
-              {recipe.missingIngredients.length > 2 && "..."}
+              {recipe.missingIngredients.slice(0, 2).join(', ')}
+              {recipe.missingIngredients.length > 2 && '...'}
             </Text>
           </View>
         )}
 
         {/* Action Button */}
         <TouchableOpacity
-          style={[
-            styles.actionButton,
-            { backgroundColor: colors.primary[500] },
-          ]}
+          style={[styles.actionButton, { backgroundColor: colors.primary[500] }]}
           onPress={onPress}
           activeOpacity={0.8}
         >
-          <Text
-            variant="bodySmall"
-            weight="semibold"
-            style={{ color: "white" }}
-          >
+          <Text variant="bodySmall" weight="semibold" style={{ color: 'white' }}>
             Tarifi Görüntüle
           </Text>
           <Ionicons name="arrow-forward" size={16} color="white" />
@@ -570,9 +464,9 @@ const styles = StyleSheet.create({
 
   // Header Styles
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: 20,
   },
   titleSection: {
@@ -583,14 +477,14 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   headerActions: {
-    alignItems: "center",
+    alignItems: 'center',
   },
 
   // Match Score Pill
   matchPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
     paddingHorizontal: 12,
     paddingVertical: 4,
     borderRadius: 999,
@@ -607,23 +501,23 @@ const styles = StyleSheet.create({
     height: 140,
     borderRadius: 12,
     marginBottom: 16,
-    position: "relative",
-    overflow: "hidden",
+    position: 'relative',
+    overflow: 'hidden',
   },
   compactImageContainer: {
     height: 100,
   },
   imageGradient: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   imageDifficultyBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: 8,
     right: 8,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 999,
@@ -632,13 +526,13 @@ const styles = StyleSheet.create({
 
   // Stats Styles
   statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
   statBox: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
     gap: 8,
   },
@@ -646,8 +540,8 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statTextContainer: {
     flex: 1,
@@ -661,17 +555,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   missingHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.tiny,
   },
 
   // Action Button
   actionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing.md,
     borderRadius: borderRadius.large,
     gap: spacing.sm,
@@ -688,16 +582,16 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: borderRadius.large,
     marginBottom: spacing.md,
-    position: "relative",
-    overflow: "hidden",
+    position: 'relative',
+    overflow: 'hidden',
   },
   gridImageGradient: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   gridMatchBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: spacing.sm,
     left: spacing.sm,
     paddingHorizontal: spacing.sm,
@@ -705,7 +599,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   gridFavoriteButton: {
-    position: "absolute",
+    position: 'absolute',
     top: spacing.sm,
     right: spacing.sm,
   },
@@ -717,19 +611,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   gridStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: spacing.sm,
   },
   gridStatItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.tiny,
   },
   gridDifficultyBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.tiny,
     borderRadius: 9999,
@@ -739,35 +633,35 @@ const styles = StyleSheet.create({
   // Featured Variant Styles
   featuredCard: {
     marginBottom: spacing.xxl,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   featuredImageContainer: {
     height: 180,
-    position: "relative",
-    overflow: "hidden",
+    position: 'relative',
+    overflow: 'hidden',
   },
   featuredImageGradient: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   featuredBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: spacing.md,
     left: spacing.md,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.7)",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: 9999,
     gap: spacing.tiny,
   },
   featuredMatchScore: {
-    position: "absolute",
+    position: 'absolute',
     top: spacing.md,
     right: spacing.md,
-    alignItems: "center",
+    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.large,
@@ -776,9 +670,9 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   featuredHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: spacing.xl,
   },
   featuredTitleContainer: {
@@ -786,9 +680,9 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   featuredDifficultyBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    alignSelf: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: 9999,
@@ -796,30 +690,30 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   featuredStatsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: spacing.xl,
   },
   featuredStatCard: {
-    alignItems: "center",
+    alignItems: 'center',
     flex: 1,
   },
   featuredStatIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.sm,
   },
   featuredActionButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing.lg,
     borderRadius: borderRadius.large,
     gap: spacing.sm,
-    shadowColor: "#000000",
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
@@ -832,7 +726,6 @@ export const RecipeCard = memo(RecipeCardComponent, (prevProps, nextProps) => {
   return (
     prevProps.recipe.id === nextProps.recipe.id &&
     prevProps.variant === nextProps.variant &&
-    prevProps.recipe.matchingIngredients ===
-      nextProps.recipe.matchingIngredients
+    prevProps.recipe.matchingIngredients === nextProps.recipe.matchingIngredients
   );
 });

@@ -52,7 +52,7 @@ export class MockRevenueCatService {
   static async identifyUser(userId: string): Promise<boolean> {
     this.currentUserId = userId;
     await AsyncStorage.setItem('mock_user_id', userId);
-    console.log(`🧪 Mock user identified: ${userId}`);
+    console.log(`🧪 Mock user identified successfully`);
     return true;
   }
 
@@ -171,7 +171,7 @@ export class MockRevenueCatService {
   static async logout(): Promise<void> {
     this.currentUserId = null;
     await AsyncStorage.multiRemove([MOCK_STORAGE_KEY, 'mock_user_id']);
-    console.log('🧪 Mock user logged out');
+    console.log('🧪 Mock user logged out successfully');
   }
 
   static getCurrentUserId(): string | null {
@@ -213,7 +213,7 @@ export class MockRevenueCatService {
     credits?: number;
     error?: string;
   }> {
-    console.log(`🧪 Mock credit purchase: ${packageId}`);
+    console.log(`🧪 Mock credit purchase completed`);
     // Simulate successful credit purchase
     return {
       success: true,

@@ -1,14 +1,13 @@
-import { supabase } from "./supabase";
-import { AIRequestHistory, HistoryStats } from "../types/History";
-import { HistoryService } from "./historyService";
-import { Logger } from "../services/LoggerService";
+import { supabase } from './supabase';
+import { AIRequestHistory } from '../types/History';
+import { HistoryService } from './historyService';
 
 /**
  * Cloud-based history service using Supabase
  * Bu servis kullanıcı history'sini bulutta saklar ve cihazlar arası senkronizasyon sağlar
  */
 class CloudHistoryService {
-  private static readonly TABLE_NAME = "user_history";
+  private static readonly TABLE_NAME = 'user_history';
 
   /**
    * Kullanıcının cloud history'sini çeker
@@ -17,13 +16,13 @@ class CloudHistoryService {
     try {
       const { data, error } = await supabase
         .from(this.TABLE_NAME)
-        .select("*")
-        .eq("user_id", userId)
-        .order("timestamp", { ascending: false })
+        .select('*')
+        .eq('user_id', userId)
+        .order('timestamp', { ascending: false })
         .limit(100);
 
       if (error) {
-        console.error("❌ Failed to get cloud history:", error);
+        console.error('❌ Failed to get cloud history:', error);
         return [];
       }
 
@@ -39,7 +38,7 @@ class CloudHistoryService {
         })) || []
       );
     } catch (error) {
-      console.error("❌ Cloud history fetch error:", error);
+      console.error('❌ Cloud history fetch error:', error);
       return [];
     }
   }
@@ -47,10 +46,7 @@ class CloudHistoryService {
   /**
    * History'yi cloud'a kaydeder
    */
-  static async saveToCloud(
-    userId: string,
-    historyItem: AIRequestHistory
-  ): Promise<boolean> {
+  static async saveToCloud(userId: string, historyItem: AIRequestHistory): Promise<boolean> {
     try {
       const { error } = await supabase.from(this.TABLE_NAME).insert([
         {
@@ -66,14 +62,14 @@ class CloudHistoryService {
       ]);
 
       if (error) {
-        console.error("❌ Failed to save to cloud:", error);
+        console.error('❌ Failed to save to cloud:', error);
         return false;
       }
 
-      console.log("☁️ History saved to cloud:", historyItem.id);
+      console.log('☁️ History saved to cloud:', historyItem.id);
       return true;
     } catch (error) {
-      console.error("❌ Cloud save error:", error);
+      console.error('❌ Cloud save error:', error);
       return false;
     }
   }
@@ -83,7 +79,7 @@ class CloudHistoryService {
    */
   static async syncHistory(userId: string): Promise<void> {
     try {
-      console.log("🔄 Starting history sync for user:", userId);
+      console.log('🔄 Starting history sync for authenticated user');
 
       // Cloud'dan history'yi çek
       const cloudHistory = await this.getCloudHistory(userId);
@@ -93,9 +89,7 @@ class CloudHistoryService {
 
       // Cloud'da olmayan local kayıtları bulut'a yükle
       for (const localItem of localHistory) {
-        const existsInCloud = cloudHistory.some(
-          (cloudItem) => cloudItem.id === localItem.id
-        );
+        const existsInCloud = cloudHistory.some(cloudItem => cloudItem.id === localItem.id);
         if (!existsInCloud) {
           await this.saveToCloud(userId, localItem);
         }
@@ -103,9 +97,7 @@ class CloudHistoryService {
 
       // Local'de olmayan cloud kayıtları local'e indir
       for (const cloudItem of cloudHistory) {
-        const existsLocal = localHistory.some(
-          (localItem) => localItem.id === cloudItem.id
-        );
+        const existsLocal = localHistory.some(localItem => localItem.id === cloudItem.id);
         if (!existsLocal) {
           // Local'e ekle (HistoryService'i güncellemek yerine doğrudan AsyncStorage'a ekle)
           const updatedLocal = [cloudItem, ...localHistory].slice(0, 100); // Max 100 kayıt
@@ -113,9 +105,9 @@ class CloudHistoryService {
         }
       }
 
-      console.log("✅ History sync completed");
+      console.log('✅ History sync completed');
     } catch (error) {
-      console.error("❌ History sync failed:", error);
+      console.error('❌ History sync failed:', error);
     }
   }
 
@@ -124,20 +116,17 @@ class CloudHistoryService {
    */
   static async clearCloudHistory(userId: string): Promise<boolean> {
     try {
-      const { error } = await supabase
-        .from(this.TABLE_NAME)
-        .delete()
-        .eq("user_id", userId);
+      const { error } = await supabase.from(this.TABLE_NAME).delete().eq('user_id', userId);
 
       if (error) {
-        console.error("❌ Failed to clear cloud history:", error);
+        console.error('❌ Failed to clear cloud history:', error);
         return false;
       }
 
-      console.log("🗑️ Cloud history cleared for user:", userId);
+      console.log('🗑️ Cloud history cleared for authenticated user');
       return true;
     } catch (error) {
-      console.error("❌ Cloud clear error:", error);
+      console.error('❌ Cloud clear error:', error);
       return false;
     }
   }
@@ -145,26 +134,23 @@ class CloudHistoryService {
   /**
    * Belirli bir history item'ı cloud'dan siler
    */
-  static async deleteFromCloud(
-    userId: string,
-    historyId: string
-  ): Promise<boolean> {
+  static async deleteFromCloud(userId: string, historyId: string): Promise<boolean> {
     try {
       const { error } = await supabase
         .from(this.TABLE_NAME)
         .delete()
-        .eq("user_id", userId)
-        .eq("id", historyId);
+        .eq('user_id', userId)
+        .eq('id', historyId);
 
       if (error) {
-        console.error("❌ Failed to delete from cloud:", error);
+        console.error('❌ Failed to delete from cloud:', error);
         return false;
       }
 
-      console.log("🗑️ History item deleted from cloud:", historyId);
+      console.log('🗑️ History item deleted from cloud:', historyId);
       return true;
     } catch (error) {
-      console.error("❌ Cloud delete error:", error);
+      console.error('❌ Cloud delete error:', error);
       return false;
     }
   }
@@ -172,10 +158,7 @@ class CloudHistoryService {
   /**
    * Auto-sync özelliği: Belirli aralıklarla senkronize eder
    */
-  static async enableAutoSync(
-    userId: string,
-    intervalMinutes: number = 30
-  ): Promise<void> {
+  static async enableAutoSync(userId: string, intervalMinutes: number = 30): Promise<void> {
     const intervalMs = intervalMinutes * 60 * 1000;
 
     // İlk senkronizasyonu hemen yap
@@ -186,32 +169,26 @@ class CloudHistoryService {
       try {
         await this.syncHistory(userId);
       } catch (error) {
-        console.error("❌ Auto-sync failed:", error);
+        console.error('❌ Auto-sync failed:', error);
       }
     }, intervalMs);
 
-    console.log(
-      `🔄 Auto-sync enabled for user ${userId} every ${intervalMinutes} minutes`
-    );
+    console.log(`🔄 Auto-sync enabled every ${intervalMinutes} minutes`);
 
     // Interval'i temizleme fonksiyonunu döndür
     clearInterval(syncInterval);
-    console.log("🛑 Auto-sync disabled");
+    console.log('🛑 Auto-sync disabled');
   }
 
   /**
    * Local history'yi günceller (private helper)
    */
-  private static async updateLocalHistory(
-    history: AIRequestHistory[]
-  ): Promise<void> {
+  private static async updateLocalHistory(history: AIRequestHistory[]): Promise<void> {
     try {
-      const { default: AsyncStorage } = await import(
-        "@react-native-async-storage/async-storage"
-      );
-      await AsyncStorage.setItem("ai_request_history", JSON.stringify(history));
+      const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
+      await AsyncStorage.setItem('ai_request_history', JSON.stringify(history));
     } catch (error) {
-      console.error("❌ Failed to update local history:", error);
+      console.error('❌ Failed to update local history:', error);
     }
   }
 
@@ -236,7 +213,7 @@ class CloudHistoryService {
         syncEnabled: true, // Bu özellik için kullanıcı ayarları eklenebilir
       };
     } catch (error) {
-      console.error("❌ Failed to get sync status:", error);
+      console.error('❌ Failed to get sync status:', error);
       return {
         cloudCount: 0,
         localCount: 0,

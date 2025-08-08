@@ -1,29 +1,24 @@
-import React, { useState, useEffect } from "react";
-import { TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import {
-  colors,
-  spacing,
-  borderRadius,
-  shadows,
-} from "../../theme/design-tokens";
+import React, { useState, useEffect } from 'react';
+import { TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, borderRadius, shadows } from '../../theme/design-tokens';
 import { Logger } from '../../services/LoggerService';
-import { Recipe } from "../../types/Recipe";
-import { FavoritesService } from "../../services/FavoritesService";
-import { CreditService } from "../../services/creditService";
-import { RevenueCatService } from "../../services/RevenueCatService";
-import { PremiumLimitsService } from "../../services/PremiumLimitsService";
+import { Recipe } from '../../types/Recipe';
+import { FavoritesService } from '../../services/FavoritesService';
+import { CreditService } from '../../services/creditService';
+import { RevenueCatService } from '../../services/RevenueCatService';
+import { PremiumLimitsService } from '../../services/PremiumLimitsService';
 
 interface FavoriteButtonProps {
   recipe: Recipe;
-  size?: "small" | "medium" | "large";
+  size?: 'small' | 'medium' | 'large';
   style?: any;
   onUpgradeRequired?: () => void;
 }
 
 export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   recipe,
-  size = "medium",
+  size = 'medium',
   style,
   onUpgradeRequired,
 }) => {
@@ -39,7 +34,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       const favoriteStatus = await FavoritesService.isFavorite(recipe.id);
       setIsFavorite(favoriteStatus);
     } catch (error) {
-      console.error("Error checking favorite status:", error);
+      console.error('Error checking favorite status:', error);
     }
   };
 
@@ -48,10 +43,10 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
     // Get current user ID
     const userId = RevenueCatService.getCurrentUserId() || 'anonymous';
-    
+
     // Check if user is premium
     const isPremium = await RevenueCatService.isPremiumUser();
-    
+
     if (isPremium) {
       // Premium user - check monthly limits
       try {
@@ -68,7 +63,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
             }
             return;
           }
-          
+
           await PremiumLimitsService.recordFavoriteUsage(userId);
           await toggleFavoriteAction();
         }
@@ -93,7 +88,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
           }
           return;
         }
-        
+
         await toggleFavoriteAction();
       }
     }
@@ -105,14 +100,14 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       // Check if user is premium to determine if we should apply limits
       const isPremium = await RevenueCatService.isPremiumUser();
       const result = await FavoritesService.toggleFavorite(recipe, isPremium);
-      
+
       if (result.success) {
         setIsFavorite(result.isAdded || false);
       } else if (result.message) {
         Logger.warn('Favorite toggle failed:', result.message);
       }
     } catch (error) {
-      console.error("Error toggling favorite:", error);
+      console.error('Error toggling favorite:', error);
     } finally {
       setIsLoading(false);
     }
@@ -120,12 +115,12 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
   const getSizeStyles = () => {
     switch (size) {
-      case "small":
+      case 'small':
         return {
           container: { width: 32, height: 32 },
           icon: 20,
         };
-      case "large":
+      case 'large':
         return {
           container: { width: 48, height: 48 },
           icon: 28,
@@ -162,7 +157,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         />
       ) : (
         <Ionicons
-          name={isFavorite ? "heart" : "heart-outline"}
+          name={isFavorite ? 'heart' : 'heart-outline'}
           size={sizeStyles.icon}
           color={isFavorite ? colors.neutral[0] : colors.error[500]}
         />
@@ -175,8 +170,8 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: borderRadius.full,
     borderWidth: 2,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     ...shadows.sm,
   },
 });

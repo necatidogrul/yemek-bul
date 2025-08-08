@@ -28,17 +28,19 @@ interface PaywallModalProps {
 const FEATURE_CONTENT = {
   recipe_limit: {
     title: '📖 Günlük Tarif Limitiniz Doldu',
-    description: 'Bugün için ücretsiz tarif görüntüleme hakkınız bitti. Premium ile sınırsız tarif keşfedin!',
+    description:
+      'Bugün için ücretsiz tarif görüntüleme hakkınız bitti. Premium ile sınırsız tarif keşfedin!',
     icon: '📚',
   },
   search_limit: {
-    title: '🔍 Günlük Arama Limitiniz Doldu', 
+    title: '🔍 Günlük Arama Limitiniz Doldu',
     description: 'Bugün için ücretsiz arama hakkınız bitti. Premium ile sınırsız arama yapın!',
     icon: '🔎',
   },
   favorites: {
     title: '❤️ Favoriler Premium Özellik',
-    description: 'Sevdiğiniz tarifleri favorilere almak ve koleksiyonlar oluşturmak premium özelliğidir.',
+    description:
+      'Sevdiğiniz tarifleri favorilere almak ve koleksiyonlar oluşturmak premium özelliğidir.',
     icon: '⭐',
   },
   ai_chat: {
@@ -52,8 +54,8 @@ const FEATURE_CONTENT = {
     icon: '⚙️',
   },
   general: {
-    title: '👑 Premium\'a Geçin',
-    description: 'Yemek Bulucu\'nun tüm özelliklerinin keyfini çıkarın!',
+    title: "👑 Premium'a Geçin",
+    description: "Yemek Bulucu'nun tüm özelliklerinin keyfini çıkarın!",
     icon: '🌟',
   },
 };
@@ -65,14 +67,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
   title,
   description,
 }) => {
-  const { 
-    isPremium, 
-    purchasePremium, 
-    isLoading, 
-    availableOfferings,
-    isInFreeTrial,
-    subscriptionInfo 
-  } = usePremium();
+  const { isPremium, purchasePremium, isLoading, availableOfferings, isInFreeTrial } = usePremium();
   const [isProcessing, setIsProcessing] = useState(false);
   const [usageStats, setUsageStats] = useState<any>(null);
   const [timeUntilReset, setTimeUntilReset] = useState('');
@@ -109,7 +104,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
     try {
       setIsProcessing(true);
       const success = await purchasePremium(selectedPackage);
-      
+
       if (success) {
         onClose();
       }
@@ -119,18 +114,18 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
       setIsProcessing(false);
     }
   };
-  
+
   // Get best package to display (monthly by default)
   const getBestPackage = () => {
     if (availableOfferings.length === 0) return null;
-    
+
     const packages = availableOfferings[0].packages;
     const monthlyPackage = packages.find(pkg => pkg.packageType === 'MONTHLY');
     const yearlyPackage = packages.find(pkg => pkg.packageType === 'ANNUAL');
-    
+
     return monthlyPackage || packages[0] || null;
   };
-  
+
   const bestPackage = getBestPackage();
 
   const premiumFeatures = [
@@ -183,7 +178,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color={colors.neutral[600]} />
           </TouchableOpacity>
-          
+
           <View style={styles.headerContent}>
             <Text style={styles.iconText}>{content.icon}</Text>
             <Text variant="h2" weight="bold" align="center" color="primary">
@@ -205,7 +200,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                   Bugünkü Kullanımınız
                 </Text>
               </View>
-              
+
               <View style={styles.usageStats}>
                 <View style={styles.usageStat}>
                   <Text variant="h3" weight="bold" color="primary">
@@ -215,9 +210,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                     / {usageStats.recipeViewsLimit} tarif
                   </Text>
                 </View>
-                
+
                 <View style={styles.usageDivider} />
-                
+
                 <View style={styles.usageStat}>
                   <Text variant="h3" weight="bold" color="primary">
                     {usageStats.searchesUsed}
@@ -247,7 +242,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                   </Text>
                 </View>
               )}
-              
+
               <View style={styles.pricingContent}>
                 <Text variant="h1" weight="bold" color="primary" align="center">
                   {bestPackage.product.priceString}
@@ -255,21 +250,23 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
                 <Text variant="body" color="secondary" align="center">
                   /{bestPackage.packageType === 'MONTHLY' ? 'ay' : 'yıl'} - İstediğin zaman iptal et
                 </Text>
-                
+
                 {availableOfferings[0].packages.length > 1 && (
                   <View style={styles.packageSelector}>
-                    {availableOfferings[0].packages.map((pkg) => (
+                    {availableOfferings[0].packages.map(pkg => (
                       <TouchableOpacity
                         key={pkg.identifier}
                         style={[
                           styles.packageOption,
-                          selectedPackage === pkg.identifier && styles.packageOptionSelected
+                          selectedPackage === pkg.identifier && styles.packageOptionSelected,
                         ]}
                         onPress={() => setSelectedPackage(pkg.identifier)}
                       >
-                        <Text 
-                          variant="caption" 
-                          color={selectedPackage === pkg.identifier ? "primary-foreground" : "secondary"}
+                        <Text
+                          variant="caption"
+                          color={
+                            selectedPackage === pkg.identifier ? 'primary-foreground' : 'secondary'
+                          }
                           weight="semibold"
                         >
                           {pkg.product.priceString}/{pkg.packageType === 'MONTHLY' ? 'ay' : 'yıl'}
@@ -291,11 +288,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
             {premiumFeatures.map((feature, index) => (
               <View key={index} style={styles.featureItem}>
                 <View style={styles.featureIcon}>
-                  <Ionicons 
-                    name={feature.icon as any} 
-                    size={20} 
-                    color={colors.primary[500]} 
-                  />
+                  <Ionicons name={feature.icon as any} size={20} color={colors.primary[500]} />
                 </View>
                 <View style={styles.featureContent}>
                   <Text variant="bodyLarge" weight="semibold" color="primary">
@@ -326,15 +319,14 @@ const PaywallModal: React.FC<PaywallModalProps> = ({
               )
             }
           >
-            {isProcessing ? 'İşlem yapılıyor...' : isInFreeTrial ? '👑 Premium Devam Et' : '👑 Premium\'a Başla'}
+            {isProcessing
+              ? 'İşlem yapılıyor...'
+              : isInFreeTrial
+              ? '👑 Premium Devam Et'
+              : "👑 Premium'a Başla"}
           </Button>
 
-          <Button
-            variant="ghost"
-            size="md"
-            onPress={onClose}
-            style={styles.laterButton}
-          >
+          <Button variant="ghost" size="md" onPress={onClose} style={styles.laterButton}>
             Şimdi Değil
           </Button>
         </View>

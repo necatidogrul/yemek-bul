@@ -15,7 +15,7 @@ export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({ children
     try {
       // Check if ErrorUtils is available (it might not be in some environments)
       const { ErrorUtils } = require('react-native');
-      
+
       if (ErrorUtils && typeof ErrorUtils.getGlobalHandler === 'function') {
         // Set global error handler for JavaScript errors
         originalHandler = ErrorUtils.getGlobalHandler();
@@ -24,7 +24,7 @@ export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({ children
           handleError(error, 'GlobalJS', {
             logError: true,
             showToast: !isFatal, // Don't show toast for fatal errors
-            showAlert: isFatal,  // Show alert for fatal errors
+            showAlert: isFatal, // Show alert for fatal errors
           });
 
           // Call original handler to maintain default behavior
@@ -65,7 +65,7 @@ export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({ children
       } catch (error) {
         console.warn('Failed to restore original error handler:', error);
       }
-      
+
       if (typeof window !== 'undefined' && window.removeEventListener) {
         window.removeEventListener('unhandledrejection', handleUnhandledRejection);
       }

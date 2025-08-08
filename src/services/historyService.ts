@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AIRequestHistory, HistoryStats, HistoryFilter } from '../types/History';
-import { Logger } from '../services/LoggerService';
 
 class HistoryService {
   private static readonly HISTORY_KEY = 'ai_request_history';
@@ -12,7 +11,7 @@ class HistoryService {
   static async saveRequest(request: Omit<AIRequestHistory, 'id' | 'timestamp'>): Promise<void> {
     try {
       const history = await this.getHistory();
-      
+
       const newRequest: AIRequestHistory = {
         ...request,
         id: this.generateId(),
@@ -26,12 +25,12 @@ class HistoryService {
       const trimmedHistory = updatedHistory.slice(0, this.MAX_HISTORY_ITEMS);
 
       await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(trimmedHistory));
-      
+
       console.log('📝 AI Request saved to history:', {
         id: newRequest.id,
         ingredients: newRequest.ingredients,
         success: newRequest.success,
-        resultsCount: newRequest.results.count
+        resultsCount: newRequest.results.count,
       });
     } catch (error) {
       console.error('❌ Failed to save AI request to history:', error);
@@ -77,11 +76,12 @@ class HistoryService {
   static async getStats(): Promise<HistoryStats> {
     try {
       const history = await this.getHistory();
-      
+
       const totalRequests = history.length;
       const successfulRequests = history.filter(item => item.success).length;
-      const totalRecipesGenerated = history.reduce((sum, item) => 
-        sum + (item.success ? item.results.count : 0), 0
+      const totalRecipesGenerated = history.reduce(
+        (sum, item) => sum + (item.success ? item.results.count : 0),
+        0,
       );
 
       // En çok kullanılan malzemeleri hesapla
@@ -152,25 +152,29 @@ class HistoryService {
   /**
    * Popüler malzeme kombinasyonlarını getirir
    */
-  static async getPopularCombinations(limit: number = 5): Promise<Array<{
-    ingredients: string[];
-    count: number;
-    successRate: number;
-  }>> {
+  static async getPopularCombinations(limit: number = 5): Promise<
+    Array<{
+      ingredients: string[];
+      count: number;
+      successRate: number;
+    }>
+  > {
     try {
       const history = await this.getHistory();
-      
+
       // Malzeme kombinasyonlarını grupla
-      const combinations: { [key: string]: { 
-        count: number; 
-        successful: number; 
-        ingredients: string[] 
-      } } = {};
+      const combinations: {
+        [key: string]: {
+          count: number;
+          successful: number;
+          ingredients: string[];
+        };
+      } = {};
 
       history.forEach(item => {
         const sortedIngredients = [...item.ingredients].sort();
         const key = sortedIngredients.join(',');
-        
+
         if (!combinations[key]) {
           combinations[key] = {
             count: 0,
@@ -178,7 +182,7 @@ class HistoryService {
             ingredients: sortedIngredients,
           };
         }
-        
+
         combinations[key].count++;
         if (item.success) {
           combinations[key].successful++;
@@ -203,7 +207,10 @@ class HistoryService {
   /**
    * Filtreleme uygular
    */
-  private static applyFilter(history: AIRequestHistory[], filter: HistoryFilter): AIRequestHistory[] {
+  private static applyFilter(
+    history: AIRequestHistory[],
+    filter: HistoryFilter,
+  ): AIRequestHistory[] {
     let filtered = [...history];
 
     // Tarih filtresi
@@ -213,13 +220,13 @@ class HistoryService {
 
       switch (filter.dateRange) {
         case 'today':
-          cutoffTime = now - (24 * 60 * 60 * 1000); // 24 saat
+          cutoffTime = now - 24 * 60 * 60 * 1000; // 24 saat
           break;
         case 'week':
-          cutoffTime = now - (7 * 24 * 60 * 60 * 1000); // 7 gün
+          cutoffTime = now - 7 * 24 * 60 * 60 * 1000; // 7 gün
           break;
         case 'month':
-          cutoffTime = now - (30 * 24 * 60 * 60 * 1000); // 30 gün
+          cutoffTime = now - 30 * 24 * 60 * 60 * 1000; // 30 gün
           break;
       }
 
@@ -234,10 +241,8 @@ class HistoryService {
     // Malzeme filtresi
     if (filter.ingredient) {
       const searchIngredient = filter.ingredient.toLowerCase();
-      filtered = filtered.filter(item => 
-        item.ingredients.some(ing => 
-          ing.toLowerCase().includes(searchIngredient)
-        )
+      filtered = filtered.filter(item =>
+        item.ingredients.some(ing => ing.toLowerCase().includes(searchIngredient)),
       );
     }
 

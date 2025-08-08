@@ -1,11 +1,39 @@
 import { createClient } from "@supabase/supabase-js";
+import Constants from 'expo-constants';
+import { debugLog } from '../config/environment';
 
-// Gerçek Supabase bağlantı bilgileri
-const supabaseUrl = "https://hvfwuyobhsejiflimgzr.supabase.co";
-const supabaseAnonKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh2Znd1eW9iaHNlamlmbGltZ3pyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzODIwMzUsImV4cCI6MjA2ODk1ODAzNX0.b6RNmLyshFnc0piuFGarGFLMWukG7nj29xzmnqib5ns";
+// Güvenli Supabase bağlantı bilgileri - environment variables'dan alınır
+const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('🚨 Supabase configuration missing! Check environment variables.');
+}
+
+// Debug logging - sadece dev mode'da URL göster
+debugLog('🔌 Supabase connection initialized', {
+  url: supabaseUrl ? '***masked***' : 'missing',
+  hasAnonKey: !!supabaseAnonKey
+});
+
+// Create client with security-focused configuration
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false, // Web güvenliği için
+  },
+  global: {
+    headers: {
+      'User-Agent': 'YemekBulucu/1.0.0',
+    },
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10, // Rate limiting
+    },
+  },
+});
 
 // Database tabloları için type definitions
 export interface Database {

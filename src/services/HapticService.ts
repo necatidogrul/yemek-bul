@@ -1,10 +1,9 @@
 import * as Haptics from 'expo-haptics';
 import { Platform } from 'react-native';
-import { Logger } from '../services/LoggerService';
 
-export type HapticFeedbackType = 
+export type HapticFeedbackType =
   | 'light'
-  | 'medium' 
+  | 'medium'
   | 'heavy'
   | 'success'
   | 'warning'
@@ -44,7 +43,7 @@ class HapticService {
    */
   private async triggerHaptic(
     hapticFunction: () => Promise<void>,
-    options: HapticOptions = {}
+    options: HapticOptions = {},
   ): Promise<void> {
     const { enabled = this.enabled, delay = 0 } = options;
 
@@ -70,10 +69,7 @@ class HapticService {
    * Use for: hovering, light touches, minor selections
    */
   async light(options?: HapticOptions): Promise<void> {
-    await this.triggerHaptic(
-      () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
-      options
-    );
+    await this.triggerHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), options);
   }
 
   /**
@@ -83,7 +79,7 @@ class HapticService {
   async medium(options?: HapticOptions): Promise<void> {
     await this.triggerHaptic(
       () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
-      options
+      options,
     );
   }
 
@@ -92,10 +88,7 @@ class HapticService {
    * Use for: confirmations, major actions, deletions
    */
   async heavy(options?: HapticOptions): Promise<void> {
-    await this.triggerHaptic(
-      () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy),
-      options
-    );
+    await this.triggerHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), options);
   }
 
   /**
@@ -105,7 +98,7 @@ class HapticService {
   async success(options?: HapticOptions): Promise<void> {
     await this.triggerHaptic(
       () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
-      options
+      options,
     );
   }
 
@@ -116,7 +109,7 @@ class HapticService {
   async warning(options?: HapticOptions): Promise<void> {
     await this.triggerHaptic(
       () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
-      options
+      options,
     );
   }
 
@@ -127,7 +120,7 @@ class HapticService {
   async error(options?: HapticOptions): Promise<void> {
     await this.triggerHaptic(
       () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
-      options
+      options,
     );
   }
 
@@ -136,10 +129,7 @@ class HapticService {
    * Use for: scrolling through lists, picker selections
    */
   async selection(options?: HapticOptions): Promise<void> {
-    await this.triggerHaptic(
-      () => Haptics.selectionAsync(),
-      options
-    );
+    await this.triggerHaptic(() => Haptics.selectionAsync(), options);
   }
 
   // Convenience methods for common app interactions

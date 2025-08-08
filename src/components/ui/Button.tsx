@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -6,21 +6,16 @@ import {
   TextStyle,
   ActivityIndicator,
   View,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
-import { useTheme } from "../../contexts/ThemeContext";
-import { useHaptics } from "../../hooks/useHaptics";
-import { useAccessibility } from "../../hooks/useAccessibility";
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useHaptics } from '../../hooks/useHaptics';
+import { useAccessibility } from '../../hooks/useAccessibility';
 
 // Modern Button Variants - Simplified for Professional Design
-type ButtonVariant =
-  | "primary"
-  | "secondary"
-  | "outline"
-  | "ghost"
-  | "destructive";
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
 
-type ButtonSize = "sm" | "md" | "lg";
+type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -45,8 +40,8 @@ interface ButtonProps {
 
 const Button: React.FC<ButtonProps> = ({
   children,
-  variant = "primary",
-  size = "md",
+  variant = 'primary',
+  size = 'md',
   disabled = false,
   loading = false,
   fullWidth = false,
@@ -62,17 +57,16 @@ const Button: React.FC<ButtonProps> = ({
   accessibilityState,
   testID,
 }) => {
-  const { colors, typography, spacing, elevation, borderRadius, animation } =
-    useTheme();
+  const { colors, typography, spacing, elevation, borderRadius, animation } = useTheme();
   const haptics = useHaptics();
   const { generateHint, shouldReduceMotion } = useAccessibility();
   const getButtonStyles = (): ViewStyle => {
     const baseStyles: ViewStyle = {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
       borderRadius: borderRadius.button,
-      overflow: "hidden",
+      overflow: 'hidden',
       minHeight: spacing.component.button.minHeight,
     };
 
@@ -113,7 +107,7 @@ const Button: React.FC<ButtonProps> = ({
         ...elevation.low,
       },
       ghost: {
-        backgroundColor: "transparent",
+        backgroundColor: 'transparent',
         ...elevation.none,
       },
       destructive: {
@@ -129,7 +123,7 @@ const Button: React.FC<ButtonProps> = ({
     };
 
     // Full width
-    const fullWidthStyles: ViewStyle = fullWidth ? { width: "100%" } : {};
+    const fullWidthStyles: ViewStyle = fullWidth ? { width: '100%' } : {};
 
     return {
       ...baseStyles,
@@ -142,8 +136,8 @@ const Button: React.FC<ButtonProps> = ({
 
   const getTextStyles = (): TextStyle => {
     const baseTextStyles: TextStyle = {
-      textAlign: "center",
-      fontWeight: "600",
+      textAlign: 'center',
+      fontWeight: '600',
     };
 
     // Modern typography sizing
@@ -211,15 +205,15 @@ const Button: React.FC<ButtonProps> = ({
   // Generate accessibility props
   const getAccessibilityLabel = (): string => {
     if (accessibilityLabel) return accessibilityLabel;
-    if (typeof children === "string") return children;
-    return "Button";
+    if (typeof children === 'string') return children;
+    return 'Button';
   };
 
   const getAccessibilityHint = (): string | undefined => {
     if (accessibilityHint) return accessibilityHint;
-    if (disabled) return "Button is disabled";
-    if (loading) return "Button is loading";
-    return generateHint("button_press");
+    if (disabled) return 'Button is disabled';
+    if (loading) return 'Button is loading';
+    return generateHint('button_press');
   };
 
   const getAccessibilityState = () => {
@@ -236,22 +230,16 @@ const Button: React.FC<ButtonProps> = ({
         <ActivityIndicator
           size="small"
           color={
-            variant === "outline" || variant === "ghost"
-              ? colors.text.primary
-              : colors.neutral[0]
+            variant === 'outline' || variant === 'ghost' ? colors.text.primary : colors.neutral[0]
           }
         />
       ) : (
         <>
-          {leftIcon && (
-            <View style={{ marginRight: iconSpacing }}>{leftIcon}</View>
-          )}
+          {leftIcon && <View style={{ marginRight: iconSpacing }}>{leftIcon}</View>}
 
           <Text style={[getTextStyles(), textStyle]}>{children}</Text>
 
-          {rightIcon && (
-            <View style={{ marginLeft: iconSpacing }}>{rightIcon}</View>
-          )}
+          {rightIcon && <View style={{ marginLeft: iconSpacing }}>{rightIcon}</View>}
         </>
       )}
     </>

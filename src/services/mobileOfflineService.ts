@@ -9,30 +9,21 @@
  * - App state persistence
  */
 
-import {
-  AppState,
-  AppStateStatus,
-  Platform,
-  InteractionManager,
-} from "react-native";
-import NetInfo, { NetInfoState } from "@react-native-community/netinfo";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-// Push notification desteği kaldırıldı
-import { Logger } from "../services/LoggerService";
+import { AppState, AppStateStatus, Platform, InteractionManager } from 'react-native';
+import NetInfo, { NetInfoState } from '@react-native-community/netinfo';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface QueueItem {
   id: string;
   [key: string]: any;
 }
 
-// Push notification interface'leri kaldırıldı
-
 export class MobileOfflineService {
   private static instance: MobileOfflineService;
   private appStateSubscription: any = null;
   private networkSubscription: any = null;
   private isOnline: boolean = true;
-  private appState: AppStateStatus = "active";
+  private appState: AppStateStatus = 'active';
 
   private constructor() {
     this.initializeService();
@@ -50,7 +41,7 @@ export class MobileOfflineService {
    */
   private async initializeService(): Promise<void> {
     try {
-      console.log("🚀 Initializing mobile offline service...");
+      console.log('🚀 Initializing mobile offline service...');
 
       // Network monitoring başlat
       await this.setupNetworkMonitoring();
@@ -64,9 +55,9 @@ export class MobileOfflineService {
       // Background job setup
       this.setupBackgroundJobs();
 
-      console.log("✅ Mobile offline service initialized");
+      console.log('✅ Mobile offline service initialized');
     } catch (error) {
-      console.error("❌ Failed to initialize mobile offline service:", error);
+      console.error('❌ Failed to initialize mobile offline service:', error);
     }
   }
 
@@ -76,61 +67,45 @@ export class MobileOfflineService {
   private async setupNetworkMonitoring(): Promise<void> {
     // İlk network durumunu al
     const netInfo = await NetInfo.fetch();
-    this.isOnline =
-      netInfo.isConnected === true && netInfo.isInternetReachable === true;
+    this.isOnline = netInfo.isConnected === true && netInfo.isInternetReachable === true;
 
-    console.log(
-      "📶 Initial network state:",
-      this.isOnline ? "Online" : "Offline"
-    );
+    console.log('📶 Initial network state:', this.isOnline ? 'Online' : 'Offline');
 
     // Network değişikliklerini dinle
-    this.networkSubscription = NetInfo.addEventListener(
-      (state: NetInfoState) => {
-        const wasOnline = this.isOnline;
-        this.isOnline =
-          state.isConnected === true && state.isInternetReachable === true;
+    this.networkSubscription = NetInfo.addEventListener((state: NetInfoState) => {
+      const wasOnline = this.isOnline;
+      this.isOnline = state.isConnected === true && state.isInternetReachable === true;
 
-        console.log(
-          "📶 Network state changed:",
-          this.isOnline ? "Online" : "Offline"
-        );
+      console.log('📶 Network state changed:', this.isOnline ? 'Online' : 'Offline');
 
-        if (!wasOnline && this.isOnline) {
-          // Offline'dan online'a geçtik
-          this.handleBecameOnline();
-        } else if (wasOnline && !this.isOnline) {
-          // Online'dan offline'a geçtik
-          this.handleBecameOffline();
-        }
+      if (!wasOnline && this.isOnline) {
+        // Offline'dan online'a geçtik
+        this.handleBecameOnline();
+      } else if (wasOnline && !this.isOnline) {
+        // Online'dan offline'a geçtik
+        this.handleBecameOffline();
       }
-    );
+    });
   }
 
   /**
    * App state monitoring kur
    */
   private setupAppStateMonitoring(): void {
-    this.appStateSubscription = AppState.addEventListener(
-      "change",
-      (nextAppState) => {
-        const previousState = this.appState;
-        this.appState = nextAppState;
+    this.appStateSubscription = AppState.addEventListener('change', nextAppState => {
+      const previousState = this.appState;
+      this.appState = nextAppState;
 
-        console.log("📱 App state changed:", previousState, "->", nextAppState);
+      console.log('📱 App state changed:', previousState, '->', nextAppState);
 
-        if (previousState === "background" && nextAppState === "active") {
-          // App background'dan active'e geçti
-          this.handleAppBecameActive();
-        } else if (
-          previousState === "active" &&
-          nextAppState === "background"
-        ) {
-          // App active'den background'a geçti
-          this.handleAppBecameBackground();
-        }
+      if (previousState === 'background' && nextAppState === 'active') {
+        // App background'dan active'e geçti
+        this.handleAppBecameActive();
+      } else if (previousState === 'active' && nextAppState === 'background') {
+        // App active'den background'a geçti
+        this.handleAppBecameBackground();
       }
-    );
+    });
   }
 
   /**
@@ -138,7 +113,7 @@ export class MobileOfflineService {
    */
   private setupPushNotifications(): void {
     // Push notification desteği kaldırıldı
-    console.log("⚠️ Push notifications not supported");
+    console.log('⚠️ Push notifications not supported');
   }
 
   /**
@@ -146,10 +121,10 @@ export class MobileOfflineService {
    */
   private setupBackgroundJobs(): void {
     // Platform'a göre background işlemleri
-    if (Platform.OS === "ios") {
+    if (Platform.OS === 'ios') {
       // iOS'ta AppState değişimlerini dinleyerek sync yapalım
-      AppState.addEventListener("change", (nextState) => {
-        if (nextState === "active") {
+      AppState.addEventListener('change', nextState => {
+        if (nextState === 'active') {
           InteractionManager.runAfterInteractions(() => {
             this.performBackgroundSync();
           });
@@ -158,7 +133,7 @@ export class MobileOfflineService {
     } else {
       // Android'de setInterval ile periyodik sync yapalım
       setInterval(() => {
-        if (this.isOnline && this.appState === "active") {
+        if (this.isOnline && this.appState === 'active') {
           this.performBackgroundSync();
         }
       }, 30 * 60 * 1000); // 30 dakika
@@ -169,7 +144,7 @@ export class MobileOfflineService {
    * Online durumuna geçince
    */
   private async handleBecameOnline(): Promise<void> {
-    console.log("🌐 App became online");
+    console.log('🌐 App became online');
 
     try {
       // Offline queue'yu sync et
@@ -179,12 +154,12 @@ export class MobileOfflineService {
       await this.refreshStaleCache();
 
       // Kullanıcıya bildir
-      this.showLocalNotification("🌐 Online", {
-        body: "İnternet bağlantısı geri geldi. Veriler güncelleniyor...",
+      this.showLocalNotification('🌐 Online', {
+        body: 'İnternet bağlantısı geri geldi. Veriler güncelleniyor...',
         autoCancel: true,
       });
     } catch (error) {
-      console.error("❌ Failed to handle online state:", error);
+      console.error('❌ Failed to handle online state:', error);
     }
   }
 
@@ -192,11 +167,11 @@ export class MobileOfflineService {
    * Offline durumuna geçince
    */
   private handleBecameOffline(): void {
-    console.log("📱 App became offline");
+    console.log('📱 App became offline');
 
     // Kullanıcıya bildir
-    this.showLocalNotification("📱 Offline Mod", {
-      body: "İnternet bağlantısı yok. Kaydedilmiş tarifler kullanılabilir.",
+    this.showLocalNotification('📱 Offline Mod', {
+      body: 'İnternet bağlantısı yok. Kaydedilmiş tarifler kullanılabilir.',
       autoCancel: false,
     });
   }
@@ -205,7 +180,7 @@ export class MobileOfflineService {
    * App active durumuna geçince
    */
   private async handleAppBecameActive(): Promise<void> {
-    console.log("👀 App became active");
+    console.log('👀 App became active');
 
     if (this.isOnline) {
       // Online'sa data'ları güncelle
@@ -217,21 +192,19 @@ export class MobileOfflineService {
    * App background durumuna geçince
    */
   private async handleAppBecameBackground(): Promise<void> {
-    console.log("📱 App went to background");
+    console.log('📱 App went to background');
 
     // App state'i kaydet
     await this.saveAppState();
 
     // Background işlemleri (eğer online'sa)
     if (this.isOnline) {
-      if (Platform.OS === "ios") {
+      if (Platform.OS === 'ios') {
         // iOS'ta bir sonraki app state değişiminde sync yapılacak
-        console.log(
-          "iOS background handling: next app state change will trigger sync"
-        );
+        console.log('iOS background handling: next app state change will trigger sync');
       } else {
         // Android'de setInterval ile devam ediyor
-        console.log("Android background handling: periodic sync continues");
+        console.log('Android background handling: periodic sync continues');
       }
     }
   }
@@ -241,10 +214,10 @@ export class MobileOfflineService {
    */
   private async performBackgroundSync(): Promise<void> {
     try {
-      console.log("🔄 Performing background sync...");
+      console.log('🔄 Performing background sync...');
 
       if (!this.isOnline) {
-        console.log("📱 Offline - skipping background sync");
+        console.log('📱 Offline - skipping background sync');
         return;
       }
 
@@ -252,14 +225,11 @@ export class MobileOfflineService {
       await this.syncOfflineQueue();
 
       // User'ın son activity'sini kaydet
-      await AsyncStorage.setItem(
-        "@yemek_bulucu:last_sync",
-        Date.now().toString()
-      );
+      await AsyncStorage.setItem('@yemek_bulucu:last_sync', Date.now().toString());
 
-      console.log("✅ Background sync completed");
+      console.log('✅ Background sync completed');
     } catch (error) {
-      console.error("❌ Background sync failed:", error);
+      console.error('❌ Background sync failed:', error);
     }
   }
 
@@ -269,21 +239,21 @@ export class MobileOfflineService {
   private async syncWhenActive(): Promise<void> {
     try {
       // Son sync zamanını kontrol et
-      const lastSync = await AsyncStorage.getItem("@yemek_bulucu:last_sync");
+      const lastSync = await AsyncStorage.getItem('@yemek_bulucu:last_sync');
       const timeSinceSync = Date.now() - (lastSync ? parseInt(lastSync) : 0);
 
       // 5 dakikadan fazla geçmişse sync yap
       if (timeSinceSync > 5 * 60 * 1000) {
-        console.log("🔄 Syncing data after becoming active...");
+        console.log('🔄 Syncing data after becoming active...');
 
         const userId = await this.getCurrentUserId();
         if (userId) {
-          const { RecipeService } = await import("./recipeService");
+          const { RecipeService } = await import('./recipeService');
           await RecipeService.syncLocalDataToServer(userId);
         }
       }
     } catch (error) {
-      console.error("❌ Active sync failed:", error);
+      console.error('❌ Active sync failed:', error);
     }
   }
 
@@ -292,7 +262,7 @@ export class MobileOfflineService {
    */
   private async syncOfflineQueue(): Promise<void> {
     try {
-      const { MobileStorageService } = await import("./localStorageService");
+      const { MobileStorageService } = await import('./localStorageService');
       const queue = await MobileStorageService.getOfflineQueue();
 
       for (const item of queue) {
@@ -301,11 +271,11 @@ export class MobileOfflineService {
           // Başarılı item'ı queue'dan kaldır
           await this.removeFromQueue(item.id);
         } catch (error) {
-          console.warn("⚠️ Queue item failed:", item.id, error);
+          console.warn('⚠️ Queue item failed:', item.id, error);
         }
       }
     } catch (error) {
-      console.error("❌ Offline queue sync failed:", error);
+      console.error('❌ Offline queue sync failed:', error);
     }
   }
 
@@ -314,12 +284,12 @@ export class MobileOfflineService {
    */
   private async refreshStaleCache(): Promise<void> {
     try {
-      console.log("🔄 Refreshing stale cache...");
+      console.log('🔄 Refreshing stale cache...');
 
-      const { MobileStorageService } = await import("./localStorageService");
+      const { MobileStorageService } = await import('./localStorageService');
       // Cache refresh logic burada implement edilecek
     } catch (error) {
-      console.warn("⚠️ Cache refresh failed:", error);
+      console.warn('⚠️ Cache refresh failed:', error);
     }
   }
 
@@ -328,7 +298,7 @@ export class MobileOfflineService {
    */
   showLocalNotification(title: string, options: any = {}): void {
     // Push notification desteği kaldırıldı
-    console.log("⚠️ Local notifications not supported:", { title, options });
+    console.log('⚠️ Local notifications not supported:', { title, options });
   }
 
   // Push notification desteği kaldırıldı
@@ -340,16 +310,13 @@ export class MobileOfflineService {
     try {
       const appState = {
         lastActiveTime: Date.now(),
-        appVersion: "1.0.0",
+        appVersion: '1.0.0',
         backgroundTime: Date.now(),
       };
 
-      await AsyncStorage.setItem(
-        "@yemek_bulucu:app_state",
-        JSON.stringify(appState)
-      );
+      await AsyncStorage.setItem('@yemek_bulucu:app_state', JSON.stringify(appState));
     } catch (error) {
-      console.warn("⚠️ Failed to save app state:", error);
+      console.warn('⚠️ Failed to save app state:', error);
     }
   }
 
@@ -358,9 +325,7 @@ export class MobileOfflineService {
    */
   private async getCurrentUserId(): Promise<string | null> {
     try {
-      const userSession = await AsyncStorage.getItem(
-        "@yemek_bulucu:user_session"
-      );
+      const userSession = await AsyncStorage.getItem('@yemek_bulucu:user_session');
       return userSession ? JSON.parse(userSession).userId : null;
     } catch {
       return null;
@@ -372,7 +337,7 @@ export class MobileOfflineService {
    */
   private async processQueueItem(item: QueueItem): Promise<void> {
     // Queue item processing logic
-    console.log("Processing queue item:", item);
+    console.log('Processing queue item:', item);
   }
 
   /**
@@ -380,7 +345,7 @@ export class MobileOfflineService {
    */
   private async removeFromQueue(itemId: string): Promise<void> {
     // Queue removal logic
-    console.log("Removing from queue:", itemId);
+    console.log('Removing from queue:', itemId);
   }
 
   // Public API
@@ -421,8 +386,8 @@ export class MobileOfflineService {
     }
 
     // Background işlemleri temizle
-    if (Platform.OS === "ios") {
-      AppState.addEventListener("change", () => {}).remove();
+    if (Platform.OS === 'ios') {
+      AppState.addEventListener('change', () => {}).remove();
     }
   }
 }

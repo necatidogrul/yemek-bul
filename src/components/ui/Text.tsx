@@ -1,61 +1,54 @@
-import React from "react";
-import { Text as RNText, TextStyle, AccessibilityRole } from "react-native";
-import { useTheme } from "../../contexts/ThemeContext";
-import { useAccessibility } from "../../hooks/useAccessibility";
+import React from 'react';
+import { Text as RNText, TextStyle, AccessibilityRole } from 'react-native';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useAccessibility } from '../../hooks/useAccessibility';
 
 // Modern Typography Variants - Professional Design System
 type TextVariant =
-  | "displayLarge"
-  | "displayMedium"
-  | "displaySmall"
-  | "headlineLarge"
-  | "headlineMedium"
-  | "headlineSmall"
-  | "bodyLarge"
-  | "bodyMedium"
-  | "bodySmall"
-  | "labelLarge"
-  | "labelMedium"
-  | "labelSmall"
-  | "h1"
-  | "h2"
-  | "h3"
-  | "h4"
-  | "h5"
-  | "h6"
-  | "caption"
-  | "body";
+  | 'displayLarge'
+  | 'displayMedium'
+  | 'displaySmall'
+  | 'headlineLarge'
+  | 'headlineMedium'
+  | 'headlineSmall'
+  | 'bodyLarge'
+  | 'bodyMedium'
+  | 'bodySmall'
+  | 'labelLarge'
+  | 'labelMedium'
+  | 'labelSmall'
+  | 'h1'
+  | 'h2'
+  | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6'
+  | 'caption'
+  | 'body';
 
 type TextWeight =
-  | "normal"
-  | "bold"
-  | "light"
-  | "medium"
-  | "semibold"
-  | "100"
-  | "200"
-  | "300"
-  | "400"
-  | "500"
-  | "600"
-  | "700"
-  | "800"
-  | "900";
-type TextColor =
-  | "primary"
-  | "secondary"
-  | "accent"
-  | "inverse"
-  | "success"
-  | "warning"
-  | "error";
+  | 'normal'
+  | 'bold'
+  | 'light'
+  | 'medium'
+  | 'semibold'
+  | '100'
+  | '200'
+  | '300'
+  | '400'
+  | '500'
+  | '600'
+  | '700'
+  | '800'
+  | '900';
+type TextColor = 'primary' | 'secondary' | 'accent' | 'inverse' | 'success' | 'warning' | 'error';
 
 interface TextProps {
   children: React.ReactNode;
   variant?: TextVariant;
   weight?: TextWeight;
   color?: TextColor | string;
-  align?: "left" | "center" | "right";
+  align?: 'left' | 'center' | 'right';
   style?: TextStyle;
   numberOfLines?: number;
   onPress?: () => void;
@@ -69,10 +62,10 @@ interface TextProps {
 
 const Text: React.FC<TextProps> = ({
   children,
-  variant = "bodyMedium",
-  weight = "normal",
-  color = "primary",
-  align = "left",
+  variant = 'bodyMedium',
+  weight = 'normal',
+  color = 'primary',
+  align = 'left',
   style,
   numberOfLines,
   onPress,
@@ -131,62 +124,62 @@ const Text: React.FC<TextProps> = ({
       },
       h1: {
         fontSize: 36,
-        fontWeight: "600",
+        fontWeight: '600',
         lineHeight: 44,
       },
       h2: {
         fontSize: 32,
-        fontWeight: "600",
+        fontWeight: '600',
         lineHeight: 40,
       },
       h3: {
         fontSize: 30,
-        fontWeight: "600",
+        fontWeight: '600',
         lineHeight: 38,
       },
       h4: {
         fontSize: 24,
-        fontWeight: "600",
+        fontWeight: '600',
         lineHeight: 32,
       },
       h5: {
         fontSize: 20,
-        fontWeight: "600",
+        fontWeight: '600',
         lineHeight: 28,
       },
       h6: {
         fontSize: 16,
-        fontWeight: "600",
+        fontWeight: '600',
         lineHeight: 24,
       },
       caption: {
         fontSize: 12,
-        fontWeight: "400",
+        fontWeight: '400',
         lineHeight: 16,
       },
       body: {
         fontSize: 16,
-        fontWeight: "400",
+        fontWeight: '400',
         lineHeight: 24,
       },
     };
 
     // Weight styles
     const weightStyles: Record<TextWeight, TextStyle> = {
-      "100": { fontWeight: "100" },
-      "200": { fontWeight: "200" },
-      "300": { fontWeight: "300" },
-      "400": { fontWeight: "400" },
-      "500": { fontWeight: "500" },
-      "600": { fontWeight: "600" },
-      "700": { fontWeight: "700" },
-      "800": { fontWeight: "800" },
-      "900": { fontWeight: "900" },
-      normal: { fontWeight: "400" },
-      bold: { fontWeight: "700" },
-      light: { fontWeight: "300" },
-      medium: { fontWeight: "500" },
-      semibold: { fontWeight: "600" },
+      '100': { fontWeight: '100' },
+      '200': { fontWeight: '200' },
+      '300': { fontWeight: '300' },
+      '400': { fontWeight: '400' },
+      '500': { fontWeight: '500' },
+      '600': { fontWeight: '600' },
+      '700': { fontWeight: '700' },
+      '800': { fontWeight: '800' },
+      '900': { fontWeight: '900' },
+      normal: { fontWeight: '400' },
+      bold: { fontWeight: '700' },
+      light: { fontWeight: '300' },
+      medium: { fontWeight: '500' },
+      semibold: { fontWeight: '600' },
     };
 
     // Professional color mapping
@@ -218,26 +211,22 @@ const Text: React.FC<TextProps> = ({
   const getAccessibilityRole = (): AccessibilityRole => {
     if (accessibilityRole) return accessibilityRole;
 
-    if (
-      variant.includes("display") ||
-      variant.includes("headline") ||
-      accessibilityHeading
-    ) {
-      return "header";
+    if (variant.includes('display') || variant.includes('headline') || accessibilityHeading) {
+      return 'header';
     }
 
     if (onPress) {
-      return "button";
+      return 'button';
     }
 
-    return "text";
+    return 'text';
   };
 
   // Generate accessibility label if not provided
   const getAccessibilityLabel = (): string | undefined => {
     if (accessibilityLabel) return accessibilityLabel;
 
-    if (typeof children === "string") {
+    if (typeof children === 'string') {
       return children;
     }
 

@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text as RNText, 
-  Animated, 
-  StyleSheet, 
+import {
+  View,
+  Text as RNText,
+  Animated,
+  StyleSheet,
   TouchableOpacity,
   Dimensions,
-  Platform 
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     right: spacing[4],
     zIndex: 9999,
   },
-  
+
   toast: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     minHeight: TOAST_HEIGHT,
   },
-  
+
   iconContainer: {
     width: 32,
     height: 32,
@@ -221,23 +221,23 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing[3],
   },
-  
+
   content: {
     flex: 1,
     paddingRight: spacing[2],
   },
-  
+
   message: {
     marginTop: spacing[1],
     lineHeight: 16,
   },
-  
+
   action: {
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
     borderRadius: borderRadius.md,
   },
-  
+
   dismiss: {
     padding: spacing[2],
     marginLeft: spacing[1],

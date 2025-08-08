@@ -40,7 +40,8 @@
       "Bash(claude mcp:*)",
       "Bash(set SUPABASE_ACCESS_TOKEN=sbp_a75632640cd185876740d644d52963053fbb57a9)",
       "Bash(npm run env:test:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   },

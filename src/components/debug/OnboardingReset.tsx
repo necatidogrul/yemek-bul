@@ -2,7 +2,6 @@ import React from 'react';
 import { Alert } from 'react-native';
 import { UserPreferencesService } from '../../services/UserPreferencesService';
 import { Button } from '../ui';
-import { Logger } from '../../services/LoggerService';
 
 interface OnboardingResetProps {
   onReset?: () => void;
@@ -32,7 +31,7 @@ const OnboardingReset: React.FC<OnboardingResetProps> = ({ onReset }) => {
                     text: 'Tamam',
                     onPress: onReset,
                   },
-                ]
+                ],
               );
             } catch (error) {
               console.error('Reset error:', error);
@@ -40,19 +39,14 @@ const OnboardingReset: React.FC<OnboardingResetProps> = ({ onReset }) => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
   // Only show in development mode
   if (__DEV__) {
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        onPress={handleReset}
-        style={{ marginTop: 20 }}
-      >
+      <Button variant="outline" size="sm" onPress={handleReset} style={{ marginTop: 20 }}>
         🔄 Debug: Onboarding Sıfırla
       </Button>
     );

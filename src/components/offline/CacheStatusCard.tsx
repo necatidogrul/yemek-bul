@@ -1,6 +1,6 @@
 /**
  * Cache Status Card Component - React Native
- * 
+ *
  * Cache durumunu ve istatistiklerini gösteren kart
  */
 
@@ -14,7 +14,6 @@ import {
   RefreshControl,
   ScrollView,
 } from 'react-native';
-import { Logger } from '../../services/LoggerService';
 import { MobileStorageService } from '../../services/localStorageService';
 import { RecipeService } from '../../services/recipeService';
 
@@ -55,28 +54,31 @@ export const CacheStatusCard: React.FC = () => {
       // Cache verilerini al
       const cache = await MobileStorageService.getSearchCache();
       const history = await MobileStorageService.getSearchHistory();
-      
+
       // Cache boyutunu hesapla
       const cacheSize = JSON.stringify(cache).length;
       const storageUsed = `${(cacheSize / 1024).toFixed(1)} KB`;
-      
+
       // Source type'lara göre ayır
       const communityPoolHits = history.filter(h => h.source === 'community_pool').length;
       const aiCacheHits = history.filter(h => h.source === 'ai_cache').length;
       const aiGenerationCount = history.filter(h => h.source === 'ai_generation').length;
-      const mockFallbacks = history.filter(h => h.source === 'mock' || h.source === 'offline_mock').length;
-      
+      const mockFallbacks = history.filter(
+        h => h.source === 'mock' || h.source === 'offline_mock',
+      ).length;
+
       // Cache hit rate hesapla
       const totalSearches = history.length;
       const cacheHits = history.filter(h => h.source.includes('cached_')).length;
       const cacheHitRate = totalSearches > 0 ? (cacheHits / totalSearches) * 100 : 0;
-      
+
       // Son cache update zamanı
       const cacheEntries = Object.values(cache);
-      const lastUpdate = cacheEntries.length > 0 
-        ? Math.max(...cacheEntries.map(entry => entry.metadata.timestamp))
-        : 0;
-      
+      const lastUpdate =
+        cacheEntries.length > 0
+          ? Math.max(...cacheEntries.map(entry => entry.metadata.timestamp))
+          : 0;
+
       return {
         totalCachedRecipes: Object.keys(cache).length,
         communityPoolHits,
@@ -84,7 +86,8 @@ export const CacheStatusCard: React.FC = () => {
         aiGenerationCount,
         mockFallbacks,
         storageUsed,
-        lastCacheUpdate: lastUpdate > 0 ? new Date(lastUpdate).toLocaleString('tr-TR') : 'Henüz yok',
+        lastCacheUpdate:
+          lastUpdate > 0 ? new Date(lastUpdate).toLocaleString('tr-TR') : 'Henüz yok',
         cacheHitRate: Math.round(cacheHitRate),
       };
     } catch (error) {
@@ -109,26 +112,22 @@ export const CacheStatusCard: React.FC = () => {
   };
 
   const clearCache = () => {
-    Alert.alert(
-      'Cache Temizle',
-      'Tüm kaydedilmiş tarifleri silmek istediğinizden emin misiniz?',
-      [
-        { text: 'İptal', style: 'cancel' },
-        {
-          text: 'Sil',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await RecipeService.clearMobileCache();
-              await loadCacheStats();
-              Alert.alert('Başarılı', 'Cache temizlendi');
-            } catch (error) {
-              Alert.alert('Hata', 'Cache temizlenemedi');
-            }
-          },
+    Alert.alert('Cache Temizle', 'Tüm kaydedilmiş tarifleri silmek istediğinizden emin misiniz?', [
+      { text: 'İptal', style: 'cancel' },
+      {
+        text: 'Sil',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await RecipeService.clearMobileCache();
+            await loadCacheStats();
+            Alert.alert('Başarılı', 'Cache temizlendi');
+          } catch (error) {
+            Alert.alert('Hata', 'Cache temizlenemedi');
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const clearAllData = () => {
@@ -150,7 +149,7 @@ export const CacheStatusCard: React.FC = () => {
             }
           },
         },
-      ]
+      ],
     );
   };
 
@@ -165,64 +164,48 @@ export const CacheStatusCard: React.FC = () => {
   return (
     <ScrollView
       style={styles.container}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <View style={styles.card}>
         <Text style={styles.title}>📦 Cache Durumu</Text>
-        
+
         <View style={styles.statsContainer}>
-          <StatItem 
-            label="Kaydedilmiş Tarif" 
+          <StatItem
+            label="Kaydedilmiş Tarif"
             value={stats.totalCachedRecipes.toString()}
             icon="🥘"
           />
-          
-          <StatItem 
-            label="Cache Hit Rate" 
+
+          <StatItem
+            label="Cache Hit Rate"
             value={`%${stats.cacheHitRate}`}
             icon="⚡"
             color={stats.cacheHitRate > 50 ? '#4CAF50' : '#FF9800'}
           />
-          
-          <StatItem 
-            label="Storage Kullanımı" 
-            value={stats.storageUsed}
-            icon="💾"
-          />
+
+          <StatItem label="Storage Kullanımı" value={stats.storageUsed} icon="💾" />
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Kaynak Dağılımı</Text>
-          
-          <SourceItem 
-            label="Community Pool" 
+
+          <SourceItem
+            label="Community Pool"
             count={stats.communityPoolHits}
             icon="🌍"
             color="#2196F3"
           />
-          
-          <SourceItem 
-            label="AI Cache" 
-            count={stats.aiCacheHits}
-            icon="🧠"
-            color="#9C27B0"
-          />
-          
-          <SourceItem 
-            label="AI Generation" 
+
+          <SourceItem label="AI Cache" count={stats.aiCacheHits} icon="🧠" color="#9C27B0" />
+
+          <SourceItem
+            label="AI Generation"
             count={stats.aiGenerationCount}
             icon="✨"
             color="#FF5722"
           />
-          
-          <SourceItem 
-            label="Mock/Offline" 
-            count={stats.mockFallbacks}
-            icon="📱"
-            color="#607D8B"
-          />
+
+          <SourceItem label="Mock/Offline" count={stats.mockFallbacks} icon="📱" color="#607D8B" />
         </View>
 
         <View style={styles.section}>
@@ -234,14 +217,12 @@ export const CacheStatusCard: React.FC = () => {
           <TouchableOpacity style={styles.actionButton} onPress={clearCache}>
             <Text style={styles.actionButtonText}>Cache Temizle</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.dangerButton]} 
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.dangerButton]}
             onPress={clearAllData}
           >
-            <Text style={[styles.actionButtonText, styles.dangerButtonText]}>
-              Tüm Verileri Sil
-            </Text>
+            <Text style={[styles.actionButtonText, styles.dangerButtonText]}>Tüm Verileri Sil</Text>
           </TouchableOpacity>
         </View>
       </View>

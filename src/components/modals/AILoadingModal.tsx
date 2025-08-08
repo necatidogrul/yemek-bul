@@ -1,11 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  Dimensions,
-  Animated,
-  Easing,
-} from 'react-native';
+import { View, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 import Modal from 'react-native-modal';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -71,7 +65,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
           duration: 2000,
           easing: Easing.linear,
           useNativeDriver: true,
-        })
+        }),
       );
 
       // Pulse animation
@@ -89,7 +83,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
-        ])
+        ]),
       );
 
       spinAnimation.start();
@@ -145,11 +139,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
               },
             ]}
           >
-            <Ionicons
-              name={currentStage.icon as any}
-              size={32}
-              color={currentStage.color}
-            />
+            <Ionicons name={currentStage.icon as any} size={32} color={currentStage.color} />
           </Animated.View>
         </LinearGradient>
 
@@ -158,7 +148,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
           <Text variant="h4" weight="bold" align="center" style={styles.title}>
             {currentStage.title}
           </Text>
-          
+
           <Text variant="body" color="secondary" align="center" style={styles.subtitle}>
             {currentStage.subtitle}
           </Text>

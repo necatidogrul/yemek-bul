@@ -43,15 +43,12 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
       tintColor={refreshTintColor}
       title={title}
       titleColor={refreshTitleColor}
-      
       // Android özellikleri
       colors={refreshColors}
       progressBackgroundColor={backgroundProgressColor}
-      
       // Accessibility özellikleri
       accessibilityLabel={accessibilityLabel}
       accessible={true}
-      
       // Animasyon ayarları
       progressViewOffset={shouldReduceMotion() ? 0 : undefined}
     />
