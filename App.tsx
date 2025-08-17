@@ -5,6 +5,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { UserPreferencesService } from "./src/services/UserPreferencesService";
 import { RevenueCatService } from "./src/services/RevenueCatService";
 
+// Initialize i18n
+import "./src/locales";
+
 // Contexts
 import { ThemeProvider } from "./src/contexts/ThemeContext";
 import { ToastProvider } from "./src/contexts/ToastContext";
@@ -12,6 +15,7 @@ import { PremiumProvider } from "./src/contexts/PremiumContext";
 import { CreditProvider } from "./src/contexts/CreditContext"; // EKLENDİ
 import { TourProvider } from "./src/contexts/TourContext";
 import { HapticProvider } from "./src/hooks/useHaptics";
+import { LanguageProvider } from "./src/contexts/LanguageContext";
 
 // UI Components
 import TourOverlay from "./src/components/ui/TourOverlay";
@@ -125,17 +129,19 @@ export default function App(): React.ReactElement {
     return (
       <SafeAreaProvider>
         <ErrorBoundary>
-          <ThemeProvider>
-            <HapticProvider>
-              <ToastProvider>
-                <GlobalErrorHandler>
-                  <OnboardingScreen onComplete={handleOnboardingComplete} />
-                  <ToastContainer />
-                  <ThemedStatusBar />
-                </GlobalErrorHandler>
-              </ToastProvider>
-            </HapticProvider>
-          </ThemeProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <HapticProvider>
+                <ToastProvider>
+                  <GlobalErrorHandler>
+                    <OnboardingScreen onComplete={handleOnboardingComplete} />
+                    <ToastContainer />
+                    <ThemedStatusBar />
+                  </GlobalErrorHandler>
+                </ToastProvider>
+              </HapticProvider>
+            </ThemeProvider>
+          </LanguageProvider>
         </ErrorBoundary>
       </SafeAreaProvider>
     );
@@ -144,26 +150,28 @@ export default function App(): React.ReactElement {
   return (
     <SafeAreaProvider>
       <ErrorBoundary>
-        <ThemeProvider>
-          <HapticProvider>
-            <ToastProvider>
-              <GlobalErrorHandler>
-                <PremiumProvider>
-                  <CreditProvider>
-                    <TourProvider>
-                      <NavigationContainer>
-                        <MainTabNavigator />
-                      </NavigationContainer>
-                      <TourOverlay />
-                    </TourProvider>
-                  </CreditProvider>
-                </PremiumProvider>
-                <ToastContainer />
-                <ThemedStatusBar />
-              </GlobalErrorHandler>
-            </ToastProvider>
-          </HapticProvider>
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <HapticProvider>
+              <ToastProvider>
+                <GlobalErrorHandler>
+                  <PremiumProvider>
+                    <CreditProvider>
+                      <TourProvider>
+                        <NavigationContainer>
+                          <MainTabNavigator />
+                        </NavigationContainer>
+                        <TourOverlay />
+                      </TourProvider>
+                    </CreditProvider>
+                  </PremiumProvider>
+                  <ToastContainer />
+                  <ThemedStatusBar />
+                </GlobalErrorHandler>
+              </ToastProvider>
+            </HapticProvider>
+          </ThemeProvider>
+        </LanguageProvider>
       </ErrorBoundary>
     </SafeAreaProvider>
   );

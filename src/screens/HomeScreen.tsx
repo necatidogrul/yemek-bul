@@ -30,6 +30,7 @@ import { useToast } from "../contexts/ToastContext";
 import { useHaptics } from "../hooks/useHaptics";
 import { useAccessibility } from "../hooks/useAccessibility";
 import { borderRadius } from "../theme/design-tokens";
+import { useTranslation } from "../hooks/useTranslation";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -62,6 +63,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { showSuccess, showError, showWarning, showInfo } = useToast();
   const haptics = useHaptics();
   const { announceForAccessibility } = useAccessibility();
+  const { t, formatCredits, formatRecipesFound, formatSearchWithCount } = useTranslation();
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerOpacity = scrollY.interpolate({
@@ -109,12 +111,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const searchRecipes = async () => {
     if (ingredientsList.length === 0) {
-      showWarning("Lütfen en az bir malzeme ekleyin");
+      showWarning(t("errors.minIngredients"));
       return;
     }
 
     if (!userCredits || userCredits.remainingCredits < 1) {
-      showError("Yetersiz kredi. Lütfen kredi satın alın.");
+      showError(t("credits.insufficient"));
       return;
     }
 
@@ -127,17 +129,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       });
 
       if (recipes && recipes.recipes && recipes.recipes.length > 0) {
-        showSuccess(`${recipes.recipes.length} tarif bulundu!`);
+        showSuccess(formatRecipesFound(recipes.recipes.length));
         navigation.navigate("RecipeResults", {
           ingredients: ingredientsList,
           aiRecipes: recipes.recipes,
         });
       } else {
-        showWarning("Bu malzemelerle tarif bulunamadı");
+        showWarning(t("errors.noRecipesFound"));
       }
     } catch (error) {
       Logger.error("Recipe search failed:", error);
-      showError("Tarif araması başarısız");
+      showError(t("errors.search"));
     } finally {
       setIsLoading(false);
     }
@@ -153,7 +155,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         setIngredients(result);
       }
     } catch (error) {
-      showError("Ses tanıma başarısız");
+      showError(t("errors.voice"));
     } finally {
       setIsListening(false);
     }
@@ -286,14 +288,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     variant="labelLarge"
                     style={{ color: "rgba(255,255,255,0.8)" }}
                   >
-                    Hoş geldin! 👋
+                    {t("home.greeting")}
                   </Text>
                   <Text
                     variant="displaySmall"
                     weight="700"
                     style={{ color: "white" }}
                   >
-                    Ne pişirelim?
+                    {t("home.question")}
                   </Text>
                 </View>
 
@@ -324,7 +326,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   marginTop: 16,
                 }}
               >
-                Evdeki malzemelerinle binlerce tarif keşfet
+                {t("home.description")}
               </Text>
             </View>
           </LinearGradient>
@@ -339,17 +341,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <Ionicons name="search" size={24} color={colors.primary[500]} />
               <View style={styles.searchHeaderText}>
                 <Text variant="headlineSmall" weight="600">
-                  Malzeme Ara
+                  {t("home.searchTitle")}
                 </Text>
                 <Text variant="bodySmall" color="secondary">
-                  Evindeki malzemeleri ekle, tarifini bul
+                  {t("home.searchSubtitle")}
                 </Text>
               </View>
             </View>
 
             <View style={styles.inputContainer}>
               <Input
-                placeholder="Domates, soğan, tavuk..."
+                placeholder={t("home.searchPlaceholder")}
                 value={ingredients}
                 onChangeText={handleIngredientChange}
                 onSubmitEditing={addIngredient}
@@ -392,7 +394,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   weight="500"
                   style={{ marginBottom: 8 }}
                 >
-                  Eklenen Malzemeler:
+                  {t("home.addedIngredients")}
                 </Text>
                 <View style={styles.tagsContainer}>
                   {ingredientsList.map((ingredient, index) => (
@@ -433,8 +435,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               style={{ marginTop: 16 }}
             >
               {isLoading
-                ? "Aranıyor..."
-                : `${ingredientsList.length} Malzemeyle Ara`}
+                ? t("home.searching")
+                : formatSearchWithCount(ingredientsList.length)}
             </Button>
           </Card>
         </View>
@@ -443,10 +445,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <View style={styles.quickSection}>
           <View style={styles.sectionHeader}>
             <Text variant="headlineSmall" weight="600">
-              Hızlı Ekle
+              {t("home.quickAdd")}
             </Text>
             <Text variant="bodySmall" color="secondary">
-              Popüler malzemeler
+              {t("home.popularIngredients")}
             </Text>
           </View>
 
@@ -464,14 +466,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <View style={styles.featuredSection}>
           <View style={styles.sectionHeader}>
             <Text variant="headlineSmall" weight="600">
-              Öne Çıkan Tarifler
+              {t("home.featuredRecipes")}
             </Text>
             <TouchableOpacity onPress={() => navigation.navigate("AllRecipes")}>
               <Text
                 variant="labelMedium"
                 style={{ color: colors.primary[500] }}
               >
-                Tümünü Gör
+                {t("home.seeAll")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -503,10 +505,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Ionicons name="library" size={28} color="white" />
               </LinearGradient>
               <Text variant="labelLarge" weight="600">
-                Tüm Tarifler
+                {t("home.allRecipes")}
               </Text>
               <Text variant="labelSmall" color="secondary">
-                500+ tarif keşfet
+                {t("home.discoverRecipes")}
               </Text>
             </TouchableOpacity>
 
@@ -524,10 +526,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Ionicons name="heart" size={28} color="white" />
               </LinearGradient>
               <Text variant="labelLarge" weight="600">
-                Favoriler
+                {t("home.favorites")}
               </Text>
               <Text variant="labelSmall" color="secondary">
-                Beğendiğin tarifler
+                {t("home.likedRecipes")}
               </Text>
             </TouchableOpacity>
           </View>

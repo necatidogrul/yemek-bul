@@ -8,16 +8,22 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "description": "Evdeki malzemelerinizle yapabileceğiniz yemekleri keşfetmenizi sağlayan akıllı tarif önerme uygulaması",
-    "keywords": ["yemek", "tarif", "malzeme", "mutfak", "pişirme", "türk mutfağı", "gıda israfı"],
+    "keywords": [
+      "yemek",
+      "tarif",
+      "malzeme",
+      "mutfak",
+      "pişirme",
+      "türk mutfağı",
+      "gıda israfı"
+    ],
     "primaryColor": "#4CAF50",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#E8F5E8"
     },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
+    "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yemekbulucu.app",
@@ -47,26 +53,20 @@
         "backgroundColor": "#E8F5E8"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": [
-        "RECORD_AUDIO",
-        "INTERNET",
-        "ACCESS_NETWORK_STATE"
-      ],
-      "package": "com.yourcompany.yemekbulucu",
+      "permissions": ["RECORD_AUDIO", "INTERNET", "ACCESS_NETWORK_STATE"],
+      "package": "com.yemekbulucu.app",
       "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": [
-      "expo-localization"
-    ],
+    "plugins": ["expo-localization"],
+    "owner": "shado7",
     "extra": {
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "e3e037bb-7ebe-4355-b267-013c4b959976"
       }
-    },
-    "owner": "your-expo-username"
+    }
   }
 }

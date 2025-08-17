@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   View,
-  ScrollView,
   SafeAreaView,
   StyleSheet,
   TouchableOpacity,
@@ -52,6 +51,49 @@ interface AIStage {
   progress: number;
 }
 
+const SMART_SUGGESTIONS = [
+  {
+    id: 'breakfast',
+    name: 'Kahvaltı Öner',
+    subtitle: 'Hızlı başlat',
+    icon: '🌅',
+    color: '#F59E0B',
+    mealTime: 'breakfast' as const,
+    defaultIngredients: ['yumurta', 'peynir', 'domates'],
+    cookingTime: 15,
+  },
+  {
+    id: 'lunch', 
+    name: 'Öğle Yemeği',
+    subtitle: 'Doyurucu tarif',
+    icon: '☀️',
+    color: '#EF4444',
+    mealTime: 'lunch' as const,
+    defaultIngredients: ['tavuk', 'pirinç', 'sebze'],
+    cookingTime: 30,
+  },
+  {
+    id: 'dinner',
+    name: 'Akşam Yemeği', 
+    subtitle: 'Lezzetli akşam',
+    icon: '🌆',
+    color: '#8B5CF6',
+    mealTime: 'dinner' as const,
+    defaultIngredients: ['et', 'patates', 'soğan'],
+    cookingTime: 45,
+  },
+  {
+    id: 'snack',
+    name: 'Hızlı Tarif',
+    subtitle: '15 dk hazır',
+    icon: '⚡',
+    color: '#10B981', 
+    mealTime: 'snack' as const,
+    defaultIngredients: ['makarna', 'domates', 'peynir'],
+    cookingTime: 15,
+  },
+];
+
 const POPULAR_INGREDIENTS = [
   { name: "Domates", icon: "🍅", color: "#EF4444" },
   { name: "Soğan", icon: "🧅", color: "#A855F7" },
@@ -60,13 +102,6 @@ const POPULAR_INGREDIENTS = [
   { name: "Patates", icon: "🥔", color: "#8B5CF6" },
   { name: "Tavuk", icon: "🐔", color: "#F97316" },
 ];
-
-const MEAL_TIMES = [
-  { id: 'breakfast', name: 'Kahvaltı', icon: '🌅', color: '#F59E0B', time: 'morning' },
-  { id: 'lunch', name: 'Öğle', icon: '☀️', color: '#EF4444', time: 'noon' },
-  { id: 'dinner', name: 'Akşam', icon: '🌆', color: '#8B5CF6', time: 'evening' },
-  { id: 'snack', name: 'Atıştırmalık', icon: '🍿', color: '#10B981', time: 'anytime' },
-] as const;
 
 export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   navigation,
@@ -86,7 +121,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   });
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [selectedMealTime, setSelectedMealTime] = useState<'breakfast' | 'lunch' | 'dinner' | 'snack' | null>(null);
+  const [showAdvancedMode, setShowAdvancedMode] = useState(false);
 
   // Hooks
   const { colors } = useThemedStyles();
@@ -186,15 +221,128 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
     }
   };
 
-  // AI Recipe Generation
-  const generateAIRecipes = async () => {
-    if (ingredients.length === 0) {
-      showWarning("Malzeme Gerekli", "Lütfen en az bir malzeme ekleyin");
+  // Smart suggestion tap handler
+  const handleSmartSuggestion = async (suggestion: typeof SMART_SUGGESTIONS[0]) => {
+    // Set the ingredients for display
+    setIngredients(suggestion.defaultIngredients);
+    
+    // Start AI generation immediately with smart defaults
+    await generateAIRecipesWithSmartDefaults(suggestion);
+  };
+
+  // Smart AI Recipe Generation with defaults
+  const generateAIRecipesWithSmartDefaults = async (suggestion: typeof SMART_SUGGESTIONS[0]) => {
+    // Check if user can afford AI recipe generation
+    if (!canAfford("recipe_generation")) {
+      setCreditModalTrigger("ai_limit");
+      setShowCreditModal(true);
       return;
     }
+
+    const canSearch = await checkSearchLimit();
+    if (!canSearch) return;
+
+    // Start animations
+    animateScale(searchScale, 0.95);
+    setTimeout(() => {
+      animateScale(searchScale, 1);
+    }, 150);
+
+    // Deduct credits BEFORE making API call
+    const creditDeducted = await deductCredits(
+      "recipe_generation",
+      `AI tarif üretimi - ${suggestion.name}`
+    );
     
-    if (!selectedMealTime) {
-      showWarning("Öğün Seçimi", "Lütfen hangi öğün için tarif aradığınızı seçin");
+    if (!creditDeducted) {
+      showError("Kredi düşürülemedi", "Lütfen tekrar deneyin");
+      return;
+    }
+
+    setShowAIModal(true);
+    haptics.voiceStart();
+
+    try {
+      // Stage 1: Analyzing
+      setAiStage({ stage: "analyzing", progress: 0 });
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setAiStage({ stage: "analyzing", progress: 25 });
+
+      // Stage 2: Generating
+      setAiStage({ stage: "generating", progress: 30 });
+
+      // Kullanıcı tercihlerini al
+      const userPreferences = await UserPreferencesService.getUserPreferences();
+      
+      // Tarif geçmişi sayısını al (basit implementation)
+      const recipeHistory = await HistoryService.getStats().then(stats => stats.totalRequests || 0).catch(() => 0);
+      
+      const aiResponse = await OpenAIService.generateRecipes({
+        ingredients: suggestion.defaultIngredients,
+        mealTime: suggestion.mealTime,
+        userProfile: {
+          dietaryRestrictions: userPreferences.dietaryRestrictions || [],
+          favoriteCategories: userPreferences.favoriteCategories || [],
+          cookingLevel: userPreferences.cookingLevel || 'orta',
+          recipeHistory: recipeHistory,
+        },
+        preferences: {
+          difficulty: userPreferences.cookingLevel === 'başlangıç' ? 'kolay' : 
+                     userPreferences.cookingLevel === 'uzman' ? 'zor' : 'orta',
+          servings: 2,
+          cookingTime: suggestion.cookingTime,
+        },
+      });
+
+      // Stage 3: Optimizing
+      setAiStage({ stage: "optimizing", progress: 75 });
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Stage 4: Finalizing
+      setAiStage({ stage: "finalizing", progress: 95 });
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      setAiStage({ stage: "finalizing", progress: 100 });
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setShowAIModal(false);
+
+      if (aiResponse.recipes && aiResponse.recipes.length > 0) {
+        haptics.success();
+        showSuccess(
+          "Tarifler Hazır!",
+          `${aiResponse.recipes.length} AI tarif önerisi oluşturuldu`
+        );
+
+        // Navigate to results
+        navigation.navigate("RecipeResults", {
+          ingredients: suggestion.defaultIngredients,
+          aiRecipes: aiResponse.recipes,
+        });
+      } else {
+        showWarning("Tarif Bulunamadı", "Bu malzemeler için tarif üretilemedi");
+      }
+    } catch (error: any) {
+      setShowAIModal(false);
+
+      // Refund credits on API failure
+      try {
+        await addCredits(1, "AI tarif üretimi başarısız - kredi iade");
+      } catch (refundError) {
+        Logger.error("Failed to refund credits:", refundError);
+      }
+
+      showError("AI Hatası", "Tarif üretilirken bir hata oluştu (Kredi iade edildi)");
+      haptics.error();
+    }
+  };
+
+  // AI Recipe Generation
+  const generateAIRecipes = async (customIngredients?: string[], customMealTime?: string) => {
+    const useIngredients = customIngredients || ingredients;
+    const useMealTime = customMealTime || 'lunch'; // Default to lunch
+    
+    if (useIngredients.length === 0) {
+      showWarning("Malzeme Gerekli", "Lütfen en az bir malzeme ekleyin");
       return;
     }
 
@@ -244,8 +392,8 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       const recipeHistory = await HistoryService.getStats().then(stats => stats.totalRequests || 0).catch(() => 0);
       
       const aiResponse = await OpenAIService.generateRecipes({
-        ingredients,
-        mealTime: selectedMealTime!,
+        ingredients: useIngredients,
+        mealTime: useMealTime as 'breakfast' | 'lunch' | 'dinner' | 'snack',
         userProfile: {
           dietaryRestrictions: userPreferences.dietaryRestrictions || [],
           favoriteCategories: userPreferences.favoriteCategories || [],
@@ -256,8 +404,8 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
           difficulty: userPreferences.cookingLevel === 'başlangıç' ? 'kolay' : 
                      userPreferences.cookingLevel === 'uzman' ? 'zor' : 'orta',
           servings: 2,
-          cookingTime: selectedMealTime === 'breakfast' ? 15 : 
-                      selectedMealTime === 'lunch' ? 30 : 45,
+          cookingTime: useMealTime === 'breakfast' ? 15 : 
+                      useMealTime === 'lunch' ? 30 : 45,
         },
       });
 
@@ -284,7 +432,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
         // Save to history
         await HistoryService.saveRequest({
-          ingredients,
+          ingredients: useIngredients,
           preferences: {
             difficulty: "kolay",
             servings: 2,
@@ -304,7 +452,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
         // Navigate to results
         navigation.navigate("RecipeResults", {
-          ingredients,
+          ingredients: useIngredients,
           aiRecipes: aiResponse.recipes,
         });
       } else {
@@ -312,7 +460,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
         // Save failed attempt to history
         await HistoryService.saveRequest({
-          ingredients,
+          ingredients: useIngredients,
           preferences: {
             difficulty: "kolay",
             servings: 2,
@@ -349,7 +497,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
       // Save error to history
       await HistoryService.saveRequest({
-        ingredients,
+        ingredients: useIngredients,
         preferences: {
           difficulty: "kolay",
           servings: 2,
@@ -364,7 +512,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       });
 
       // Fallback to normal search
-      navigation.navigate("RecipeResults", { ingredients });
+      navigation.navigate("RecipeResults", { ingredients: useIngredients });
     }
   };
 
@@ -383,149 +531,109 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
     >
       <StatusBar barStyle="light-content" backgroundColor="#1a1a2e" />
 
-      {/* Header */}
-      <RNAnimated.View style={{ opacity: headerOpacity }}>
-        <LinearGradient
-          colors={["#1a1a2e", "#16213e", "#0f3460"]}
-          style={styles.header}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.headerContent}>
-            <View style={styles.headerLeft}>
-              <View style={styles.headerIcon}>
-                <Ionicons name="restaurant" size={28} color="#fff" />
-              </View>
-              <View style={styles.headerText}>
-                <Text
-                  variant="headlineMedium"
-                  weight="bold"
-                  style={{ color: "#fff" }}
-                >
-                  Yemek Bulucu
-                </Text>
-                <Text
-                  variant="bodyMedium"
-                  style={{ color: "rgba(255,255,255,0.8)" }}
-                >
-                  AI ile akıllı tarif önerileri
-                </Text>
-              </View>
-            </View>
+      {/* Compact Header */}
+      <View style={styles.compactHeader}>
+        <View style={styles.compactHeaderContent}>
+          <View style={styles.compactHeaderLeft}>
+            <Ionicons name="restaurant" size={24} color={colors.primary[500]} />
+            <Text variant="headlineSmall" weight="bold" style={{ color: colors.text.primary }}>
+              Yemek Bulucu
+            </Text>
+          </View>
+          <CreditDisplay
+            compact={true}
+            onPress={() => {
+              setCreditModalTrigger("general");
+              setShowCreditModal(true);
+            }}
+          />
+        </View>
+      </View>
 
-            <View style={styles.headerRight}>
-              <CreditDisplay
-                compact={true}
-                onPress={() => {
-                  setCreditModalTrigger("general");
-                  setShowCreditModal(true);
-                }}
+      <View style={styles.mainContent}>
+        {/* Welcome Section */}
+        <View style={styles.welcomeSection}>
+          <Text variant="displaySmall" weight="bold" style={{ color: colors.text.primary }}>
+            Ne pişirmek istersin?
+          </Text>
+          <Text variant="bodyLarge" color="secondary" style={{ marginTop: 8 }}>
+            Tek dokunuşla AI tarif önerisi al
+          </Text>
+        </View>
+
+        {/* Smart Suggestions Grid - 2x2 */}
+        <View style={styles.smartSuggestionGrid}>
+          {SMART_SUGGESTIONS.map((suggestion) => (
+            <TouchableOpacity
+              key={suggestion.id}
+              style={[styles.suggestionCard]}
+              onPress={() => handleSmartSuggestion(suggestion)}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={[suggestion.color, suggestion.color + 'E6']}
+                style={styles.suggestionGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Text style={styles.suggestionIcon}>{suggestion.icon}</Text>
+                <Text variant="bodyLarge" weight="600" style={{ color: 'white', textAlign: 'center' }}>
+                  {suggestion.name}
+                </Text>
+                <Text variant="labelSmall" style={{ color: 'rgba(255,255,255,0.9)', textAlign: 'center' }}>
+                  {suggestion.subtitle}
+                </Text>
+                <View style={styles.aiIndicator}>
+                  <Ionicons name="sparkles" size={14} color="white" />
+                  <Text variant="labelSmall" style={{ color: 'white', marginLeft: 4 }}>
+                    AI
+                  </Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Custom Input Section */}
+        <View style={styles.customInputSection}>
+          <TouchableOpacity 
+            style={[styles.customInputButton, { backgroundColor: colors.surface?.primary || '#fff' }]}
+            onPress={() => setShowAdvancedMode(!showAdvancedMode)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.customInputContent}>
+              <Ionicons name="create-outline" size={24} color={colors.primary[500]} />
+              <View style={styles.customInputText}>
+                <Text variant="bodyLarge" weight="600" style={{ color: colors.text.primary }}>
+                  Özel Tarif Oluştur
+                </Text>
+                <Text variant="labelMedium" color="secondary">
+                  Kendi malzemelerinle tarif bul
+                </Text>
+              </View>
+              <Ionicons 
+                name={showAdvancedMode ? "chevron-up" : "chevron-down"} 
+                size={20} 
+                color={colors.primary[500]} 
               />
             </View>
-          </View>
-        </LinearGradient>
-      </RNAnimated.View>
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Meal Time Selector */}
-        <RNAnimated.View style={{ transform: [{ scale: inputScale }] }}>
-          <View
-            style={[
-              styles.mealTimeSection,
-              { backgroundColor: colors.neutral[50] },
-            ]}
-          >
-            <Text
-              variant="headlineSmall"
-              weight="semibold"
-              style={styles.sectionTitle}
-            >
-              Hangi öğün için tarif arıyorsun?
+        {/* Advanced Mode - Only show when toggled */}
+        {showAdvancedMode && (
+          <View style={[styles.advancedInputSection, { backgroundColor: colors.neutral[50] }]}>
+            <Text variant="bodyLarge" weight="600" style={{ marginBottom: 16, color: colors.text.primary }}>
+              Malzemelerinizi ekleyin
             </Text>
             
-            <View style={styles.mealTimeGrid}>
-              {MEAL_TIMES.map((mealTime) => {
-                const isSelected = selectedMealTime === mealTime.id;
-                return (
-                  <TouchableOpacity
-                    key={mealTime.id}
-                    style={[
-                      styles.mealTimeCard,
-                      {
-                        backgroundColor: isSelected 
-                          ? mealTime.color + '20' 
-                          : colors.surface?.primary || '#fff',
-                        borderColor: isSelected 
-                          ? mealTime.color 
-                          : colors.neutral?.[300] || '#ddd',
-                        borderWidth: isSelected ? 2 : 1,
-                      },
-                    ]}
-                    onPress={() => {
-                      setSelectedMealTime(mealTime.id);
-                      haptics.impactLight();
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={{ ...styles.mealTimeIcon, fontSize: 32 }}>
-                      {mealTime.icon}
-                    </Text>
-                    <Text
-                      variant="bodyLarge"
-                      weight="600"
-                      style={{
-                        color: isSelected ? mealTime.color : colors.text.primary,
-                        textAlign: 'center',
-                      }}
-                    >
-                      {mealTime.name}
-                    </Text>
-                    {isSelected && (
-                      <View style={[
-                        styles.checkmark,
-                        { backgroundColor: mealTime.color }
-                      ]}>
-                        <Ionicons name="checkmark" size={12} color="white" />
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          </View>
-        </RNAnimated.View>
-
-        {/* Input Section */}
-        <RNAnimated.View style={{ transform: [{ scale: inputScale }] }}>
-          <View
-            style={[
-              styles.inputSection,
-              { backgroundColor: colors.neutral[50] },
-            ]}
-          >
-            <Text
-              variant="headlineSmall"
-              weight="semibold"
-              style={styles.sectionTitle}
-            >
-              Malzemelerinizi Girin
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <View
-                style={[
-                  styles.textInputContainer,
-                  { borderColor: colors.neutral[200] },
-                ]}
-              >
-                <Ionicons name="search" size={20} color={colors.neutral[400]} />
+            {/* Compact Input */}
+            <View style={styles.compactInputContainer}>
+              <View style={[styles.compactTextInput, { borderColor: colors.neutral[300] }]}>
+                <Ionicons name="restaurant-outline" size={20} color={colors.neutral[400]} />
                 <TextInput
-                  style={[styles.textInput, { color: colors.neutral[900] }]}
-                  placeholder="Örn: domates, soğan, peynir..."
+                  style={[styles.inputField, { color: colors.text.primary }]}
+                  placeholder="Malzeme ekle..."
                   placeholderTextColor={colors.neutral[400]}
                   value={inputText}
                   onChangeText={handleInputChange}
@@ -535,223 +643,82 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
                 {inputText.length > 0 && (
                   <TouchableOpacity
                     onPress={() => addIngredient(inputText)}
-                    style={[
-                      styles.addButton,
-                      { backgroundColor: colors.primary[500] },
-                    ]}
+                    style={[styles.quickAddButton, { backgroundColor: colors.primary[500] }]}
                   >
                     <Ionicons name="add" size={18} color="#fff" />
                   </TouchableOpacity>
                 )}
               </View>
 
-              {/* Suggestions */}
-              {showSuggestions && (
-                <View
-                  style={[
-                    styles.suggestionsContainer,
-                    { backgroundColor: colors.neutral[50] },
-                  ]}
-                >
-                  {suggestions.map((suggestion, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={styles.suggestionItem}
-                      onPress={() => addIngredient(suggestion)}
-                    >
-                      <Ionicons
-                        name="add-circle-outline"
-                        size={16}
-                        color={colors.primary[500]}
-                      />
-                      <Text variant="bodyMedium" style={{ marginLeft: 8 }}>
-                        {suggestion}
+              {/* Quick Popular Ingredients */}
+              <View style={styles.quickIngredients}>
+                {POPULAR_INGREDIENTS.slice(0, 4).map((item) => (
+                  <TouchableOpacity
+                    key={item.name}
+                    style={[styles.quickIngredientTag, { backgroundColor: colors.surface?.primary || '#fff' }]}
+                    onPress={() => addIngredient(item.name)}
+                  >
+                    <Text style={{ fontSize: 16 }}>{item.icon}</Text>
+                    <Text variant="labelSmall" style={{ color: colors.text.primary }}>
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Added Ingredients Display */}
+              {ingredients.length > 0 && (
+                <View style={styles.addedIngredients}>
+                  <View style={styles.addedIngredientsHeader}>
+                    <Text variant="labelMedium" weight="600" style={{ color: colors.text.primary }}>
+                      Eklenen ({ingredients.length})
+                    </Text>
+                    <TouchableOpacity onPress={() => setIngredients([])}>
+                      <Text variant="labelSmall" style={{ color: colors.error[500] }}>
+                        Temizle
                       </Text>
                     </TouchableOpacity>
-                  ))}
+                  </View>
+                  <View style={styles.ingredientChips}>
+                    {ingredients.map((ingredient) => (
+                      <TouchableOpacity
+                        key={ingredient}
+                        style={[styles.ingredientChip, { backgroundColor: colors.primary[100] }]}
+                        onPress={() => removeIngredient(ingredient)}
+                      >
+                        <Text variant="labelSmall" style={{ color: colors.primary[700] }}>
+                          {ingredient}
+                        </Text>
+                        <Ionicons name="close" size={12} color={colors.primary[700]} />
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Generate Button */}
+                  <TouchableOpacity
+                    style={[styles.generateButton]}
+                    onPress={generateAIRecipes}
+                    activeOpacity={0.8}
+                  >
+                    <LinearGradient
+                      colors={["#8B5CF6", "#A855F7"]}
+                      style={styles.generateButtonGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    >
+                      <Ionicons name="sparkles" size={20} color="white" />
+                      <Text variant="bodyMedium" weight="600" style={{ color: 'white' }}>
+                        AI Tarif Üret
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </View>
               )}
             </View>
           </View>
-        </RNAnimated.View>
-
-        {/* Popular Ingredients */}
-        <View style={styles.popularSection}>
-          <Text
-            variant="bodyLarge"
-            weight="semibold"
-            style={styles.sectionTitle}
-          >
-            Popüler Malzemeler
-          </Text>
-          <View style={styles.popularGrid}>
-            {POPULAR_INGREDIENTS.map((item, index) => (
-              <TouchableOpacity
-                key={item.name}
-                style={[
-                  styles.popularItem,
-                  { backgroundColor: colors.neutral[50] },
-                ]}
-                onPress={() => handlePopularIngredientPress(item.name)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.popularEmoji}>{item.icon}</Text>
-                <Text variant="bodySmall" weight="medium">
-                  {item.name}
-                </Text>
-                <View
-                  style={[styles.popularDot, { backgroundColor: item.color }]}
-                />
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Added Ingredients */}
-        {ingredients.length > 0 && (
-          <View
-            style={[
-              styles.ingredientsSection,
-              { backgroundColor: colors.neutral[50] },
-            ]}
-          >
-            <View style={styles.ingredientsHeader}>
-              <Text variant="bodyLarge" weight="semibold">
-                Eklenen Malzemeler ({ingredients.length})
-              </Text>
-              <TouchableOpacity
-                onPress={() => setIngredients([])}
-                style={[
-                  styles.clearButton,
-                  { backgroundColor: colors.error[50] },
-                ]}
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={16}
-                  color={colors.error[500]}
-                />
-                <Text variant="labelSmall" color="error" weight="medium">
-                  Temizle
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.ingredientsList}>
-              {ingredients.map((ingredient, index) => (
-                <View
-                  key={ingredient}
-                  style={[
-                    styles.ingredientChip,
-                    { backgroundColor: colors.primary[50] },
-                  ]}
-                >
-                  <Text variant="bodySmall" color="accent" weight="medium">
-                    {ingredient}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => removeIngredient(ingredient)}
-                    style={styles.removeButton}
-                  >
-                    <Ionicons
-                      name="close"
-                      size={16}
-                      color={colors.primary[400]}
-                    />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </View>
-
-            {/* AI Generate Button */}
-            <RNAnimated.View style={{ transform: [{ scale: searchScale }] }}>
-              <TouchableOpacity
-                style={[styles.aiButton]}
-                onPress={generateAIRecipes}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={["#8B5CF6", "#A855F7", "#C084FC"]}
-                  style={styles.aiButtonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Ionicons name="sparkles" size={24} color="#fff" />
-                  <Text
-                    variant="bodyLarge"
-                    weight="bold"
-                    style={{ color: "#fff" }}
-                  >
-                    AI ile Tarif Üret
-                  </Text>
-                  <View style={styles.aiButtonBadge}>
-                    <Text
-                      variant="labelSmall"
-                      weight="bold"
-                      style={{ color: "#8B5CF6" }}
-                    >
-                      BETA
-                    </Text>
-                  </View>
-                </LinearGradient>
-              </TouchableOpacity>
-            </RNAnimated.View>
-          </View>
         )}
 
-        {/* Quick Actions */}
-        <RNAnimated.View style={{ opacity: headerOpacity }}>
-          <View style={styles.quickActions}>
-            <TouchableOpacity
-              style={[
-                styles.quickActionCard,
-                { backgroundColor: colors.neutral[50] },
-              ]}
-              onPress={() => {
-                // @ts-ignore - Navigate to tab
-                navigation.getParent()?.navigate("HistoryTab");
-              }}
-            >
-              <LinearGradient
-                colors={["#8B5CF6", "#7C3AED"]}
-                style={styles.quickActionGradient}
-              >
-                <Ionicons name="time" size={24} color="#fff" />
-              </LinearGradient>
-              <Text variant="bodyLarge" weight="semibold">
-                Geçmiş
-              </Text>
-              <Text variant="labelSmall" color="secondary">
-                Arama geçmişi
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.quickActionCard,
-                { backgroundColor: colors.neutral[50] },
-              ]}
-              onPress={() => {
-                // @ts-ignore - Navigate to tab
-                navigation.getParent()?.navigate("FavoritesTab");
-              }}
-            >
-              <LinearGradient
-                colors={["#EF4444", "#DC2626"]}
-                style={styles.quickActionGradient}
-              >
-                <Ionicons name="heart" size={24} color="#fff" />
-              </LinearGradient>
-              <Text variant="bodyLarge" weight="semibold">
-                Favorilerim
-              </Text>
-              <Text variant="labelSmall" color="secondary">
-                Kayıtlı tarifler
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </RNAnimated.View>
-      </ScrollView>
+      </View>
 
       {/* AI Loading Modal */}
       <AILoadingModal
@@ -777,6 +744,169 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  
+  // Compact Header
+  compactHeader: {
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  compactHeaderContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  compactHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+  },
+
+  // Main Content
+  mainContent: {
+    flex: 1,
+    paddingHorizontal: spacing[4],
+  },
+  welcomeSection: {
+    paddingTop: spacing[6],
+    paddingBottom: spacing[6],
+    alignItems: 'center',
+  },
+
+  // Smart Suggestions Grid
+  smartSuggestionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[3],
+    marginBottom: spacing[6],
+  },
+  suggestionCard: {
+    width: (screenWidth - spacing[4] * 2 - spacing[3]) / 2,
+    aspectRatio: 1.1,
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    ...shadows.lg,
+  },
+  suggestionGradient: {
+    flex: 1,
+    padding: spacing[4],
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  suggestionIcon: {
+    fontSize: 36,
+    marginBottom: spacing[2],
+  },
+  aiIndicator: {
+    position: 'absolute',
+    top: spacing[2],
+    right: spacing[2],
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+  },
+
+  // Custom Input Section
+  customInputSection: {
+    marginBottom: spacing[4],
+  },
+  customInputButton: {
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
+  },
+  customInputContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing[4],
+    gap: spacing[3],
+  },
+  customInputText: {
+    flex: 1,
+  },
+
+  // Advanced Input
+  advancedInputSection: {
+    borderRadius: borderRadius.lg,
+    padding: spacing[4],
+    ...shadows.sm,
+  },
+  compactInputContainer: {
+    gap: spacing[3],
+  },
+  compactTextInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
+    gap: spacing[2],
+  },
+  inputField: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  quickAddButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickIngredients: {
+    flexDirection: 'row',
+    gap: spacing[2],
+  },
+  quickIngredientTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[2],
+    paddingVertical: 8,
+    borderRadius: borderRadius.md,
+    gap: 4,
+    ...shadows.sm,
+  },
+  addedIngredients: {
+    gap: spacing[3],
+  },
+  addedIngredientsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ingredientChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  ingredientChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[2],
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
+    gap: 6,
+  },
+  generateButton: {
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  generateButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing[3],
+    gap: spacing[2],
   },
   header: {
     paddingTop: spacing[6],
@@ -978,6 +1108,117 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginBottom: spacing[3],
+  },
+  
+  // Smart Suggestions
+  smartSection: {
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[6],
+    padding: spacing[6],
+    borderRadius: borderRadius.xl,
+    ...shadows.lg,
+  },
+  smartHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing[6],
+  },
+  advancedToggle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    ...shadows.sm,
+  },
+  smartGrid: {
+    gap: spacing[4],
+  },
+  smartCard: {
+    borderRadius: borderRadius.lg,
+    overflow: "hidden",
+    ...shadows.md,
+  },
+  smartCardGradient: {
+    padding: spacing[5],
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
+    minHeight: 80,
+  },
+  smartCardIcon: {
+    marginRight: spacing[4],
+  },
+  smartCardContent: {
+    flex: 1,
+  },
+  smartCardBadge: {
+    position: "absolute",
+    top: spacing[2],
+    right: spacing[2],
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  // Smart Suggestions
+  smartSection: {
+    marginHorizontal: spacing[4],
+    marginBottom: spacing[6],
+    padding: spacing[6],
+    borderRadius: borderRadius.xl,
+    ...shadows.md,
+  },
+  smartHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing[6],
+  },
+  advancedToggle: {
+    padding: spacing[3],
+    borderRadius: borderRadius.full,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  smartGrid: {
+    gap: spacing[4],
+  },
+  smartCard: {
+    borderRadius: borderRadius.lg,
+    overflow: "hidden",
+    ...shadows.sm,
+  },
+  smartCardGradient: {
+    padding: spacing[4],
+    flexDirection: "row",
+    alignItems: "center",
+    position: "relative",
+  },
+  smartCardIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(255,255,255,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: spacing[4],
+  },
+  smartCardContent: {
+    flex: 1,
+  },
+  smartCardBadge: {
+    position: "absolute",
+    top: spacing[2],
+    right: spacing[2],
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   
   // Meal Time Selector

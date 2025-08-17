@@ -41,6 +41,9 @@ export { PullToRefresh, default as PullToRefreshComponent } from "./PullToRefres
 // Performance Optimized Components
 export { OptimizedImage } from "./OptimizedImage";
 
+// Language Components
+export { LanguageSelector } from "./LanguageSelector";
+
 // Legacy components (will be updated)
 export { RecipeCard } from "./RecipeCard";
 export { SuggestionCard } from "./SuggestionCard";

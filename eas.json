@@ -7,7 +7,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "ios": {
-        "buildConfiguration": "Debug"
+        "buildConfiguration": "Debug",
+        "simulator": true
       },
       "android": {
         "buildType": "apk"
@@ -16,23 +17,20 @@
     "preview": {
       "distribution": "internal",
       "ios": {
-        "buildConfiguration": "Release"
+        "buildConfiguration": "Release",
+        "simulator": false
       },
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "distribution": "store",
       "ios": {
-        "buildConfiguration": "Release",
-        "bundleIdentifier": "com.yemekbulucu.app"
+        "buildConfiguration": "Release"
       },
       "android": {
-        "buildType": "aab",
-        "packageName": "com.yemekbulucu.app"
-      },
-      "env": {
-        "NODE_ENV": "production"
+        "buildType": "app-bundle"
       }
     }
   },
@@ -42,10 +40,6 @@
         "appleId": "your-apple-id@email.com",
         "ascAppId": "your-app-store-connect-app-id",
         "appleTeamId": "YOUR_TEAM_ID"
-      },
-      "android": {
-        "serviceAccountKeyPath": "./service-account-key.json",
-        "track": "internal"
       }
     }
   }
