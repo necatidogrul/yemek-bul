@@ -818,18 +818,17 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
           contentContainerStyle={[
             styles.listContainer,
             processedRecipes.length === 0 && styles.emptyListContainer,
+            { flexGrow: 1, paddingBottom: 100 }
           ]}
           columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
           showsVerticalScrollIndicator={false}
+          bounces={true}
+          nestedScrollEnabled={true}
           refreshing={pullToRefresh.isRefreshing}
           onRefresh={pullToRefresh.handleRefresh}
           onEndReached={() => {}}
           onEndReachedThreshold={0.5}
-          getItemLayout={(data, index) => ({
-            length: viewMode === "grid" ? 200 : 140,
-            offset: (viewMode === "grid" ? 200 : 140) * index,
-            index,
-          })}
+          getItemLayout={undefined}
           ItemSeparatorComponent={() =>
             viewMode === "list" ? <View style={{ height: 12 }} /> : null
           }

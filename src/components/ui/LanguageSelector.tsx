@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   StyleSheet,
@@ -6,31 +6,36 @@ import {
   Modal,
   FlatList,
   SafeAreaView,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { useTranslation } from '../../hooks/useTranslation';
-import { useTheme } from '../../contexts/ThemeContext';
-import { Button, Card, Text } from './index';
-import { borderRadius, spacing } from '../../theme/design-tokens';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { useTranslation } from "../../hooks/useTranslation";
+import { useTheme } from "../../contexts/ThemeContext";
+import Button from "./Button";
+import Card from "./Card";
+import Text from "./Text";
+import { borderRadius, spacing } from "../../theme/design-tokens";
 
 interface LanguageSelectorProps {
-  variant?: 'button' | 'card';
+  variant?: "button" | "card";
   showModal?: boolean;
   onModalToggle?: (show: boolean) => void;
 }
 
 export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
-  variant = 'button',
+  variant = "button",
   showModal = false,
   onModalToggle,
 }) => {
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const { currentLanguage, changeLanguage, availableLanguages, isLoading } = useLanguage();
+  const { currentLanguage, changeLanguage, availableLanguages, isLoading } =
+    useLanguage();
   const [modalVisible, setModalVisible] = useState(showModal);
 
-  const currentLang = availableLanguages.find(lang => lang.code === currentLanguage);
+  const currentLang = availableLanguages.find(
+    (lang) => lang.code === currentLanguage
+  );
 
   const handleModalToggle = (show: boolean) => {
     setModalVisible(show);
@@ -44,9 +49,13 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     handleModalToggle(false);
   };
 
-  const renderLanguageItem = ({ item }: { item: typeof availableLanguages[0] }) => {
+  const renderLanguageItem = ({
+    item,
+  }: {
+    item: (typeof availableLanguages)[0];
+  }) => {
     const isSelected = item.code === currentLanguage;
-    
+
     return (
       <TouchableOpacity
         style={[
@@ -69,14 +78,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           >
             {item.nativeName}
           </Text>
-          <Text
-            variant="labelSmall"
-            color="secondary"
-          >
+          <Text variant="labelSmall" color="secondary">
             {item.name}
           </Text>
         </View>
-        
+
         {isSelected && (
           <Ionicons
             name="checkmark-circle"
@@ -88,7 +94,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     );
   };
 
-  if (variant === 'card') {
+  if (variant === "card") {
     return (
       <>
         <Card variant="outlined" style={styles.card}>
@@ -98,19 +104,28 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             disabled={isLoading}
           >
             <View style={styles.cardLeft}>
-              <View style={[styles.iconContainer, { backgroundColor: colors.primary[100] }]}>
-                <Ionicons name="language" size={20} color={colors.primary[500]} />
+              <View
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: colors.primary[100] },
+                ]}
+              >
+                <Ionicons
+                  name="language"
+                  size={20}
+                  color={colors.primary[500]}
+                />
               </View>
               <View>
                 <Text variant="labelLarge" weight="600">
                   Dil / Language
                 </Text>
                 <Text variant="labelSmall" color="secondary">
-                  {currentLang?.nativeName || 'Türkçe'}
+                  {currentLang?.nativeName || "Türkçe"}
                 </Text>
               </View>
             </View>
-            
+
             <Ionicons
               name="chevron-forward"
               size={20}
@@ -125,9 +140,16 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
           presentationStyle="pageSheet"
           onRequestClose={() => handleModalToggle(false)}
         >
-          <SafeAreaView style={[styles.modal, { backgroundColor: colors.background }]}>
+          <SafeAreaView
+            style={[styles.modal, { backgroundColor: colors.background }]}
+          >
             {/* Header */}
-            <View style={[styles.modalHeader, { borderBottomColor: colors.neutral[200] }]}>
+            <View
+              style={[
+                styles.modalHeader,
+                { borderBottomColor: colors.neutral[200] },
+              ]}
+            >
               <Text variant="headlineSmall" weight="600">
                 Dil Seçimi / Language
               </Text>
@@ -135,7 +157,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 style={styles.closeButton}
                 onPress={() => handleModalToggle(false)}
               >
-                <Ionicons name="close" size={24} color={colors.text.secondary} />
+                <Ionicons
+                  name="close"
+                  size={24}
+                  color={colors.text.secondary}
+                />
               </TouchableOpacity>
             </View>
 
@@ -162,9 +188,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         size="sm"
         onPress={() => handleModalToggle(true)}
         disabled={isLoading}
-        leftIcon={<Ionicons name="language" size={16} color={colors.primary[500]} />}
+        leftIcon={
+          <Ionicons name="language" size={16} color={colors.primary[500]} />
+        }
       >
-        {currentLang?.code.toUpperCase() || 'TR'}
+        {currentLang?.code.toUpperCase() || "TR"}
       </Button>
 
       <Modal
@@ -173,11 +201,18 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         presentationStyle="pageSheet"
         onRequestClose={() => handleModalToggle(false)}
       >
-        <SafeAreaView style={[styles.modal, { backgroundColor: colors.background }]}>
+        <SafeAreaView
+          style={[styles.modal, { backgroundColor: colors.background }]}
+        >
           {/* Header */}
-          <View style={[styles.modalHeader, { borderBottomColor: colors.neutral[200] }]}>
+          <View
+            style={[
+              styles.modalHeader,
+              { borderBottomColor: colors.neutral[200] },
+            ]}
+          >
             <Text variant="headlineSmall" weight="600">
-              {t('app.name')} - Language
+              {t("app.name")} - Language
             </Text>
             <TouchableOpacity
               style={styles.closeButton}
@@ -208,22 +243,22 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   cardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: spacing[4],
   },
   cardLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: spacing[3],
   },
   iconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // Modal
@@ -231,9 +266,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: spacing[4],
     borderBottomWidth: 1,
   },
@@ -250,9 +285,9 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   languageItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: spacing[4],
     borderRadius: borderRadius.lg,
     borderWidth: 1,

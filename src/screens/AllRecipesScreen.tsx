@@ -937,7 +937,10 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
           contentContainerStyle={[
             styles.listContainer,
             filteredRecipes.length === 0 && styles.emptyListContainer,
+            { flexGrow: 1, paddingBottom: 100 },
           ]}
+          bounces={true}
+          nestedScrollEnabled={true}
           columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
           showsVerticalScrollIndicator={false}
           refreshing={isRefreshing}

@@ -575,7 +575,10 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           contentContainerStyle={[
             styles.listContainer,
             filteredFavorites.length === 0 && styles.emptyListContainer,
+            { flexGrow: 1, paddingBottom: 100 },
           ]}
+          bounces={true}
+          nestedScrollEnabled={true}
           columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
           showsVerticalScrollIndicator={false}
           refreshing={isRefreshing}

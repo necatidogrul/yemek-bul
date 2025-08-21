@@ -295,4 +295,40 @@ export const en = {
     ingredient: "Ingredient",
     recipe: "Recipe",
   },
+
+  // Onboarding
+  onboarding: {
+    steps: {
+      welcome: {
+        title: "Welcome to Recipe Finder! 👋",
+        subtitle: "Ready to create magic in the kitchen with AI?",
+      },
+      features: {
+        title: "AI-Powered Recipe Search ⚡",
+        subtitle: "Tell us your ingredients, discover perfect recipes",
+      },
+      preferences: {
+        title: "Let's Get to Know You 💜",
+        subtitle: "Choose your preferences, start your personal experience",
+      },
+      notifications: {
+        title: "Daily Inspiration 🔔",
+        subtitle: "Surprise yourself with new recipes every day",
+      },
+      ready: {
+        title: "Let's Get Started! 🚀",
+        subtitle: "Your culinary adventure begins now",
+      },
+    },
+    preferences: {
+      turkish: "Turkish",
+      italian: "Italian",
+      asian: "Asian",
+      healthy: "Healthy",
+      dessert: "Dessert",
+      quick: "Quick",
+      vegetarian: "Vegetarian",
+      meat: "Meat",
+    },
+  },
 };

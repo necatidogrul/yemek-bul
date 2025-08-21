@@ -70,40 +70,40 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const onboardingSteps: OnboardingStep[] = [
     {
       id: 0,
-      title: "Yemek Bulucu'ya Hoş Geldin! 👋",
-      subtitle: "AI ile mutfakta harikalar yaratmaya hazır mısın?",
+      title: t("onboarding.steps.welcome.title"),
+      subtitle: t("onboarding.steps.welcome.subtitle"),
       icon: "restaurant",
       color: "#6366f1",
       type: "welcome",
     },
     {
       id: 1,
-      title: "AI Destekli Tarif Arama ⚡",
-      subtitle: "Malzemelerini söyle, mükemmel tarifleri keşfet",
+      title: t("onboarding.steps.features.title"),
+      subtitle: t("onboarding.steps.features.subtitle"),
       icon: "flash",
       color: "#ec4899", 
       type: "features",
     },
     {
       id: 2,
-      title: "Seni Tanıyalım 💜",
-      subtitle: "Tercihlerini seç, kişisel deneyimin başlasın",
+      title: t("onboarding.steps.preferences.title"),
+      subtitle: t("onboarding.steps.preferences.subtitle"),
       icon: "heart",
       color: "#06b6d4",
       type: "preferences",
     },
     {
       id: 3,
-      title: "Günlük İlham 🔔",
-      subtitle: "Her gün yeni tariflerle sürprizlerle dolu",
+      title: t("onboarding.steps.notifications.title"),
+      subtitle: t("onboarding.steps.notifications.subtitle"),
       icon: "notifications",
       color: "#10b981",
       type: "notifications",
     },
     {
       id: 4,
-      title: "Hadi Başlayalım! 🚀",
-      subtitle: "Mutfak maceran şimdi başlıyor",
+      title: t("onboarding.steps.ready.title"),
+      subtitle: t("onboarding.steps.ready.subtitle"),
       icon: "rocket",
       color: "#f59e0b",
       type: "ready",
@@ -112,12 +112,12 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
 
   // Quick preference options
   const quickPreferences = [
-    { id: "turkish", emoji: "🇹🇷", label: "Türk" },
-    { id: "italian", emoji: "🍝", label: "İtalyan" },
-    { id: "asian", emoji: "🍜", label: "Asya" },
-    { id: "healthy", emoji: "🥗", label: "Sağlıklı" },
-    { id: "dessert", emoji: "🍰", label: "Tatlı" },
-    { id: "fast", emoji: "⚡", label: "Hızlı" },
+    { id: "turkish", emoji: "🇹🇷", label: t("onboarding.preferences.turkish") },
+    { id: "italian", emoji: "🍝", label: t("onboarding.preferences.italian") },
+    { id: "asian", emoji: "🍜", label: t("onboarding.preferences.asian") },
+    { id: "healthy", emoji: "🥗", label: t("onboarding.preferences.healthy") },
+    { id: "dessert", emoji: "🍰", label: t("onboarding.preferences.dessert") },
+    { id: "fast", emoji: "⚡", label: t("onboarding.preferences.quick") },
   ];
 
   const skillLevels = [

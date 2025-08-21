@@ -52,23 +52,51 @@ export default function App(): React.ReactElement {
     initializeApp();
   }, []);
 
+  // Timeout helper to avoid indefinite hangs (e.g., 3rd-party SDK init)
+  const withTimeout = async <T,>(
+    promise: Promise<T>,
+    ms: number,
+    onTimeout?: () => void
+  ): Promise<T | null> => {
+    let timeoutId: NodeJS.Timeout;
+    const timeoutPromise = new Promise<null>((resolve) => {
+      timeoutId = setTimeout(() => {
+        if (onTimeout) onTimeout();
+        resolve(null);
+      }, ms);
+    });
+
+    const result = await Promise.race([promise as any, timeoutPromise]);
+    clearTimeout(timeoutId!);
+    return result as T | null;
+  };
+
   const initializeApp = async () => {
     try {
-      // Initialize RevenueCat first
-      const revenueCatInitialized = await RevenueCatService.initialize();
+      // 1) Check onboarding status ASAP (don't block UI on SDK inits)
+      await checkOnboardingStatus();
+
+      // 2) Initialize RevenueCat with timeout so we don't hang the app
+      const revenueCatInitialized = await withTimeout(
+        RevenueCatService.initialize(),
+        5000,
+        () =>
+          console.warn(
+            "RevenueCat initialization timed out, continuing without it"
+          )
+      );
+
       if (revenueCatInitialized) {
-        // Login anonymously for users who haven't registered
         await RevenueCatService.loginAnonymously();
         setIsRevenueCatReady(true);
+      } else {
+        setIsRevenueCatReady(false);
       }
-
-      // Then check onboarding status
-      await checkOnboardingStatus();
     } catch (error) {
       console.error("App initialization error:", error);
       // Continue with app even if RevenueCat fails
       setIsRevenueCatReady(false);
-      await checkOnboardingStatus();
+      // Onboarding status is already checked; nothing else to block UI
     }
   };
 

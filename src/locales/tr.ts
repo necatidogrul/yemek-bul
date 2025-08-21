@@ -295,4 +295,40 @@ export const tr = {
     ingredient: "Malzeme",
     recipe: "Tarif",
   },
+
+  // Onboarding
+  onboarding: {
+    steps: {
+      welcome: {
+        title: "Yemek Bulucu'ya Hoş Geldin! 👋",
+        subtitle: "AI ile mutfakta harikalar yaratmaya hazır mısın?",
+      },
+      features: {
+        title: "AI Destekli Tarif Arama ⚡",
+        subtitle: "Malzemelerini söyle, mükemmel tarifleri keşfet",
+      },
+      preferences: {
+        title: "Seni Tanıyalım 💜",
+        subtitle: "Tercihlerini seç, kişisel deneyimin başlasın",
+      },
+      notifications: {
+        title: "Günlük İlham 🔔",
+        subtitle: "Her gün yeni tariflerle sürprizlerle dolu",
+      },
+      ready: {
+        title: "Hadi Başlayalım! 🚀",
+        subtitle: "Mutfak maceran şimdi başlıyor",
+      },
+    },
+    preferences: {
+      turkish: "Türk",
+      italian: "İtalyan",
+      asian: "Asya",
+      healthy: "Sağlıklı",
+      dessert: "Tatlı",
+      quick: "Hızlı",
+      vegetarian: "Vejetaryen",
+      meat: "Etli",
+    },
+  },
 };

@@ -1,45 +1,31 @@
 {
   "cli": {
-    "version": ">= 3.0.0"
+    "version": ">= 5.9.1",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal",
-      "ios": {
-        "buildConfiguration": "Debug",
-        "simulator": true
-      },
-      "android": {
-        "buildType": "apk"
-      }
+      "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal",
-      "ios": {
-        "buildConfiguration": "Release",
-        "simulator": false
-      },
-      "android": {
-        "buildType": "apk"
-      }
+      "distribution": "internal"
     },
     "production": {
-      "distribution": "store",
       "ios": {
-        "buildConfiguration": "Release"
-      },
-      "android": {
-        "buildType": "app-bundle"
+        "resourceClass": "m-medium"
       }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "appleId": "your-apple-id@email.com",
-        "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "YOUR_TEAM_ID"
+        "appleId": "necatidogrul7@gmail.com",
+        "ascAppId": "6749386118",
+        "appleTeamId": "QD633BK5SD",
+        "language": "tr",
+        "companyName": "Yemek Bulucu",
+        "bundleIdentifier": "com.yemekbulucuai.app"
       }
     }
   }

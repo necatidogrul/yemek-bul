@@ -9,6 +9,8 @@ import {
   Dimensions,
   FlatList,
   Animated,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Logger } from "../services/LoggerService";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -257,18 +259,27 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
-      <Animated.ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )}
-        scrollEventThrottle={16}
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
+        <Animated.ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          nestedScrollEnabled={true}
+          scrollToOverflowEnabled={true}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          scrollEventThrottle={16}
+        >
         {/* Modern Hero Section */}
         <Animated.View style={[styles.heroSection, { opacity: headerOpacity }]}>
           <LinearGradient
@@ -536,8 +547,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </View>
 
         {/* Bottom Spacing */}
-        <View style={{ height: 48 }} />
-      </Animated.ScrollView>
+        <View style={{ height: 120 }} />
+        </Animated.ScrollView>
+      </KeyboardAvoidingView>
 
       <PaywallModal visible={false} onClose={() => {}} feature="general" />
     </SafeAreaView>
@@ -548,8 +560,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  keyboardView: {
+    flex: 1,
+  },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: Platform.OS === 'ios' ? 150 : 120,
   },
 
   // Hero Section

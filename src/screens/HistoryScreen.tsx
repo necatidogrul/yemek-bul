@@ -640,6 +640,8 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        bounces={true}
+        nestedScrollEnabled={true}
       >
         {/* View Mode Toggle */}
         <Card variant="elevated" size="lg" style={styles.controlsCard}>
@@ -891,7 +893,8 @@ const styles = StyleSheet.create({
 
   // History Items
   scrollContent: {
-    paddingBottom: spacing[8],
+    flexGrow: 1,
+    paddingBottom: 100,
   },
   listContent: {
     paddingHorizontal: spacing[4],

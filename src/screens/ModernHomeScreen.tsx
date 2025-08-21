@@ -7,6 +7,9 @@ import {
   TextInput,
   Dimensions,
   StatusBar,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Logger } from "../services/LoggerService";
 import { LinearGradient } from "expo-linear-gradient";
@@ -121,7 +124,8 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   });
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [showAdvancedMode, setShowAdvancedMode] = useState(false);
+  // Removed dropdown - always show advanced mode
+  const showAdvancedMode = true;
 
   // Hooks
   const { colors } = useThemedStyles();
@@ -550,7 +554,20 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
         </View>
       </View>
 
-      <View style={styles.mainContent}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <View style={styles.mainContent}>
         {/* Welcome Section */}
         <View style={styles.welcomeSection}>
           <Text variant="displaySmall" weight="bold" style={{ color: colors.text.primary }}>
@@ -594,13 +611,9 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
           ))}
         </View>
 
-        {/* Custom Input Section */}
+        {/* Custom Input Section Header */}
         <View style={styles.customInputSection}>
-          <TouchableOpacity 
-            style={[styles.customInputButton, { backgroundColor: colors.surface?.primary || '#fff' }]}
-            onPress={() => setShowAdvancedMode(!showAdvancedMode)}
-            activeOpacity={0.7}
-          >
+          <View style={[styles.customInputHeader, { backgroundColor: colors.surface?.primary || '#fff' }]}>
             <View style={styles.customInputContent}>
               <Ionicons name="create-outline" size={24} color={colors.primary[500]} />
               <View style={styles.customInputText}>
@@ -611,18 +624,12 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
                   Kendi malzemelerinle tarif bul
                 </Text>
               </View>
-              <Ionicons 
-                name={showAdvancedMode ? "chevron-up" : "chevron-down"} 
-                size={20} 
-                color={colors.primary[500]} 
-              />
             </View>
-          </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Advanced Mode - Only show when toggled */}
-        {showAdvancedMode && (
-          <View style={[styles.advancedInputSection, { backgroundColor: colors.neutral[50] }]}>
+        {/* Advanced Mode - Always shown */}
+        <View style={[styles.advancedInputSection, { backgroundColor: colors.neutral[50] }]}>
             <Text variant="bodyLarge" weight="600" style={{ marginBottom: 16, color: colors.text.primary }}>
               Malzemelerinizi ekleyin
             </Text>
@@ -697,7 +704,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
                   {/* Generate Button */}
                   <TouchableOpacity
                     style={[styles.generateButton]}
-                    onPress={generateAIRecipes}
+                    onPress={() => generateAIRecipes()}
                     activeOpacity={0.8}
                   >
                     <LinearGradient
@@ -716,9 +723,12 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
               )}
             </View>
           </View>
-        )}
-
-      </View>
+          </View>
+          
+          {/* Bottom Spacing */}
+          <View style={{ height: 120 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* AI Loading Modal */}
       <AILoadingModal
@@ -744,6 +754,16 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: Platform.OS === 'ios' ? 150 : 120,
   },
   
   // Compact Header
@@ -817,7 +837,7 @@ const styles = StyleSheet.create({
   customInputSection: {
     marginBottom: spacing[4],
   },
-  customInputButton: {
+  customInputHeader: {
     borderRadius: borderRadius.lg,
     ...shadows.sm,
   },
@@ -939,12 +959,6 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: spacing[8],
-  },
   inputSection: {
     margin: spacing[4],
     padding: spacing[6],
@@ -1051,14 +1065,6 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: spacing[6],
   },
-  ingredientChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing[3],
-    paddingVertical: 8,
-    borderRadius: borderRadius.full,
-    gap: 8,
-  },
   removeButton: {
     width: 20,
     height: 20,
@@ -1164,62 +1170,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  // Smart Suggestions
-  smartSection: {
-    marginHorizontal: spacing[4],
-    marginBottom: spacing[6],
-    padding: spacing[6],
-    borderRadius: borderRadius.xl,
-    ...shadows.md,
-  },
-  smartHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: spacing[6],
-  },
-  advancedToggle: {
-    padding: spacing[3],
-    borderRadius: borderRadius.full,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  smartGrid: {
-    gap: spacing[4],
-  },
-  smartCard: {
-    borderRadius: borderRadius.lg,
-    overflow: "hidden",
-    ...shadows.sm,
-  },
-  smartCardGradient: {
-    padding: spacing[4],
-    flexDirection: "row",
-    alignItems: "center",
-    position: "relative",
-  },
-  smartCardIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(255,255,255,0.3)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: spacing[4],
-  },
-  smartCardContent: {
-    flex: 1,
-  },
-  smartCardBadge: {
-    position: "absolute",
-    top: spacing[2],
-    right: spacing[2],
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  // Smart Suggestions (duplicate removed)
   
   // Meal Time Selector
   mealTimeSection: {

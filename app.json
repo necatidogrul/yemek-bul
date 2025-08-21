@@ -8,15 +8,6 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "description": "Evdeki malzemelerinizle yapabileceğiniz yemekleri keşfetmenizi sağlayan akıllı tarif önerme uygulaması",
-    "keywords": [
-      "yemek",
-      "tarif",
-      "malzeme",
-      "mutfak",
-      "pişirme",
-      "türk mutfağı",
-      "gıda israfı"
-    ],
     "primaryColor": "#4CAF50",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -26,7 +17,7 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yemekbulucu.app",
+      "bundleIdentifier": "com.yemekbulucuai.app",
       "buildNumber": "1",
       "requireFullScreen": false,
       "infoPlist": {
@@ -61,7 +52,7 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-localization"],
+    "plugins": ["expo-localization", "expo-font"],
     "owner": "shado7",
     "extra": {
       "eas": {
