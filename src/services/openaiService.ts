@@ -1,7 +1,9 @@
 import { Recipe } from '../types/Recipe';
+import { supabase } from './supabase';
 
 export interface RecipeGenerationRequest {
   ingredients: string[];
+  language?: 'tr' | 'en';
   mealTime?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   userProfile?: {
     dietaryRestrictions: string[];
@@ -26,39 +28,94 @@ export interface RecipeGenerationResponse {
 }
 
 export class OpenAIService {
-  private static readonly API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY;
-  private static readonly BASE_URL = 'https://api.openai.com/v1/chat/completions';
+  // GÜVENLIK: Production'da Supabase Edge Function kullanır
+  private static readonly DEV_API_KEY = __DEV__ ? process.env.EXPO_PUBLIC_OPENAI_API_KEY : null;
+  private static readonly PRODUCTION_URL = process.env.EXPO_PUBLIC_SUPABASE_URL + '/functions/v1/openai-proxy';
+  private static readonly DEV_URL = 'https://api.openai.com/v1/chat/completions';
   private static readonly MODEL = 'gpt-3.5-turbo';
   
   // Token fiyatlandırması (GPT-3.5-turbo)
   private static readonly TOKEN_COST_PER_1K = 0.002; // $0.002 per 1K tokens
 
   /**
+   * Dile ve kullanıcı tercihlerine göre system prompt getir
+   */
+  private static getSystemPrompt(language: 'tr' | 'en' = 'tr', userPreferences?: { favoriteCategories?: string[] }): string {
+    const favoriteCategories = userPreferences?.favoriteCategories || [];
+    
+    // Kullanıcının en sevdiği mutfağı belirle
+    let cuisineExpertise = '';
+    if (favoriteCategories.includes('italian')) {
+      cuisineExpertise = language === 'tr' ? 'İtalyan ve uluslararası' : 'Italian and international';
+    } else if (favoriteCategories.includes('asian')) {
+      cuisineExpertise = language === 'tr' ? 'Asya ve uluslararası' : 'Asian and international';
+    } else if (favoriteCategories.includes('healthy')) {
+      cuisineExpertise = language === 'tr' ? 'sağlıklı beslenme ve uluslararası' : 'healthy cooking and international';
+    } else if (favoriteCategories.includes('turkish')) {
+      cuisineExpertise = language === 'tr' ? 'Türk ve uluslararası' : 'Turkish and international';
+    } else {
+      cuisineExpertise = language === 'tr' ? 'uluslararası' : 'international';
+    }
+    
+    const prompts = {
+      tr: `Sen ${cuisineExpertise} mutfağı konusunda uzman bir şefsin. Verilen malzemelerle pratik, lezzetli tarifler öneriyorsun. Yanıtlarını JSON formatında ver.`,
+      en: `You are an expert chef specializing in ${cuisineExpertise} cuisine. You suggest practical, delicious recipes using given ingredients. Respond in JSON format.`
+    };
+    
+    return prompts[language];
+  }
+
+  /**
+   * API yapılandırmasını environment'a göre getir
+   */
+  private static async getApiConfig(): Promise<{ url: string; headers: Record<string, string> }> {
+    if (__DEV__ && this.DEV_API_KEY) {
+      // Development: Direct OpenAI API
+      return {
+        url: this.DEV_URL,
+        headers: {
+          'Authorization': `Bearer ${this.DEV_API_KEY}`,
+          'Content-Type': 'application/json',
+        }
+      };
+    } else {
+      // Production: Supabase Edge Function
+      const { data: { session } } = await supabase.auth.getSession();
+      return {
+        url: this.PRODUCTION_URL,
+        headers: {
+          'Authorization': `Bearer ${session?.access_token || ''}`,
+          'Content-Type': 'application/json',
+          'apikey': process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+        }
+      };
+    }
+  }
+
+  /**
    * Malzemelere göre AI ile tarif üret
    */
   static async generateRecipes(request: RecipeGenerationRequest): Promise<RecipeGenerationResponse> {
     try {
-      if (!this.API_KEY || this.API_KEY === 'your_openai_api_key_here') {
-        throw new Error('OpenAI API key bulunamadı. Lütfen .env dosyasını kontrol edin.');
-      }
-
+      const { language = 'tr', userProfile } = request;
       const prompt = this.buildPrompt(request);
       
       console.log('🤖 OpenAI API: Recipe generation started');
       console.log('📝 Ingredients:', request.ingredients);
+      console.log('🌍 Language:', language);
+      console.log('🍽️ Favorite cuisines:', userProfile?.favoriteCategories);
 
-      const response = await fetch(this.BASE_URL, {
+      const { url, headers } = await this.getApiConfig();
+      
+      const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           model: this.MODEL,
           messages: [
             {
               role: 'system',
-              content: 'Sen Türk mutfağı konusunda uzman bir şefsin. Verilen malzemelerle pratik, lezzetli tarifler öneriyorsun. Yanıtlarını JSON formatında ver.'
+              content: this.getSystemPrompt(language, { favoriteCategories: userProfile?.favoriteCategories })
             },
             {
               role: 'user',
@@ -108,10 +165,63 @@ export class OpenAIService {
   }
 
   /**
+   * Dile göre çeviri template'leri
+   */
+  private static getPromptTemplates(language: 'tr' | 'en') {
+    const templates = {
+      tr: {
+        mealTimes: {
+          breakfast: '🌅 KAHVALTI için',
+          lunch: '☀️ ÖĞLE YEMEĞİ için', 
+          dinner: '🌆 AKŞAM YEMEĞİ için',
+          snack: '🍿 ATIŞTIRMALIK için'
+        },
+        basePrompt: 'Bu malzemeleri kullanarak 3 tarif öner:',
+        userProfile: 'KULLANICI PROFİLİ:',
+        nutrition: 'Beslenme:',
+        favorites: 'Favori mutfaklar:',
+        experience: 'Mutfak deneyimi:',
+        recipeDistribution: 'TARİF DAĞILIMI',
+        difficulty: 'Zorluk:',
+        time: 'Süre: Max',
+        servings: 'Porsiyon:',
+        exclude: 'Kullanma:',
+        conservative: '3 tarif: Tamamen kullanıcı tercihlerine uygun',
+        balanced: ['2 tarif: Kullanıcı tercihlerine uygun 🎯', '1 tarif: Yeni keşif için farklı mutfaktan 🌟'],
+        adventurous: ['1 tarif: Kullanıcı tercihlerine uygun 🎯', '2 tarif: Macera için yeni deneyimler 🌟']
+      },
+      en: {
+        mealTimes: {
+          breakfast: '🌅 For BREAKFAST',
+          lunch: '☀️ For LUNCH',
+          dinner: '🌆 For DINNER', 
+          snack: '🍿 For SNACK'
+        },
+        basePrompt: 'Suggest 3 recipes using these ingredients:',
+        userProfile: 'USER PROFILE:',
+        nutrition: 'Dietary restrictions:',
+        favorites: 'Favorite cuisines:',
+        experience: 'Cooking experience:',
+        recipeDistribution: 'RECIPE DISTRIBUTION',
+        difficulty: 'Difficulty:',
+        time: 'Time: Max',
+        servings: 'Servings:',
+        exclude: 'Exclude:',
+        conservative: '3 recipes: Fully matching user preferences',
+        balanced: ['2 recipes: Matching user preferences 🎯', '1 recipe: New discovery from different cuisine 🌟'],
+        adventurous: ['1 recipe: Matching user preferences 🎯', '2 recipes: New adventures for exploration 🌟']
+      }
+    };
+    
+    return templates[language];
+  }
+
+  /**
    * AI için adaptif prompt oluştur
    */
   private static buildPrompt(request: RecipeGenerationRequest): string {
-    const { ingredients, mealTime, userProfile, preferences, excludeIngredients } = request;
+    const { ingredients, mealTime, userProfile, preferences, excludeIngredients, language = 'tr' } = request;
+    const t = this.getPromptTemplates(language);
     
     // Adaptif strateji belirleme
     const recipeHistory = userProfile?.recipeHistory || 0;
@@ -120,52 +230,72 @@ export class OpenAIService {
     if (recipeHistory >= 20) strategy = 'adventurous'; // 1+2
     
     // Öğün zamanına göre özel öneriler
-    const mealTimePrompt = this.getMealTimePrompt(mealTime);
+    const mealTimePrompt = mealTime && t.mealTimes[mealTime as keyof typeof t.mealTimes] ? t.mealTimes[mealTime as keyof typeof t.mealTimes] : '';
     
-    let prompt = `${mealTimePrompt} Bu malzemeleri kullanarak 3 tarif öner: ${ingredients.join(', ')}`;
+    let prompt = `${mealTimePrompt} ${t.basePrompt} ${ingredients.join(', ')}`;
     
     // Kullanıcı profili ekleme
     if (userProfile) {
-      prompt += `\n\nKULLANICI PROFİLİ:`;
+      prompt += `\n\n${t.userProfile}`;
       if (userProfile.dietaryRestrictions.length) {
-        prompt += `\n- Beslenme: ${userProfile.dietaryRestrictions.join(', ')}`;
+        prompt += `\n- ${t.nutrition} ${userProfile.dietaryRestrictions.join(', ')}`;
       }
       if (userProfile.favoriteCategories.length) {
-        prompt += `\n- Favori mutfaklar: ${userProfile.favoriteCategories.join(', ')}`;
+        prompt += `\n- ${t.favorites} ${userProfile.favoriteCategories.join(', ')}`;
       }
       if (userProfile.cookingLevel) {
-        prompt += `\n- Mutfak deneyimi: ${userProfile.cookingLevel}`;
+        prompt += `\n- ${t.experience} ${userProfile.cookingLevel}`;
       }
     }
     
     // Adaptif strateji uygulama
-    prompt += `\n\nTARİF DAĞILIMI (${strategy.toUpperCase()}):`;
+    prompt += `\n\n${t.recipeDistribution} (${strategy.toUpperCase()}):`;
     
     if (strategy === 'conservative') {
-      prompt += `\n- 3 tarif: Tamamen kullanıcı tercihlerine uygun`;
+      prompt += `\n- ${t.conservative}`;
     } else if (strategy === 'balanced') {
-      prompt += `\n- 2 tarif: Kullanıcı tercihlerine uygun 🎯`;
-      prompt += `\n- 1 tarif: Yeni keşif için farklı mutfaktan 🌟`;
+      prompt += `\n- ${t.balanced[0]}`;
+      prompt += `\n- ${t.balanced[1]}`;
     } else {
-      prompt += `\n- 1 tarif: Kullanıcı tercihlerine uygun 🎯`;
-      prompt += `\n- 2 tarif: Macera için yeni deneyimler 🌟`;
+      prompt += `\n- ${t.adventurous[0]}`;
+      prompt += `\n- ${t.adventurous[1]}`;
     }
     
     // Diğer tercihler
     if (preferences?.difficulty) {
-      prompt += `\nZorluk: ${preferences.difficulty}`;
+      prompt += `\n${t.difficulty} ${preferences.difficulty}`;
     }
     if (preferences?.cookingTime) {
-      prompt += `\nSüre: Max ${preferences.cookingTime} dakika`;
+      prompt += `\n${t.time} ${preferences.cookingTime} ${language === 'en' ? 'minutes' : 'dakika'}`;
     }
     if (preferences?.servings) {
-      prompt += `\nPorsiyon: ${preferences.servings} kişi`;
+      prompt += `\n${t.servings} ${preferences.servings} ${language === 'en' ? 'people' : 'kişi'}`;
     }
     if (excludeIngredients?.length) {
-      prompt += `\nKullanma: ${excludeIngredients.join(', ')}`;
+      prompt += `\n${t.exclude} ${excludeIngredients.join(', ')}`;
     }
 
-    prompt += `\n\nYanıtını şu JSON formatında ver:
+    // JSON formatı talimatları
+    const jsonInstructions = language === 'en' 
+      ? `\n\nRespond in this JSON format:
+{
+  "recipes": [
+    {
+      "name": "Recipe Name",
+      "description": "Brief description (max 100 chars)",
+      "ingredients": ["ingredient 1", "ingredient 2"],
+      "instructions": ["step 1", "step 2", "step 3"],
+      "preparationTime": 15,
+      "servings": 2,
+      "difficulty": "easy",
+      "category": "main_dish",
+      "recommendationType": "preference", // "preference" or "discovery"
+      "recommendationReason": "Briefly explain why recommended",
+      "tips": "Tip (optional)"
+    }
+  ]
+}`
+      : `\n\nYanıtını şu JSON formatında ver:
 {
   "recipes": [
     {
@@ -183,6 +313,8 @@ export class OpenAIService {
     }
   ]
 }`;
+    
+    prompt += jsonInstructions;
 
     return prompt;
   }
@@ -229,17 +361,12 @@ export class OpenAIService {
    */
   static async checkApiStatus(): Promise<boolean> {
     try {
-      if (!this.API_KEY || this.API_KEY === 'your_openai_api_key_here') {
-        return false;
-      }
+      const { url, headers } = await this.getApiConfig();
 
       // Basit test isteği
-      const response = await fetch(this.BASE_URL, {
+      const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           model: this.MODEL,
           messages: [{ role: 'user', content: 'Test' }],
@@ -259,21 +386,16 @@ export class OpenAIService {
    */
   static async askRecipeQuestion(recipe: any, question: string): Promise<string> {
     try {
-      if (!this.API_KEY || this.API_KEY === 'your_openai_api_key_here') {
-        throw new Error('OpenAI API key bulunamadı. Lütfen .env dosyasını kontrol edin.');
-      }
-
       const prompt = this.buildQuestionPrompt(recipe, question);
       
       console.log('🤖 OpenAI API: Recipe Q&A started');
       console.log('❓ Question:', question);
 
-      const response = await fetch(this.BASE_URL, {
+      const { url, headers } = await this.getApiConfig();
+
+      const response = await fetch(url, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           model: this.MODEL,
           messages: [
@@ -333,18 +455,11 @@ Lütfen bu soruyu net, pratik ve yardımcı şekilde yanıtla. Gerekirse alterna
   }
 
   /**
-   * Öğün zamanına göre prompt
+   * Öğün zamanına göre prompt (deprecated - template sistemi kullanılıyor)
    */
   private static getMealTimePrompt(mealTime?: string): string {
-    const mealTimePrompts = {
-      breakfast: '🌅 KAHVALTI için',
-      lunch: '☀️ ÖĞLE YEMEĞİ için',
-      dinner: '🌆 AKŞAM YEMEĞİ için',
-      snack: '🍿 ATIŞTIRMALIK için'
-    };
-    
-    const timePrompt = mealTime ? mealTimePrompts[mealTime as keyof typeof mealTimePrompts] : '';
-    return timePrompt || '';
+    // Bu fonksiyon artık kullanılmıyor, template sistemi kullanılıyor
+    return '';
   }
 
   /**

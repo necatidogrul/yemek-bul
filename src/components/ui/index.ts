@@ -39,4 +39,3 @@ export { LanguageSelector } from "./LanguageSelector";
 
 // Legacy components (will be updated)
 export { RecipeCard } from "./RecipeCard";
-export { SuggestionCard } from "./SuggestionCard";

@@ -187,7 +187,39 @@ export class FavoritesService {
   static async getFavoriteRecipes(): Promise<Recipe[]> {
     try {
       const favorites = await this.getFavoritesFromStorage();
-      return favorites.map(recipe => ({ ...recipe, isFavorite: true }));
+      
+      // Filter out recipes without valid IDs and fix malformed recipes
+      const validFavorites = favorites
+        .filter(recipe => recipe && typeof recipe === 'object')
+        .map(recipe => {
+          // If recipe doesn't have an id, generate one
+          if (!recipe.id) {
+            recipe.id = `recipe-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          }
+          
+          // Ensure required fields exist
+          if (!recipe.name) {
+            recipe.name = 'İsimsiz Tarif';
+          }
+          
+          if (!recipe.ingredients || !Array.isArray(recipe.ingredients)) {
+            recipe.ingredients = [];
+          }
+          
+          if (!recipe.instructions || !Array.isArray(recipe.instructions)) {
+            recipe.instructions = ['Tarif adımları mevcut değil'];
+          }
+          
+          return { ...recipe, isFavorite: true };
+        });
+      
+      // If we had to fix recipes, save the corrected data back
+      if (validFavorites.length !== favorites.length || 
+          validFavorites.some((recipe, index) => !favorites[index]?.id)) {
+        await this.saveFavoritesToStorage(validFavorites);
+      }
+      
+      return validFavorites;
     } catch (error) {
       console.error('Error in getFavoriteRecipes:', error);
       return [];

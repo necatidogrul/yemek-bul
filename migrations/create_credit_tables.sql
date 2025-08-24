@@ -57,22 +57,23 @@ ALTER TABLE user_credits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE credit_transactions ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for user_credits (users can only access their own data)
+-- GÜVENLI RLS POLİTİKALARI - auth.uid() kullanıyor
 CREATE POLICY "Users can view own credits" ON user_credits
-    FOR SELECT USING (user_id = current_setting('app.current_user_id', true));
+    FOR SELECT USING (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can insert own credits" ON user_credits
-    FOR INSERT WITH CHECK (user_id = current_setting('app.current_user_id', true));
+    FOR INSERT WITH CHECK (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can update own credits" ON user_credits
-    FOR UPDATE USING (user_id = current_setting('app.current_user_id', true))
-    WITH CHECK (user_id = current_setting('app.current_user_id', true));
+    FOR UPDATE USING (auth.uid()::text = user_id)
+    WITH CHECK (auth.uid()::text = user_id);
 
 -- Create policies for credit_transactions
 CREATE POLICY "Users can view own transactions" ON credit_transactions
-    FOR SELECT USING (user_id = current_setting('app.current_user_id', true));
+    FOR SELECT USING (auth.uid()::text = user_id);
 
 CREATE POLICY "Users can insert own transactions" ON credit_transactions
-    FOR INSERT WITH CHECK (user_id = current_setting('app.current_user_id', true));
+    FOR INSERT WITH CHECK (auth.uid()::text = user_id);
 
 -- Allow service role to access all data (for admin operations)
 CREATE POLICY "Service role can access all credits" ON user_credits

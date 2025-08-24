@@ -22,11 +22,7 @@ import { useCreditContext } from "../contexts/CreditContext";
 
 // UI Components
 import { Button, Text } from "../components/ui";
-import {
-  useTheme,
-  spacing,
-  colors,
-} from "../contexts/ThemeContext";
+import { useTheme, spacing, colors } from "../contexts/ThemeContext";
 import { borderRadius, shadows } from "../theme/design-tokens";
 import { FavoriteButton } from "../components/ui/FavoriteButton";
 import PaywallModal from "../components/premium/PaywallModal";
@@ -70,11 +66,13 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   const [showQAModal, setShowQAModal] = useState(false);
   const [showCreditUpgrade, setShowCreditUpgrade] = useState(false);
   const [showCreditModal, setShowCreditModal] = useState(false);
-  const [creditModalTrigger, setCreditModalTrigger] = useState<"ai_limit" | "general">("general");
+  const [creditModalTrigger, setCreditModalTrigger] = useState<
+    "ai_limit" | "general"
+  >("general");
   const [activeTab, setActiveTab] = useState<
     "ingredients" | "instructions" | "nutrition"
   >("ingredients");
-  const [servingSize, setServingSize] = useState(recipe.servings || 4);
+  const [servingSize, setServingSize] = useState(recipe?.servings || 4);
 
   const { colors, spacing } = useTheme();
   const { userCredits, canAfford, deductCredits } = useCreditContext();
@@ -129,12 +127,12 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   const shareRecipe = async () => {
     try {
       await Share.share({
-        message: `${recipe.name}\n\nMalzemeler:\n${recipe.ingredients?.join(
-          "\n"
-        )}\n\nHazırlık:\n${recipe.instructions?.join(
-          "\n\n"
-        )}\n\nYemek Bulucu ile paylaşıldı 🍽️`,
-        title: recipe.name,
+        message: `${recipe?.name || "Tarif"}\n\nMalzemeler:\n${
+          recipe?.ingredients?.join("\n") || ""
+        }\n\nHazırlık:\n${
+          recipe?.instructions?.join("\n\n") || ""
+        }\n\nYemek Bulucu ile paylaşıldı 🍽️`,
+        title: recipe?.name || "Tarif",
       });
     } catch (error) {
       Logger.error("Share failed:", error);
@@ -148,7 +146,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   };
 
   const nextStep = () => {
-    if (currentStep < (recipe.instructions?.length || 0) - 1) {
+    if (currentStep < (recipe?.instructions?.length || 0) - 1) {
       setCurrentStep(currentStep + 1);
       haptics.lightImpact();
     }
@@ -162,11 +160,11 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   };
 
   const playStepAudio = async () => {
-    if (!recipe.instructions?.[currentStep]) return;
+    if (!recipe?.instructions?.[currentStep]) return;
 
     setIsPlaying(true);
     try {
-      await SpeechService.speak(recipe.instructions[currentStep], {
+      await SpeechService.speak(recipe?.instructions?.[currentStep] || "", {
         language: "tr-TR",
       });
     } catch (error) {
@@ -195,7 +193,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
 
       // OpenAI'a soru sor
       const answer = await OpenAIService.askRecipeQuestion(recipe, question);
-      
+
       showSuccess("🤖 AI cevabı hazır!");
       return answer;
     } catch (error) {
@@ -281,7 +279,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
       </View>
 
       <View style={styles.ingredientsList}>
-        {recipe.ingredients?.map((ingredient: string, index: number) => (
+        {recipe?.ingredients?.map((ingredient: string, index: number) => (
           <View
             key={index}
             style={[styles.ingredientItem, { backgroundColor: colors.surface }]}
@@ -301,7 +299,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
               </Text>
             </View>
             <Text variant="bodyMedium" style={{ flex: 1 }}>
-              {calculateScaledAmount(ingredient, recipe.servings || 4)}
+              {calculateScaledAmount(ingredient, recipe?.servings || 4)}
             </Text>
             <View
               style={[
@@ -366,7 +364,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
             </Text>
           </View>
           <Text variant="labelMedium" color="secondary">
-            {recipe.instructions?.length || 0} adımdan {currentStep + 1}.
+            {recipe?.instructions?.length || 0} adımdan {currentStep + 1}.
           </Text>
         </View>
 
@@ -374,7 +372,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           variant="bodyLarge"
           style={{ lineHeight: 28, marginVertical: spacing.lg }}
         >
-          {recipe.instructions?.[currentStep]}
+          {recipe?.instructions?.[currentStep]}
         </Text>
 
         <View style={styles.stepNavigation}>
@@ -418,36 +416,36 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
               styles.stepNavButton,
               {
                 backgroundColor:
-                  currentStep === (recipe.instructions?.length || 0) - 1
+                  currentStep === (recipe?.instructions?.length || 0) - 1
                     ? colors.semantic.success + "20"
                     : colors.primary[100],
               },
             ]}
             onPress={nextStep}
-            disabled={currentStep === (recipe.instructions?.length || 0) - 1}
+            disabled={currentStep === (recipe?.instructions?.length || 0) - 1}
           >
             <Text
               variant="labelMedium"
               weight="600"
               style={{
                 color:
-                  currentStep === (recipe.instructions?.length || 0) - 1
+                  currentStep === (recipe?.instructions?.length || 0) - 1
                     ? colors.semantic.success
                     : colors.primary[600],
               }}
             >
-              {currentStep === (recipe.instructions?.length || 0) - 1
+              {currentStep === (recipe?.instructions?.length || 0) - 1
                 ? "Tamamlandı"
                 : "Sonraki"}
             </Text>
-            {currentStep < (recipe.instructions?.length || 0) - 1 && (
+            {currentStep < (recipe?.instructions?.length || 0) - 1 && (
               <Ionicons
                 name="chevron-forward"
                 size={20}
                 color={colors.primary[600]}
               />
             )}
-            {currentStep === (recipe.instructions?.length || 0) - 1 && (
+            {currentStep === (recipe?.instructions?.length || 0) - 1 && (
               <Ionicons
                 name="checkmark-circle"
                 size={20}
@@ -562,7 +560,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           numberOfLines={1}
           style={{ flex: 1, marginHorizontal: spacing.md }}
         >
-          {recipe.name}
+          {recipe?.name || "Tarif"}
         </Text>
 
         <TouchableOpacity
@@ -630,7 +628,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
               </TouchableOpacity>
 
               <FavoriteButton
-                recipe={recipe}
+                recipe={recipe || undefined}
                 size="large"
                 style={{ backgroundColor: "rgba(0,0,0,0.3)" }}
               />
@@ -643,18 +641,18 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           <View style={styles.recipeHeader}>
             <View style={styles.recipeTitleContainer}>
               <Text variant="displaySmall" weight="700">
-                {recipe.name}
+                {recipe?.name || "Tarif"}
               </Text>
 
-              {recipe.difficulty && (
+              {recipe?.difficulty && (
                 <View
                   style={[
                     styles.difficultyBadge,
                     {
                       backgroundColor:
-                        recipe.difficulty === "kolay"
+                        recipe?.difficulty === "kolay"
                           ? colors.semantic.success + "20"
-                          : recipe.difficulty === "orta"
+                          : recipe?.difficulty === "orta"
                           ? colors.semantic.warning + "20"
                           : colors.semantic.error + "20",
                     },
@@ -682,14 +680,14 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                     weight="600"
                     style={{
                       color:
-                        recipe.difficulty === "kolay"
+                        recipe?.difficulty === "kolay"
                           ? colors.semantic.success
-                          : recipe.difficulty === "orta"
+                          : recipe?.difficulty === "orta"
                           ? colors.semantic.warning
                           : colors.semantic.error,
                     }}
                   >
-                    {recipe.difficulty}
+                    {recipe?.difficulty}
                   </Text>
                 </View>
               )}
@@ -707,7 +705,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 weight="600"
                 style={{ color: colors.primary[600] }}
               >
-                {recipe.cookingTime || "30"}dk
+                {recipe?.cookingTime || "30"}dk
               </Text>
               <Text variant="labelSmall" color="secondary">
                 Süre
@@ -749,7 +747,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 weight="600"
                 style={{ color: colors.semantic.warning }}
               >
-                {recipe.ingredients?.length || 0}
+                {recipe?.ingredients?.length || 0}
               </Text>
               <Text variant="labelSmall" color="secondary">
                 Malzeme
@@ -852,11 +850,11 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           userId={userCredits?.userId || "anonymous"}
           onPurchaseCredits={async (packageId: string) => {
             // Credit purchase logic would go here
-            console.log('Purchasing credits:', packageId);
+            console.log("Purchasing credits:", packageId);
           }}
           onUpgradePremium={async (tierId: string, yearly?: boolean) => {
             // Premium upgrade logic would go here
-            console.log('Upgrading to premium:', tierId, yearly);
+            console.log("Upgrading to premium:", tierId, yearly);
           }}
         />
       )}

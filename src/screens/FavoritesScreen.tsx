@@ -124,18 +124,26 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const { optimizedProps, onEndReached } = useOptimizedFlatList<Recipe>({
     enableGetItemLayout: true,
     itemHeight: viewMode === "grid" ? 180 : 120,
-    keyExtractor: (item) => item.id,
+    keyExtractor: (item) => item.id || `recipe-${Date.now()}-${Math.random()}`,
   });
 
   async function loadFavorites() {
     try {
       setIsLoading(true);
       const favRecipes = await FavoritesService.getFavoriteRecipes();
+      
+      // Validate recipes have valid IDs
+      const invalidRecipes = favRecipes.filter(recipe => !recipe.id);
+      if (invalidRecipes.length > 0) {
+        Logger.warn(`Found ${invalidRecipes.length} recipes without IDs, they should be auto-fixed`);
+      }
+      
       setFavorites(favRecipes);
       Logger.info(`Loaded ${favRecipes.length} favorite recipes`);
     } catch (error) {
       Logger.error("Failed to load favorites:", error);
       showError("Favoriler yüklenemedi");
+      setFavorites([]); // Set empty array as fallback
     } finally {
       setIsLoading(false);
     }
@@ -151,6 +159,12 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   }, [navigation]);
 
   const handleRecipePress = (recipe: Recipe) => {
+    // Check if recipe has valid id
+    if (!recipe.id) {
+      showError("Bu tarif bozuk görünüyor. Lütfen uygulamayı yeniden başlatın.");
+      return;
+    }
+
     // Premium users can view favorites freely
     // Free users need credit only for AI-generated recipe details
     if (!isPremium && recipe.aiGenerated && !canAfford("favorite_view")) {
@@ -264,6 +278,11 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             { backgroundColor: colors.semantic.error + "20" },
           ]}
           onPress={async () => {
+            if (!item.id) {
+              showError("Bu tarif bozuk görünüyor. Favorileri temizlemeyi deneyin.");
+              return;
+            }
+            
             const success = await FavoritesService.removeFromFavorites(item.id);
             if (success) {
               haptics.notificationSuccess();

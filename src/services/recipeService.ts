@@ -2,7 +2,6 @@ import { supabase } from "./supabase";
 import { Recipe, RecipeSearchResult, SearchRequest, SearchHistoryEntry, UserSearchStats, SearchAnalytics, PopularSearchIngredient } from "../types/Recipe";
 import { OpenAIService, RecipeGenerationRequest } from "./openaiService";
 import { CreditService } from "./creditService";
-import { TranslationService } from "./translationService";
 import { MOCK_RECIPES } from "../data/mockRecipes";
 import { MobileStorageService } from "./localStorageService";
 import { RevenueCatService } from "./RevenueCatService";
@@ -839,14 +838,6 @@ export class RecipeService {
   // Tüm mevcut malzemeleri al (önerilerde kullanmak için)
   static async getAllIngredients(): Promise<string[]> {
     try {
-      // Çeviri servisinden Türkçe malzemeleri al
-      const turkishIngredients = TranslationService.getAllTurkishIngredients();
-      
-      if (turkishIngredients.length > 0) {
-        console.log('📝 Using ingredients from translation service:', turkishIngredients.length);
-        return turkishIngredients;
-      }
-
       // Fallback: Supabase'den al
       const { data, error } = await supabase
         .from("ingredients")
@@ -860,7 +851,12 @@ export class RecipeService {
       return data?.map((item) => item.name) || [];
     } catch (error) {
       console.error("Get ingredients error:", error);
-      return TranslationService.getAllTurkishIngredients(); // Güvenli fallback
+      // Güvenli fallback: Temel malzemeler
+      return [
+        'Domates', 'Soğan', 'Sarımsak', 'Biber', 'Patlıcan',
+        'Havuç', 'Patates', 'Et', 'Tavuk', 'Balık',
+        'Pirinç', 'Makarna', 'Yoğurt', 'Peynir', 'Yumurta'
+      ];
     }
   }
 

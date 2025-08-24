@@ -19,6 +19,7 @@
     "submit:ios": "eas submit --platform ios",
     "submit:android": "eas submit --platform android",
     "test": "echo \"Tests not implemented yet\" && exit 1",
+    "test:revenuecat": "node test-revenuecat.js",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json}\"",
@@ -27,7 +28,7 @@
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.1.0",
-    "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/netinfo": "11.4.1",
     "@react-native-masked-view/masked-view": "0.3.2",
     "@react-navigation/bottom-tabs": "^7.4.2",
@@ -47,19 +48,19 @@
     "expo-status-bar": "~2.2.3",
     "i18next": "^25.3.4",
     "lodash": "^4.17.21",
-    "lottie-react-native": "^7.2.2",
+    "lottie-react-native": "7.2.2",
     "react": "19.0.0",
-    "react-dom": "^19.0.0",
+    "react-dom": "19.0.0",
     "react-i18next": "^15.6.1",
     "react-native": "0.79.5",
     "react-native-device-info": "^14.0.4",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-get-random-values": "^1.11.0",
     "react-native-modal": "^14.0.0-rc.1",
-    "react-native-purchases": "^8.5.3",
+    "react-native-purchases": "^9.2.2",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
-    "react-native-svg": "^15.11.2",
+    "react-native-svg": "15.11.2",
     "react-native-vector-icons": "^10.3.0",
     "react-native-web": "^0.20.0"
   },
@@ -69,7 +70,7 @@
     "@types/react": "~19.0.10",
     "@types/uuid": "^10.0.0",
     "babel-plugin-module-resolver": "^5.0.2",
-    "typescript": "^5.8.3"
+    "typescript": "~5.8.3"
   },
   "private": true
 }

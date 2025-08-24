@@ -4,13 +4,13 @@ import Purchases, {
   PurchasesOffering,
   PURCHASES_ERROR_CODE,
   PurchasesError,
-} from 'react-native-purchases';
-import { Logger } from '../services/LoggerService';
-import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { REVENUECAT_CONFIG } from '../config/revenuecat.config';
-import { MockRevenueCatService } from './MockRevenueCatService';
-import { shouldUseMockServices, debugLog, ENV } from '../config/environment';
+} from "react-native-purchases";
+import { Logger } from "../services/LoggerService";
+import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { REVENUECAT_CONFIG } from "../config/revenuecat.config";
+import { MockRevenueCatService } from "./MockRevenueCatService";
+import { shouldUseMockServices, debugLog, ENV } from "../config/environment";
 
 // Import configuration
 const {
@@ -22,9 +22,9 @@ const {
 
 // Storage keys
 const STORAGE_KEYS = {
-  PREMIUM_STATUS: 'premium_status',
-  LAST_CHECK: 'premium_last_check',
-  USER_ID: 'revenuecat_user_id',
+  PREMIUM_STATUS: "premium_status",
+  LAST_CHECK: "premium_last_check",
+  USER_ID: "revenuecat_user_id",
 } as const;
 
 export interface SubscriptionInfo {
@@ -64,12 +64,12 @@ export class RevenueCatService {
   // Mock mode helper methods
   static enableMockMode(): void {
     this.isMockMode = true;
-    console.log('🧪 Mock mode enabled');
+    console.log("🧪 Mock mode enabled");
   }
 
   static disableMockMode(): void {
     this.isMockMode = false;
-    console.log('✅ Mock mode disabled');
+    console.log("✅ Mock mode disabled");
   }
 
   static isMockModeEnabled(): boolean {
@@ -94,44 +94,54 @@ export class RevenueCatService {
     try {
       // Set log level based on environment
       await Purchases.setLogLevel(
-        DEVELOPMENT.ENABLE_DEBUG_LOGS ? Purchases.LOG_LEVEL.DEBUG : Purchases.LOG_LEVEL.ERROR,
+        DEVELOPMENT.ENABLE_DEBUG_LOGS
+          ? Purchases.LOG_LEVEL.DEBUG
+          : Purchases.LOG_LEVEL.ERROR
       );
 
-      // Configure RevenueCat with platform-specific API key
-      let apiKey = Platform.OS === 'ios' ? REVENUECAT_API_KEYS.ios : REVENUECAT_API_KEYS.android;
+      // Configure RevenueCat - sadece iOS için
+      if (Platform.OS !== "ios") {
+        console.log("⚠️ RevenueCat sadece iOS için konfigüre edildi");
+        this.isMockMode = true;
+        return this.initialize(); // Android'de mock mode'a geç
+      }
+
+      let apiKey = REVENUECAT_API_KEYS.ios;
 
       // Development için temporary key kullan (gerçek key'ler yoksa)
       if (
-        apiKey.includes('PUT_YOUR_') &&
+        apiKey.includes("PUT_YOUR_") &&
         DEVELOPMENT.TEMP_API_KEY &&
-        !DEVELOPMENT.TEMP_API_KEY.includes('PUT_YOUR_')
+        !DEVELOPMENT.TEMP_API_KEY.includes("PUT_YOUR_")
       ) {
         apiKey = DEVELOPMENT.TEMP_API_KEY;
-        console.log('⚠️ Using temporary RevenueCat API key for development');
+        console.log("⚠️ Using temporary RevenueCat API key for development");
       }
 
-      if (apiKey.includes('PUT_YOUR_')) {
-        if (ENV === 'development') {
+      if (apiKey.includes("PUT_YOUR_")) {
+        if (ENV === "development") {
           debugLog(
-            'RevenueCat API key not configured. Enabling mock mode. Check REVENUECAT_SETUP.md for instructions.',
+            "RevenueCat API key not configured. Enabling mock mode. Check REVENUECAT_SETUP.md for instructions."
           );
           this.isMockMode = true;
           return this.initialize(); // Re-initialize in mock mode
         } else {
-          throw new Error('RevenueCat API key not configured. Please add your API key.');
+          throw new Error(
+            "RevenueCat API key not configured. Please add your API key."
+          );
         }
       }
 
       await Purchases.configure({ apiKey });
 
       this.isInitialized = true;
-      console.log('✅ RevenueCat initialized successfully');
+      console.log("✅ RevenueCat initialized successfully");
 
       return true;
     } catch (error) {
-      console.error('❌ RevenueCat initialization error:', error);
-      if (ENV === 'development') {
-        debugLog('Falling back to mock mode for development');
+      console.error("❌ RevenueCat initialization error:", error);
+      if (ENV === "development") {
+        debugLog("Falling back to mock mode for development");
         this.isMockMode = true;
         return this.initialize(); // Re-initialize in mock mode
       }
@@ -157,16 +167,17 @@ export class RevenueCatService {
 
       await AsyncStorage.setItem(STORAGE_KEYS.USER_ID, userId);
 
-      Logger.info('✅ User identified successfully');
+      Logger.info("✅ User identified successfully");
       Logger.info(
         `Premium status: ${
-          customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM] !== undefined
-        }`,
+          customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM] !==
+          undefined
+        }`
       );
 
       return true;
     } catch (error) {
-      console.error('❌ User identification error:', error);
+      console.error("❌ User identification error:", error);
       return false;
     }
   }
@@ -187,10 +198,12 @@ export class RevenueCatService {
       }
 
       // Generate anonymous user ID
-      const anonymousId = `anonymous_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+      const anonymousId = `anonymous_${Date.now()}_${Math.random()
+        .toString(36)
+        .substring(2, 11)}`;
       return await this.identifyUser(anonymousId);
     } catch (error) {
-      console.error('❌ Anonymous login error:', error);
+      console.error("❌ Anonymous login error:", error);
       return false;
     }
   }
@@ -205,7 +218,8 @@ export class RevenueCatService {
 
     try {
       const customerInfo: CustomerInfo = await Purchases.getCustomerInfo();
-      const premiumEntitlement = customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM];
+      const premiumEntitlement =
+        customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM];
 
       if (premiumEntitlement) {
         const subscriptionInfo: SubscriptionInfo = {
@@ -223,8 +237,14 @@ export class RevenueCatService {
         };
 
         // Cache premium status
-        await AsyncStorage.setItem(STORAGE_KEYS.PREMIUM_STATUS, JSON.stringify(subscriptionInfo));
-        await AsyncStorage.setItem(STORAGE_KEYS.LAST_CHECK, Date.now().toString());
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.PREMIUM_STATUS,
+          JSON.stringify(subscriptionInfo)
+        );
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.LAST_CHECK,
+          Date.now().toString()
+        );
 
         return subscriptionInfo;
       }
@@ -237,12 +257,18 @@ export class RevenueCatService {
       };
 
       // Cache free status
-      await AsyncStorage.setItem(STORAGE_KEYS.PREMIUM_STATUS, JSON.stringify(freeInfo));
-      await AsyncStorage.setItem(STORAGE_KEYS.LAST_CHECK, Date.now().toString());
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.PREMIUM_STATUS,
+        JSON.stringify(freeInfo)
+      );
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.LAST_CHECK,
+        Date.now().toString()
+      );
 
       return freeInfo;
     } catch (error) {
-      console.error('❌ Subscription status check error:', error);
+      console.error("❌ Subscription status check error:", error);
 
       // Return cached status if available
       try {
@@ -251,12 +277,12 @@ export class RevenueCatService {
           try {
             return JSON.parse(cached);
           } catch (parseError) {
-            console.warn('Invalid premium status cache, clearing:', parseError);
+            console.warn("Invalid premium status cache, clearing:", parseError);
             await AsyncStorage.removeItem(STORAGE_KEYS.PREMIUM_STATUS);
           }
         }
       } catch (cacheError) {
-        console.error('Cache read error:', cacheError);
+        console.error("Cache read error:", cacheError);
       }
 
       return {
@@ -288,7 +314,7 @@ export class RevenueCatService {
             const info: SubscriptionInfo = JSON.parse(cached);
             return info.isPremium;
           } catch (parseError) {
-            console.warn('Invalid cached subscription info:', parseError);
+            console.warn("Invalid cached subscription info:", parseError);
           }
         }
       }
@@ -297,7 +323,7 @@ export class RevenueCatService {
       const info = await this.getSubscriptionInfo();
       return info.isPremium;
     } catch (error) {
-      console.error('❌ Premium check error:', error);
+      console.error("❌ Premium check error:", error);
       return false;
     }
   }
@@ -318,20 +344,22 @@ export class RevenueCatService {
         const packages: PurchasePackageInfo[] = [];
 
         // Process available packages
-        Object.values(offerings.current.availablePackages).forEach((pkg: PurchasesPackage) => {
-          packages.push({
-            identifier: pkg.identifier,
-            packageType: pkg.packageType,
-            product: {
-              identifier: pkg.product.identifier,
-              description: pkg.product.description,
-              title: pkg.product.title,
-              price: pkg.product.price,
-              priceString: pkg.product.priceString,
-              currencyCode: pkg.product.currencyCode,
-            },
-          });
-        });
+        Object.values(offerings.current.availablePackages).forEach(
+          (pkg: PurchasesPackage) => {
+            packages.push({
+              identifier: pkg.identifier,
+              packageType: pkg.packageType,
+              product: {
+                identifier: pkg.product.identifier,
+                description: pkg.product.description,
+                title: pkg.product.title,
+                price: pkg.product.price,
+                priceString: pkg.product.priceString,
+                currencyCode: pkg.product.currencyCode,
+              },
+            });
+          }
+        );
 
         result.push({
           identifier: offerings.current.identifier,
@@ -342,7 +370,7 @@ export class RevenueCatService {
 
       return result;
     } catch (error) {
-      console.error('❌ Get offerings error:', error);
+      console.error("❌ Get offerings error:", error);
       return [];
     }
   }
@@ -362,10 +390,13 @@ export class RevenueCatService {
     try {
       const offerings = await Purchases.getOfferings();
 
-      if (!offerings.current || offerings.current.availablePackages.length === 0) {
+      if (
+        !offerings.current ||
+        offerings.current.availablePackages.length === 0
+      ) {
         return {
           success: false,
-          error: 'Hiçbir abonelik paketi bulunamadı',
+          error: "Hiçbir abonelik paketi bulunamadı",
         };
       }
 
@@ -375,34 +406,40 @@ export class RevenueCatService {
       if (packageIdentifier) {
         // Find specific package
         packageToPurchase =
-          offerings.current.availablePackages.find(pkg => pkg.identifier === packageIdentifier) ||
-          null;
+          offerings.current.availablePackages.find(
+            (pkg) => pkg.identifier === packageIdentifier
+          ) || null;
       } else {
         // Default to monthly package
         packageToPurchase =
-          offerings.current.monthly || offerings.current.availablePackages[0] || null;
+          offerings.current.monthly ||
+          offerings.current.availablePackages[0] ||
+          null;
       }
 
       if (!packageToPurchase) {
         return {
           success: false,
-          error: 'Abonelik paketi bulunamadı',
+          error: "Abonelik paketi bulunamadı",
         };
       }
 
       console.log(`🛒 Purchasing package: ${packageToPurchase.identifier}`);
-      const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
+      const { customerInfo } = await Purchases.purchasePackage(
+        packageToPurchase
+      );
 
       // Check if purchase was successful
-      const isPremium = customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM] !== undefined;
+      const isPremium =
+        customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM] !== undefined;
 
       if (isPremium) {
-        Logger.info('✅ Purchase successful! User is now premium.');
+        Logger.info("✅ Purchase successful! User is now premium.");
 
         // Update cached status
         await this.getSubscriptionInfo();
       } else {
-        console.log('❌ Purchase completed but premium not activated.');
+        console.log("❌ Purchase completed but premium not activated.");
       }
 
       return {
@@ -410,29 +447,30 @@ export class RevenueCatService {
         customerInfo,
       };
     } catch (error: any) {
-      console.error('❌ Purchase error:', error);
+      console.error("❌ Purchase error:", error);
 
       // Handle specific error cases
       if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
         return {
           success: false,
-          error: 'Satın alma iptal edildi',
+          error: "Satın alma iptal edildi",
         };
-      } else if (error.code === 'PURCHASE_IN_PROGRESS_ERROR') {
+      } else if (error.code === "PURCHASE_IN_PROGRESS_ERROR") {
         return {
           success: false,
-          error: 'Ödeme beklemede. Lütfen daha sonra tekrar kontrol edin.',
+          error: "Ödeme beklemede. Lütfen daha sonra tekrar kontrol edin.",
         };
       } else if (error.code === PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR) {
         return {
           success: false,
-          error: 'App Store ile bağlantı sorunu. Lütfen daha sonra tekrar deneyin.',
+          error:
+            "App Store ile bağlantı sorunu. Lütfen daha sonra tekrar deneyin.",
         };
       }
 
       return {
         success: false,
-        error: 'Satın alma sırasında bir hata oluştu',
+        error: "Satın alma sırasında bir hata oluştu",
       };
     }
   }
@@ -450,17 +488,18 @@ export class RevenueCatService {
     }
 
     try {
-      console.log('🔄 Restoring purchases...');
+      console.log("🔄 Restoring purchases...");
       const customerInfo = await Purchases.restorePurchases();
 
-      const isPremium = customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM] !== undefined;
+      const isPremium =
+        customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM] !== undefined;
 
       if (isPremium) {
-        Logger.info('✅ Purchases restored! User is premium.');
+        Logger.info("✅ Purchases restored! User is premium.");
         // Update cached status
         await this.getSubscriptionInfo();
       } else {
-        console.log('ℹ️ No active premium purchases found.');
+        console.log("ℹ️ No active premium purchases found.");
       }
 
       return {
@@ -468,10 +507,10 @@ export class RevenueCatService {
         customerInfo,
       };
     } catch (error: any) {
-      console.error('❌ Restore purchases error:', error);
+      console.error("❌ Restore purchases error:", error);
       return {
         success: false,
-        error: 'Satın alımlar geri yüklenirken bir hata oluştu',
+        error: "Satın alımlar geri yüklenirken bir hata oluştu",
       };
     }
   }
@@ -480,7 +519,7 @@ export class RevenueCatService {
    * Get subscription management URL for iOS
    */
   static getSubscriptionManagementURL(): string {
-    return 'https://apps.apple.com/account/subscriptions';
+    return "https://apps.apple.com/account/subscriptions";
   }
 
   /**
@@ -496,11 +535,12 @@ export class RevenueCatService {
       if (!info.isPremium) return false;
 
       const customerInfo = await Purchases.getCustomerInfo();
-      const premiumEntitlement = customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM];
+      const premiumEntitlement =
+        customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM];
 
-      return premiumEntitlement?.periodType === 'trial' || false;
+      return premiumEntitlement?.periodType === "trial" || false;
     } catch (error) {
-      console.error('❌ Trial check error:', error);
+      console.error("❌ Trial check error:", error);
       return false;
     }
   }
@@ -524,9 +564,9 @@ export class RevenueCatService {
         STORAGE_KEYS.USER_ID,
       ]);
 
-      Logger.info('✅ User logged out successfully');
+      Logger.info("✅ User logged out successfully");
     } catch (error) {
-      console.error('❌ Logout error:', error);
+      console.error("❌ Logout error:", error);
     }
   }
 
@@ -551,12 +591,13 @@ export class RevenueCatService {
   }
 
   /**
-   * Purchase credit package
+   * Purchase credit package - Kredi satın alma
    */
   static async purchaseCredits(packageId: string): Promise<{
     success: boolean;
     credits?: number;
     error?: string;
+    customerInfo?: CustomerInfo;
   }> {
     if (this.isMockMode) {
       return MockRevenueCatService.purchaseCredits(packageId);
@@ -565,56 +606,150 @@ export class RevenueCatService {
     try {
       const offerings = await Purchases.getOfferings();
 
-      if (!offerings.current) {
+      if (
+        !offerings.current ||
+        offerings.current.availablePackages.length === 0
+      ) {
         return {
           success: false,
-          error: 'Kredi paketleri bulunamadı',
+          error: "Hiçbir kredi paketi bulunamadı",
         };
       }
 
-      // Find the credit package
-      const creditPackage = offerings.current.availablePackages.find(
-        pkg => pkg.identifier === packageId,
+      // Find the credit package to purchase
+      const packageToPurchase = offerings.current.availablePackages.find(
+        (pkg) => pkg.product.identifier === packageId
       );
 
-      if (!creditPackage) {
+      if (!packageToPurchase) {
         return {
           success: false,
-          error: 'Kredi paketi bulunamadı',
+          error: "Kredi paketi bulunamadı",
         };
       }
 
-      Logger.info(`🛒 Purchasing credit package`);
-      const { customerInfo } = await Purchases.purchasePackage(creditPackage);
+      console.log(
+        `🛒 Purchasing credit package: ${packageToPurchase.identifier}`
+      );
+      const { customerInfo } = await Purchases.purchasePackage(
+        packageToPurchase
+      );
 
-      // Extract credits from package identifier or use default mapping
-      const creditsMap: { [key: string]: number } = {
-        credits_starter: 10,
-        credits_popular: 30, // 25 + 5 bonus
-        credits_premium: 75, // 60 + 15 bonus
-        credits_bulk: 200, // 150 + 50 bonus
-      };
+      // Check if purchase was successful
+      const hasCredits =
+        customerInfo.entitlements.active[ENTITLEMENT_IDS.CREDITS] !== undefined;
 
-      const credits = creditsMap[packageId] || 10;
+      if (hasCredits) {
+        Logger.info("✅ Credit purchase successful!");
 
-      return {
-        success: true,
-        credits,
-      };
+        // Get credit amount from package
+        const creditAmount = this.getCreditAmountFromPackage(packageId);
+
+        return {
+          success: true,
+          credits: creditAmount,
+          customerInfo,
+        };
+      } else {
+        console.log("❌ Purchase completed but credits not activated.");
+        return {
+          success: false,
+          error: "Satın alma tamamlandı ancak krediler aktifleştirilmedi",
+        };
+      }
     } catch (error: any) {
-      console.error('❌ Credit purchase error:', error);
+      console.error("❌ Credit purchase error:", error);
 
+      // Handle specific error cases
       if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
         return {
           success: false,
-          error: 'Satın alma iptal edildi',
+          error: "Satın alma iptal edildi",
+        };
+      } else if (error.code === "PURCHASE_IN_PROGRESS_ERROR") {
+        return {
+          success: false,
+          error: "Ödeme beklemede. Lütfen daha sonra tekrar kontrol edin.",
+        };
+      } else if (error.code === PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR) {
+        return {
+          success: false,
+          error:
+            "App Store ile bağlantı sorunu. Lütfen daha sonra tekrar deneyin.",
         };
       }
 
       return {
         success: false,
-        error: 'Kredi satın alma sırasında bir hata oluştu',
+        error: "Kredi satın alma sırasında bir hata oluştu",
       };
+    }
+  }
+
+  /**
+   * Get credit amount from package ID
+   */
+  private static getCreditAmountFromPackage(packageId: string): number {
+    const { PRODUCTS } = REVENUECAT_CONFIG;
+
+    switch (packageId) {
+      case PRODUCTS.CREDITS_STARTER:
+        return 10;
+      case PRODUCTS.CREDITS_POPULAR:
+        return 30; // 25 + 5 bonus
+      case PRODUCTS.CREDITS_PREMIUM:
+        return 75; // 60 + 15 bonus
+      default:
+        return 0;
+    }
+  }
+
+  /**
+   * Get available credit packages
+   */
+  static async getCreditPackages(): Promise<OfferingInfo[]> {
+    if (this.isMockMode) {
+      return MockRevenueCatService.getCreditPackages();
+    }
+
+    try {
+      const offerings = await Purchases.getOfferings();
+      const result: OfferingInfo[] = [];
+
+      // Filter credit packages
+      if (offerings.current) {
+        const creditPackages = offerings.current.availablePackages.filter(
+          (pkg) => pkg.product.identifier.includes("credits_")
+        );
+
+        if (creditPackages.length > 0) {
+          const packages: PurchasePackageInfo[] = creditPackages.map(
+            (pkg: PurchasesPackage) => ({
+              identifier: pkg.identifier,
+              packageType: pkg.packageType,
+              product: {
+                identifier: pkg.product.identifier,
+                description: pkg.product.description,
+                title: pkg.product.title,
+                price: pkg.product.price,
+                priceString: pkg.product.priceString,
+                currencyCode: pkg.product.currencyCode,
+              },
+            })
+          );
+
+          result.push({
+            identifier: "credits_offering",
+            serverDescription: "Kredi paketleri",
+            packages,
+          });
+        }
+      }
+
+      return result;
+    } catch (error) {
+      console.error("❌ Get credit packages error:", error);
+      return [];
     }
   }
 
@@ -631,13 +766,13 @@ export class RevenueCatService {
       const activeEntitlements = Object.keys(customerInfo.entitlements.active);
 
       // Map entitlements to tier IDs
-      if (activeEntitlements.includes('pro_premium')) return 'pro';
-      if (activeEntitlements.includes('standard_premium')) return 'standard';
-      if (activeEntitlements.includes('basic_premium')) return 'basic';
+      if (activeEntitlements.includes("pro_premium")) return "pro";
+      if (activeEntitlements.includes("standard_premium")) return "standard";
+      if (activeEntitlements.includes("basic_premium")) return "basic";
 
       return null; // Free tier
     } catch (error) {
-      console.error('❌ Get current tier error:', error);
+      console.error("❌ Get current tier error:", error);
       return null;
     }
   }
@@ -656,26 +791,26 @@ export class RevenueCatService {
 
       // Feature mapping based on tiers
       const tierFeatures: { [key: string]: string[] } = {
-        basic: ['favorites', 'history', 'ai_monthly', 'increased_limits'],
+        basic: ["favorites", "history", "ai_monthly", "increased_limits"],
         standard: [
-          'favorites',
-          'history',
-          'ai_monthly',
-          'increased_limits',
-          'community_pool',
-          'cloud_sync',
-          'high_limits',
+          "favorites",
+          "history",
+          "ai_monthly",
+          "increased_limits",
+          "community_pool",
+          "cloud_sync",
+          "high_limits",
         ],
-        pro: ['all_features'], // Pro has everything
+        pro: ["all_features"], // Pro has everything
       };
 
       return (
         tierFeatures[tier]?.includes(featureId) ||
-        tierFeatures[tier]?.includes('all_features') ||
+        tierFeatures[tier]?.includes("all_features") ||
         false
       );
     } catch (error) {
-      console.error('❌ Feature check error:', error);
+      console.error("❌ Feature check error:", error);
       return false;
     }
   }
@@ -691,9 +826,9 @@ export class RevenueCatService {
     try {
       await Purchases.getCustomerInfo();
       await this.getSubscriptionInfo(); // This will update the cache
-      console.log('✅ Customer info refreshed');
+      console.log("✅ Customer info refreshed");
     } catch (error) {
-      console.error('❌ Refresh customer info error:', error);
+      console.error("❌ Refresh customer info error:", error);
     }
   }
 }

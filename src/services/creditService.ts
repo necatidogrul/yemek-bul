@@ -139,6 +139,22 @@ export class CreditService {
         return null;
       }
 
+      // Production'da authentication kontrolü
+      if (!__DEV__) {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        
+        if (authError || !user) {
+          Logger.error("[CreditService] ❌ No authenticated user found");
+          return null;
+        }
+
+        // Authenticated user ID ile request user ID'nin eşleşmesini kontrol et
+        if (user.id !== userId) {
+          Logger.error("[CreditService] ❌ User ID mismatch - potential security breach");
+          return null;
+        }
+      }
+
       const { data, error } = await supabase
         .from("user_credits")
         .select("*")
