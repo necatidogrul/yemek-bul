@@ -257,7 +257,21 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
         colors={[colors.primary[400], colors.primary[600]]}
         style={styles.gridItemImage}
       >
-        <Ionicons name="restaurant" size={28} color="white" />
+        {item.imageUrl ? (
+          <Animated.Image
+            source={{ uri: item.imageUrl }}
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            }}
+            resizeMode="cover"
+          />
+        ) : (
+          <Ionicons name="restaurant" size={28} color="white" />
+        )}
 
         {/* Match Badge */}
         {item.matchingIngredients && item.totalIngredients && (
@@ -818,7 +832,7 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
           contentContainerStyle={[
             styles.listContainer,
             processedRecipes.length === 0 && styles.emptyListContainer,
-            { flexGrow: 1, paddingBottom: 100 }
+            { flexGrow: 1, paddingBottom: 100 },
           ]}
           columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
           showsVerticalScrollIndicator={false}

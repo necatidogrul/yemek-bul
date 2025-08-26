@@ -16,6 +16,7 @@ export interface Recipe {
   difficulty?: "kolay" | "orta" | "zor";
   category?: "çorba" | "ana_yemek" | "salata" | "tatlı" | "aperatif" | "kahvaltı";
   imageUrl?: string;
+  imageSearchTerm?: string; // Unsplash API için İngilizce arama kelimesi
   missingIngredients?: string[];
   matchingIngredients?: number;
   totalIngredients?: number;

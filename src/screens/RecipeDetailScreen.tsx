@@ -9,6 +9,7 @@ import {
   StatusBar,
   Animated,
   Share,
+  Image,
 } from "react-native";
 import { Logger } from "../services/LoggerService";
 import { StackNavigationProp } from "@react-navigation/stack";
@@ -591,18 +592,26 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
         <Animated.View
           style={[styles.heroImage, { transform: [{ scale: imageScale }] }]}
         >
-          <LinearGradient
-            colors={[
-              colors.primary[400],
-              colors.primary[600],
-              colors.secondary[500],
-            ]}
-            style={styles.imageGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <Ionicons name="restaurant" size={80} color="white" />
-          </LinearGradient>
+          {recipe?.imageUrl ? (
+            <Image
+              source={{ uri: recipe.imageUrl }}
+              style={styles.imageGradient}
+              resizeMode="cover"
+            />
+          ) : (
+            <LinearGradient
+              colors={[
+                colors.primary[400],
+                colors.primary[600],
+                colors.secondary[500],
+              ]}
+              style={styles.imageGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Ionicons name="restaurant" size={80} color="white" />
+            </LinearGradient>
+          )}
 
           {/* Overlay Controls */}
           <View style={styles.imageOverlay}>
@@ -904,6 +913,8 @@ const styles = StyleSheet.create({
   },
   imageGradient: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     alignItems: "center",
     justifyContent: "center",
   },

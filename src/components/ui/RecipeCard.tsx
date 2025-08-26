@@ -1,12 +1,11 @@
 import React, { memo } from 'react';
-import { TouchableOpacity, View, StyleSheet, Dimensions } from 'react-native';
+import { TouchableOpacity, View, StyleSheet, Dimensions, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Recipe } from '../../types/Recipe';
 import Card from './Card';
 import Text from './Text';
 import { FavoriteButton } from './FavoriteButton';
-import { OptimizedImage } from './OptimizedImage';
 import { useTheme } from '../../contexts/ThemeContext';
 import { spacing, borderRadius, shadows } from '../../contexts/ThemeContext';
 
@@ -24,6 +23,13 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
   onPress,
 }) => {
   const { colors, spacing, borderRadius, elevation } = useTheme();
+  
+  // Debug log
+  console.log(`🖼️ RecipeCard - ${recipe.name}:`, {
+    hasImage: !!recipe.imageUrl,
+    imageUrl: recipe.imageUrl,
+    variant
+  });
 
   const getDifficultyColor = (difficulty?: string) => {
     switch (difficulty?.toLowerCase()) {
@@ -77,16 +83,24 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
     return (
       <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.gridContainer}>
         <Card variant="elevated" size="md" style={styles.gridCard}>
-          {/* Image Placeholder with Gradient */}
+          {/* Recipe Image */}
           <View style={styles.gridImageContainer}>
-            <LinearGradient
-              colors={[colors.primary[400], colors.primary[600]]}
-              style={styles.gridImageGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="restaurant" size={32} color="white" />
-            </LinearGradient>
+            {recipe.imageUrl ? (
+              <Image
+                source={{ uri: recipe.imageUrl }}
+                style={styles.gridImageGradient}
+                resizeMode="cover"
+              />
+            ) : (
+              <LinearGradient
+                colors={[colors.primary[400], colors.primary[600]]}
+                style={styles.gridImageGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name="restaurant" size={32} color="white" />
+              </LinearGradient>
+            )}
 
             {/* Match Badge */}
             <View
@@ -162,14 +176,22 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
         <Card variant="elevated" size="lg" style={styles.featuredCard}>
           {/* Hero Image with Gradient Overlay */}
           <View style={styles.featuredImageContainer}>
-            <LinearGradient
-              colors={[colors.primary[500], colors.primary[700]]}
-              style={styles.featuredImageGradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Ionicons name="restaurant" size={48} color="white" />
-            </LinearGradient>
+            {recipe.imageUrl ? (
+              <Image
+                source={{ uri: recipe.imageUrl }}
+                style={styles.featuredImageGradient}
+                resizeMode="cover"
+              />
+            ) : (
+              <LinearGradient
+                colors={[colors.primary[500], colors.primary[700]]}
+                style={styles.featuredImageGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <Ionicons name="restaurant" size={48} color="white" />
+              </LinearGradient>
+            )}
 
             {/* Featured Badge */}
             <View style={styles.featuredBadge}>
@@ -341,12 +363,20 @@ const RecipeCardComponent: React.FC<RecipeCardProps> = ({
 
         {/* Image Container */}
         <View style={[styles.imageContainer, isCompact && styles.compactImageContainer]}>
-          <LinearGradient
-            colors={[colors.neutral[100], colors.neutral[200]]}
-            style={styles.imageGradient}
-          >
-            <Ionicons name="image-outline" size={isCompact ? 28 : 36} color={colors.neutral[400]} />
-          </LinearGradient>
+          {recipe.imageUrl ? (
+            <Image
+              source={{ uri: recipe.imageUrl }}
+              style={styles.imageGradient}
+              resizeMode="cover"
+            />
+          ) : (
+            <LinearGradient
+              colors={[colors.neutral[100], colors.neutral[200]]}
+              style={styles.imageGradient}
+            >
+              <Ionicons name="image-outline" size={isCompact ? 28 : 36} color={colors.neutral[400]} />
+            </LinearGradient>
+          )}
 
           {/* Difficulty Badge on Image */}
           {recipe.difficulty && (
@@ -509,6 +539,8 @@ const styles = StyleSheet.create({
   },
   imageGradient: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -587,6 +619,8 @@ const styles = StyleSheet.create({
   },
   gridImageGradient: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -642,6 +676,8 @@ const styles = StyleSheet.create({
   },
   featuredImageGradient: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
