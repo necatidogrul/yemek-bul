@@ -6,11 +6,14 @@ interface GlobalErrorHandlerProps {
   children: React.ReactNode;
 }
 
-export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({ children }) => {
+export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({
+  children,
+}) => {
   const { handleError } = useErrorHandler();
 
   useEffect(() => {
-    let originalHandler: ((error: any, isFatal?: boolean) => void) | null = null;
+    let originalHandler: ((error: any, isFatal?: boolean) => void) | null =
+      null;
 
     try {
       // Check if ErrorUtils is available (it might not be in some environments)
@@ -59,7 +62,11 @@ export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({ children
       try {
         // Restore original handler on cleanup
         const { ErrorUtils } = require('react-native');
-        if (ErrorUtils && typeof ErrorUtils.setGlobalHandler === 'function' && originalHandler) {
+        if (
+          ErrorUtils &&
+          typeof ErrorUtils.setGlobalHandler === 'function' &&
+          originalHandler
+        ) {
           ErrorUtils.setGlobalHandler(originalHandler);
         }
       } catch (error) {
@@ -67,7 +74,10 @@ export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({ children
       }
 
       if (typeof window !== 'undefined' && window.removeEventListener) {
-        window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+        window.removeEventListener(
+          'unhandledrejection',
+          handleUnhandledRejection
+        );
       }
     };
   }, [handleError]);

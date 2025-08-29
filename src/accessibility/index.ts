@@ -73,7 +73,10 @@ export const AccessibilityHelpers = {
    * Generate consistent accessibility labels for common UI patterns
    */
   generateLabel: {
-    button: (text: string, state?: { loading?: boolean; disabled?: boolean }) => {
+    button: (
+      text: string,
+      state?: { loading?: boolean; disabled?: boolean }
+    ) => {
       let label = text;
       if (state?.loading) label += ', yükleniyor';
       if (state?.disabled) label += ', devre dışı';
@@ -96,7 +99,7 @@ export const AccessibilityHelpers = {
         matchingIngredients?: number;
         totalIngredients?: number;
         isFavorite?: boolean;
-      },
+      }
     ) => {
       const parts = [`Tarif: ${name}`];
 
@@ -109,7 +112,9 @@ export const AccessibilityHelpers = {
       }
 
       if (details.matchingIngredients && details.totalIngredients) {
-        parts.push(`${details.matchingIngredients} / ${details.totalIngredients} malzeme mevcut`);
+        parts.push(
+          `${details.matchingIngredients} / ${details.totalIngredients} malzeme mevcut`
+        );
       }
 
       if (details.isFavorite) {
@@ -125,7 +130,10 @@ export const AccessibilityHelpers = {
    */
   generateHint: {
     tapToAction: (action: string) => `${action} için çift dokunun`,
-    swipeToAction: (action: string, direction: 'left' | 'right' | 'up' | 'down') => {
+    swipeToAction: (
+      action: string,
+      direction: 'left' | 'right' | 'up' | 'down'
+    ) => {
       const directionText = {
         left: 'sola',
         right: 'sağa',

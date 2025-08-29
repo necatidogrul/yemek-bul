@@ -1,4 +1,4 @@
-import { supabase } from "./supabase";
+import { supabase } from './supabase';
 import {
   Recipe,
   RecipeSearchResult,
@@ -7,57 +7,57 @@ import {
   UserSearchStats,
   SearchAnalytics,
   PopularSearchIngredient,
-} from "../types/Recipe";
-import { OpenAIService, RecipeGenerationRequest } from "./openaiService";
-import { MobileStorageService } from "./localStorageService";
-import { UsageLimitService } from "./UsageLimitService";
-import { RevenueCatService } from "./RevenueCatService";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Logger } from "../services/LoggerService";
+} from '../types/Recipe';
+import { OpenAIService, RecipeGenerationRequest } from './openaiService';
+import { MobileStorageService } from './localStorageService';
+import { UsageLimitService } from './UsageLimitService';
+import { RevenueCatService } from './RevenueCatService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Logger } from '../services/LoggerService';
 
 // Mock recipes for offline mode
 const MOCK_RECIPES: Recipe[] = [
   {
-    id: "1",
-    name: "Tavuk Sote",
-    description: "Lezzetli tavuk sote tarifi",
-    ingredients: ["tavuk göğsü", "soğan", "biber", "zeytinyağı", "tuz"],
+    id: '1',
+    name: 'Tavuk Sote',
+    description: 'Lezzetli tavuk sote tarifi',
+    ingredients: ['tavuk göğsü', 'soğan', 'biber', 'zeytinyağı', 'tuz'],
     instructions: [
-      "Tavuk göğsünü küp küp doğrayın",
-      "Soğanı yemeklik doğrayın",
-      "Zeytinyağında tavukları soteleyin",
-      "Soğan ve biberi ekleyin",
-      "Tuz ekleyip pişirin",
+      'Tavuk göğsünü küp küp doğrayın',
+      'Soğanı yemeklik doğrayın',
+      'Zeytinyağında tavukları soteleyin',
+      'Soğan ve biberi ekleyin',
+      'Tuz ekleyip pişirin',
     ],
     preparationTime: 15,
     cookingTime: 20,
     servings: 4,
-    difficulty: "kolay",
-    category: "ana_yemek",
-    imageUrl: "https://example.com/tavuk-sote.jpg",
-    source: "mock",
+    difficulty: 'kolay',
+    category: 'ana_yemek',
+    imageUrl: 'https://example.com/tavuk-sote.jpg',
+    source: 'mock',
     aiGenerated: false,
     createdAt: new Date().toISOString(),
   },
   {
-    id: "2",
-    name: "Mercimek Çorbası",
-    description: "Geleneksel mercimek çorbası",
-    ingredients: ["kırmızı mercimek", "soğan", "havuç", "tuz", "karabiber"],
+    id: '2',
+    name: 'Mercimek Çorbası',
+    description: 'Geleneksel mercimek çorbası',
+    ingredients: ['kırmızı mercimek', 'soğan', 'havuç', 'tuz', 'karabiber'],
     instructions: [
-      "Mercimeği yıkayın",
-      "Soğan ve havucu doğrayın",
-      "Tüm malzemeleri tencereye koyun",
-      "Su ekleyip pişirin",
-      "Blenderdan geçirin",
+      'Mercimeği yıkayın',
+      'Soğan ve havucu doğrayın',
+      'Tüm malzemeleri tencereye koyun',
+      'Su ekleyip pişirin',
+      'Blenderdan geçirin',
     ],
     preparationTime: 10,
     cookingTime: 30,
     servings: 6,
-    difficulty: "kolay",
-    category: "çorba",
-    imageUrl: "https://example.com/mercimek-corbasi.jpg",
-    source: "mock",
+    difficulty: 'kolay',
+    category: 'çorba',
+    imageUrl: 'https://example.com/mercimek-corbasi.jpg',
+    source: 'mock',
     aiGenerated: false,
     createdAt: new Date().toISOString(),
   },
@@ -72,7 +72,7 @@ class PremiumLimitsService {
 
   static async recordCommunityUsage(userId: string): Promise<void> {
     // Premium kullanıcılar için kullanım kaydı
-    console.log("Community usage recorded for premium user:", userId);
+    console.log('Community usage recorded for premium user:', userId);
   }
 
   static async canUseAI(userId: string): Promise<boolean> {
@@ -82,7 +82,7 @@ class PremiumLimitsService {
 
   static async recordAIUsage(userId: string): Promise<void> {
     // Premium kullanıcılar için AI kullanım kaydı
-    console.log("AI usage recorded for premium user:", userId);
+    console.log('AI usage recorded for premium user:', userId);
   }
 }
 
@@ -117,8 +117,8 @@ export class RecipeService {
     }
   ): Promise<RecipeSearchResult & { isCached?: boolean; isStale?: boolean }> {
     const startTime = Date.now();
-    let resultType: "community_pool" | "ai_cache" | "ai_generation" | "mock" =
-      "mock";
+    let resultType: 'community_pool' | 'ai_cache' | 'ai_generation' | 'mock' =
+      'mock';
 
     let isCachedResult = false;
     let isStaleResult = false;
@@ -135,25 +135,24 @@ export class RecipeService {
       } = request;
 
       const isOnline = await MobileStorageService.isOnline();
-      console.log("🔍 Recipe search started:", {
+      console.log('🔍 Recipe search started:', {
         ingredients,
         useAI,
         offline: !isOnline,
       });
 
       // 0. ÖNCE AsyncStorage'dan kontrol et (Mobile Offline-First)
-      const cachedResult = await MobileStorageService.getCachedSearchResult(
-        ingredients
-      );
+      const cachedResult =
+        await MobileStorageService.getCachedSearchResult(ingredients);
       if (cachedResult) {
-        console.log("⚡ Found in mobile cache:", cachedResult.metadata.source);
+        console.log('⚡ Found in mobile cache:', cachedResult.metadata.source);
         isCachedResult = true;
         isStaleResult = cachedResult.metadata.isStale || false;
 
         // Local search history ekle
         await MobileStorageService.addSearchHistory(
           ingredients,
-          ingredients.join(", "),
+          ingredients.join(', '),
           cachedResult.results.exactMatches.length +
             cachedResult.results.nearMatches.length,
           `cached_${cachedResult.metadata.source}`
@@ -169,7 +168,7 @@ export class RecipeService {
         }
 
         // Stale ise background'da güncelle (stale-while-revalidate pattern)
-        console.log("🔄 Cached result is stale, updating in background...");
+        console.log('🔄 Cached result is stale, updating in background...');
         this.updateCacheInBackground(request, cachedResult);
 
         return {
@@ -181,7 +180,7 @@ export class RecipeService {
 
       // Offline durumunda cached sonuç yoksa mock data kullan
       if (!isOnline) {
-        console.log("📱 Mobile offline mode: Using mock recipes");
+        console.log('📱 Mobile offline mode: Using mock recipes');
         const mockResult = this.searchInMockRecipes(
           ingredients,
           maxMissingIngredients
@@ -191,22 +190,22 @@ export class RecipeService {
         await MobileStorageService.cacheSearchResult(
           ingredients,
           mockResult,
-          "mock",
+          'mock',
           Date.now() - startTime
         );
 
         // Local history ekle
         await MobileStorageService.addSearchHistory(
           ingredients,
-          ingredients.join(", "),
+          ingredients.join(', '),
           mockResult.exactMatches.length + mockResult.nearMatches.length,
-          "offline_mock"
+          'offline_mock'
         );
 
         return { ...mockResult, isCached: false, isStale: false };
       }
 
-      console.log("🌐 Online mode: Fetching fresh data...");
+      console.log('🌐 Online mode: Fetching fresh data...');
 
       // 1. Community AI recipes pool'da ara
       try {
@@ -218,24 +217,24 @@ export class RecipeService {
           communityResults.exactMatches.length > 0 ||
           communityResults.nearMatches.length > 0
         ) {
-          console.log("✅ Found results in community AI recipe pool");
-          resultType = "community_pool";
+          console.log('✅ Found results in community AI recipe pool');
+          resultType = 'community_pool';
           const result = communityResults;
 
           // AsyncStorage'a cache'le
           await MobileStorageService.cacheSearchResult(
             ingredients,
             result,
-            "community_pool",
+            'community_pool',
             Date.now() - startTime
           );
 
           // Local search history ekle
           await MobileStorageService.addSearchHistory(
             ingredients,
-            ingredients.join(", "),
+            ingredients.join(', '),
             result.exactMatches.length + result.nearMatches.length,
-            "community_pool"
+            'community_pool'
           );
 
           // Server search history kaydet
@@ -259,7 +258,7 @@ export class RecipeService {
           return { ...result, isCached: false, isStale: false };
         }
       } catch (communityError) {
-        console.warn("⚠️ Community search failed:", communityError);
+        console.warn('⚠️ Community search failed:', communityError);
       }
 
       // 2. Cache'den ara (kısa vadeli AI cache)
@@ -269,24 +268,24 @@ export class RecipeService {
           cachedResults.exactMatches.length > 0 ||
           cachedResults.nearMatches.length > 0
         ) {
-          console.log("✅ Found results in AI cache");
-          resultType = "ai_cache";
+          console.log('✅ Found results in AI cache');
+          resultType = 'ai_cache';
           const result = cachedResults;
 
           // AsyncStorage'a cache'le
           await MobileStorageService.cacheSearchResult(
             ingredients,
             result,
-            "ai_cache",
+            'ai_cache',
             Date.now() - startTime
           );
 
           // Local search history ekle
           await MobileStorageService.addSearchHistory(
             ingredients,
-            ingredients.join(", "),
+            ingredients.join(', '),
             result.exactMatches.length + result.nearMatches.length,
-            "ai_cache"
+            'ai_cache'
           );
 
           // Server search history kaydet
@@ -310,29 +309,29 @@ export class RecipeService {
           return { ...result, isCached: false, isStale: false };
         }
       } catch (cacheError) {
-        console.warn("⚠️ Cache search failed:", cacheError);
+        console.warn('⚠️ Cache search failed:', cacheError);
       }
 
       // 3. Eğer AI kullanımı istenmişse ve kullanıcı ID'si varsa
       if (useAI && userId) {
         try {
           const aiResult = await this.searchWithAI(ingredients, userId);
-          resultType = "ai_generation";
+          resultType = 'ai_generation';
 
           // AsyncStorage'a cache'le (AI results uzun süre cache'lenir)
           await MobileStorageService.cacheSearchResult(
             ingredients,
             aiResult,
-            "ai_generation",
+            'ai_generation',
             Date.now() - startTime
           );
 
           // Local search history ekle
           await MobileStorageService.addSearchHistory(
             ingredients,
-            ingredients.join(", "),
+            ingredients.join(', '),
             aiResult.exactMatches.length + aiResult.nearMatches.length,
-            "ai_generation"
+            'ai_generation'
           );
 
           // Server search history kaydet
@@ -354,14 +353,14 @@ export class RecipeService {
           return { ...aiResult, isCached: false, isStale: false };
         } catch (aiError) {
           console.warn(
-            "⚠️ AI search failed, falling back to mock data:",
+            '⚠️ AI search failed, falling back to mock data:',
             aiError
           );
         }
       }
 
       // Fallback 2: Mock verileri kullan
-      console.log("📦 Using mock recipe data");
+      console.log('📦 Using mock recipe data');
       const recipes = MOCK_RECIPES;
 
       const exactMatches: Recipe[] = [];
@@ -376,18 +375,18 @@ export class RecipeService {
         priority: number;
       }> = [];
 
-      recipes.forEach((recipe) => {
-        const recipeIngredients = recipe.ingredients.map((ing) =>
+      recipes.forEach(recipe => {
+        const recipeIngredients = recipe.ingredients.map(ing =>
           ing.toLowerCase().trim()
         );
-        const userIngredients = ingredients.map((ing) =>
+        const userIngredients = ingredients.map(ing =>
           ing.toLowerCase().trim()
         );
 
         // Kullanıcının sahip olduğu malzemeler (daha esnek eşleştirme)
-        const matchingIngredients = recipeIngredients.filter((ing) =>
+        const matchingIngredients = recipeIngredients.filter(ing =>
           userIngredients.some(
-            (userIng) =>
+            userIng =>
               ing.includes(userIng) ||
               userIng.includes(ing) ||
               this.areSimilarIngredients(ing, userIng)
@@ -396,9 +395,9 @@ export class RecipeService {
 
         // Eksik malzemeler
         const missingIngredients = recipeIngredients.filter(
-          (ing) =>
+          ing =>
             !userIngredients.some(
-              (userIng) =>
+              userIng =>
                 ing.includes(userIng) ||
                 userIng.includes(ing) ||
                 this.areSimilarIngredients(ing, userIng)
@@ -415,7 +414,7 @@ export class RecipeService {
         priority -= missingCount * 0.5; // Eksik malzeme cezası
 
         // Temel malzemeler (tuz, zeytinyağı, vs.) varsa bonus
-        if (matchingIngredients.some((ing) => this.isBasicIngredient(ing))) {
+        if (matchingIngredients.some(ing => this.isBasicIngredient(ing))) {
           priority += 2;
         }
 
@@ -473,16 +472,16 @@ export class RecipeService {
       await MobileStorageService.cacheSearchResult(
         ingredients,
         result,
-        "mock",
+        'mock',
         Date.now() - startTime
       );
 
       // Local search history ekle
       await MobileStorageService.addSearchHistory(
         ingredients,
-        ingredients.join(", "),
+        ingredients.join(', '),
         result.exactMatches.length + result.nearMatches.length,
-        "mock"
+        'mock'
       );
 
       // Server search history kaydet
@@ -490,7 +489,7 @@ export class RecipeService {
         await this.recordSearchHistory({
           userId,
           searchIngredients: ingredients,
-          resultType: "mock",
+          resultType: 'mock',
           resultsFound: result.exactMatches.length + result.nearMatches.length,
           exactMatches: result.exactMatches.length,
           nearMatches: result.nearMatches.length,
@@ -504,7 +503,7 @@ export class RecipeService {
 
       return { ...result, isCached: false, isStale: false };
     } catch (error) {
-      console.error("Recipe search error:", error);
+      console.error('Recipe search error:', error);
 
       // Hata durumu için de history kaydet
       if (request.userId && request.ingredients) {
@@ -524,7 +523,7 @@ export class RecipeService {
           });
         } catch (historyError) {
           console.warn(
-            "⚠️ Failed to record error search history:",
+            '⚠️ Failed to record error search history:',
             historyError
           );
         }
@@ -542,13 +541,12 @@ export class RecipeService {
     userId?: string
   ): Promise<RecipeSearchResult> {
     try {
-      console.log("🔍 Searching in community AI recipes pool...");
+      console.log('🔍 Searching in community AI recipes pool...');
 
       // Premium kullanıcılar için community pool limit kontrolü
       if (userId) {
-        const communityCheck = await PremiumLimitsService.canUseCommunityPool(
-          userId
-        );
+        const communityCheck =
+          await PremiumLimitsService.canUseCommunityPool(userId);
         if (!communityCheck) {
           console.log(`⚠️ Premium community pool limit exceeded`);
           return { exactMatches: [], nearMatches: [] };
@@ -560,33 +558,33 @@ export class RecipeService {
       }
 
       const sortedIngredients = ingredients
-        .map((ing) => ing.toLowerCase().trim())
+        .map(ing => ing.toLowerCase().trim())
         .sort();
 
       // 1. Önce tam eşleşme ara
       const { data: exactMatches, error: exactError } = await supabase
-        .from("recipes")
-        .select("*")
-        .eq("ai_generated", true)
-        .contains("ingredient_combination", sortedIngredients)
-        .order("popularity_score", { ascending: false })
+        .from('recipes')
+        .select('*')
+        .eq('ai_generated', true)
+        .contains('ingredient_combination', sortedIngredients)
+        .order('popularity_score', { ascending: false })
         .limit(5);
 
       if (exactError) {
-        console.warn("⚠️ Exact match search failed:", exactError);
+        console.warn('⚠️ Exact match search failed:', exactError);
       }
 
       // 2. Kısmi eşleşmeler ara (en az %60 eşleşme)
       const { data: allAIRecipes, error: allError } = await supabase
-        .from("recipes")
-        .select("*")
-        .eq("ai_generated", true)
-        .not("ingredient_combination", "is", null)
-        .order("popularity_score", { ascending: false })
+        .from('recipes')
+        .select('*')
+        .eq('ai_generated', true)
+        .not('ingredient_combination', 'is', null)
+        .order('popularity_score', { ascending: false })
         .limit(50);
 
       if (allError) {
-        console.warn("⚠️ Community search failed:", allError);
+        console.warn('⚠️ Community search failed:', allError);
         return { exactMatches: [], nearMatches: [] };
       }
 
@@ -595,18 +593,18 @@ export class RecipeService {
 
       // Exact matches'i işle
       if (exactMatches && exactMatches.length > 0) {
-        exactMatches.forEach((recipe) => {
+        exactMatches.forEach(recipe => {
           exactResults.push(this.mapDatabaseRecipeToRecipe(recipe));
         });
 
         // Popularity score artır
-        await this.incrementPopularityScore(exactMatches.map((r) => r.id));
+        await this.incrementPopularityScore(exactMatches.map(r => r.id));
       }
 
       // Kısmi eşleşmeler için analiz yap
       if (allAIRecipes && allAIRecipes.length > 0) {
         const partialMatches = allAIRecipes
-          .filter((recipe) => {
+          .filter(recipe => {
             if (!recipe.ingredient_combination) return false;
 
             const recipeIngredients = recipe.ingredient_combination.map(
@@ -624,9 +622,9 @@ export class RecipeService {
           })
           .slice(0, 10); // En fazla 10 kısmi eşleşme
 
-        partialMatches.forEach((recipe) => {
+        partialMatches.forEach(recipe => {
           // Exact matches'te yoksa near matches'e ekle
-          if (!exactResults.find((er) => er.id === recipe.id)) {
+          if (!exactResults.find(er => er.id === recipe.id)) {
             nearResults.push(this.mapDatabaseRecipeToRecipe(recipe));
           }
         });
@@ -634,7 +632,7 @@ export class RecipeService {
         // Kısmi eşleşmeler için de popularity artır (daha az)
         if (partialMatches.length > 0) {
           await this.incrementPopularityScore(
-            partialMatches.map((r) => r.id),
+            partialMatches.map(r => r.id),
             0.5
           );
         }
@@ -652,7 +650,7 @@ export class RecipeService {
         nearMatches: nearResults,
       };
     } catch (error) {
-      console.error("❌ Community AI search error:", error);
+      console.error('❌ Community AI search error:', error);
       return { exactMatches: [], nearMatches: [] };
     }
   }
@@ -667,13 +665,13 @@ export class RecipeService {
     tokensUsed: number = 0
   ): Promise<void> {
     try {
-      console.log("💾 Saving AI recipes to community pool...");
+      console.log('💾 Saving AI recipes to community pool...');
 
       const sortedIngredients = originalIngredients
-        .map((ing) => ing.toLowerCase().trim())
+        .map(ing => ing.toLowerCase().trim())
         .sort();
 
-      const communityRecipes = recipes.map((recipe) => ({
+      const communityRecipes = recipes.map(recipe => ({
         id: recipe.id, // AI'dan gelen ID'yi kullan
         name: recipe.name,
         description: recipe.description,
@@ -685,7 +683,7 @@ export class RecipeService {
         difficulty: recipe.difficulty,
         category: recipe.category,
         image_url: recipe.imageUrl,
-        source: "ai",
+        source: 'ai',
         ai_generated: true,
         popularity_score: 1, // Başlangıç popülerlik skoru
         ingredient_combination: sortedIngredients,
@@ -696,9 +694,9 @@ export class RecipeService {
       }));
 
       const { error } = await supabase
-        .from("recipes")
+        .from('recipes')
         .upsert(communityRecipes, {
-          onConflict: "id",
+          onConflict: 'id',
           ignoreDuplicates: false,
         });
 
@@ -710,7 +708,7 @@ export class RecipeService {
         `✅ Successfully saved ${recipes.length} AI recipes to community pool`
       );
     } catch (error) {
-      console.error("❌ Failed to save recipes to community pool:", error);
+      console.error('❌ Failed to save recipes to community pool:', error);
     }
   }
 
@@ -723,13 +721,13 @@ export class RecipeService {
   ): Promise<void> {
     try {
       for (const recipeId of recipeIds) {
-        await supabase.rpc("increment_popularity", {
+        await supabase.rpc('increment_popularity', {
           recipe_id: recipeId,
           increment_value: increment,
         });
       }
     } catch (error) {
-      console.warn("⚠️ Failed to increment popularity score:", error);
+      console.warn('⚠️ Failed to increment popularity score:', error);
     }
   }
 
@@ -749,7 +747,7 @@ export class RecipeService {
       difficulty: dbRecipe.difficulty as any,
       category: dbRecipe.category as any,
       imageUrl: dbRecipe.image_url || undefined,
-      source: dbRecipe.source || "database",
+      source: dbRecipe.source || 'database',
       aiGenerated: dbRecipe.ai_generated || false,
       popularityScore: dbRecipe.popularity_score || 0,
       ingredientCombination: dbRecipe.ingredient_combination || undefined,
@@ -825,14 +823,14 @@ export class RecipeService {
       // Free kullanıcı - kredi kontrolü
       const creditCheck = await CreditService.canUseCredits(userId, 1);
       if (!creditCheck) {
-        throw new Error("Insufficient credits for AI recipe generation");
+        throw new Error('Insufficient credits for AI recipe generation');
       }
 
       // Kredi düş (API çağrısı öncesinde)
       const creditResult = await CreditService.spendCredits(userId, 1);
 
       if (!creditResult) {
-        throw new Error("Insufficient credits for AI recipe generation");
+        throw new Error('Insufficient credits for AI recipe generation');
       }
 
       // AI tarif üretimi
@@ -888,10 +886,10 @@ export class RecipeService {
     const ingredientHash = this.generateIngredientHash(ingredients);
 
     const { data, error } = await supabase
-      .from("ai_recipe_cache")
-      .select("recipe_data")
-      .eq("ingredient_hash", ingredientHash)
-      .gt("expires_at", new Date().toISOString())
+      .from('ai_recipe_cache')
+      .select('recipe_data')
+      .eq('ingredient_hash', ingredientHash)
+      .gt('expires_at', new Date().toISOString())
       .single();
 
     if (error || !data) {
@@ -927,10 +925,10 @@ export class RecipeService {
         ).toISOString(), // 30 gün
       };
 
-      await supabase.from("ai_recipe_cache").insert(cacheData);
-      console.log("✅ AI recipes cached successfully");
+      await supabase.from('ai_recipe_cache').insert(cacheData);
+      console.log('✅ AI recipes cached successfully');
     } catch (error) {
-      console.warn("⚠️ Failed to cache AI recipes:", error);
+      console.warn('⚠️ Failed to cache AI recipes:', error);
     }
   }
 
@@ -944,21 +942,21 @@ export class RecipeService {
     tokensUsed: number
   ): Promise<void> {
     try {
-      const historyEntries = recipes.map((recipe) => ({
+      const historyEntries = recipes.map(recipe => ({
         user_id: userId,
         recipe_id: recipe.id,
         recipe_name: recipe.name,
         ingredients_used: ingredients,
-        action_type: "generated",
+        action_type: 'generated',
         credits_spent: 1, // recipe_generation cost
-        ai_model_used: "gpt-3.5-turbo",
+        ai_model_used: 'gpt-3.5-turbo',
         tokens_used: Math.floor(tokensUsed / recipes.length), // Distribute tokens across recipes
       }));
 
-      await supabase.from("user_recipe_history").insert(historyEntries);
-      console.log("✅ Recipe history recorded successfully");
+      await supabase.from('user_recipe_history').insert(historyEntries);
+      console.log('✅ Recipe history recorded successfully');
     } catch (error) {
-      console.warn("⚠️ Failed to record user history:", error);
+      console.warn('⚠️ Failed to record user history:', error);
     }
   }
 
@@ -967,9 +965,9 @@ export class RecipeService {
    */
   private static generateIngredientHash(ingredients: string[]): string {
     const sortedIngredients = ingredients
-      .map((ing) => ing.toLowerCase().trim())
+      .map(ing => ing.toLowerCase().trim())
       .sort()
-      .join("|");
+      .join('|');
 
     // Basit hash function (production'da crypto hash kullanılabilir)
     let hash = 0;
@@ -984,22 +982,20 @@ export class RecipeService {
   // Benzer malzemeleri kontrol et
   private static areSimilarIngredients(ing1: string, ing2: string): boolean {
     const synonyms = [
-      ["domates", "domates salçası"],
-      ["soğan", "taze soğan"],
-      ["biber", "sivri biber", "yeşil biber", "kırmızı biber"],
-      ["peynir", "beyaz peynir", "kaşar peyniri"],
-      ["yağ", "zeytinyağı", "ayçiçek yağı"],
-      ["un", "galeta unu"],
+      ['domates', 'domates salçası'],
+      ['soğan', 'taze soğan'],
+      ['biber', 'sivri biber', 'yeşil biber', 'kırmızı biber'],
+      ['peynir', 'beyaz peynir', 'kaşar peyniri'],
+      ['yağ', 'zeytinyağı', 'ayçiçek yağı'],
+      ['un', 'galeta unu'],
     ];
 
-    return synonyms.some(
-      (group) => group.includes(ing1) && group.includes(ing2)
-    );
+    return synonyms.some(group => group.includes(ing1) && group.includes(ing2));
   }
 
   // Temel malzemeleri kontrol et
   private static isBasicIngredient(ingredient: string): boolean {
-    const basicIngredients = ["tuz", "karabiber", "zeytinyağı", "su", "şeker"];
+    const basicIngredients = ['tuz', 'karabiber', 'zeytinyağı', 'su', 'şeker'];
     return basicIngredients.includes(ingredient);
   }
 
@@ -1007,21 +1003,21 @@ export class RecipeService {
   static async getRecipeById(id: string): Promise<Recipe | null> {
     try {
       // Önce mock verilerden ara
-      const mockRecipe = MOCK_RECIPES.find((recipe) => recipe.id === id);
+      const mockRecipe = MOCK_RECIPES.find(recipe => recipe.id === id);
       if (mockRecipe) {
-        console.log("✅ Recipe found in mock data:", mockRecipe.name);
+        console.log('✅ Recipe found in mock data:', mockRecipe.name);
         return mockRecipe;
       }
 
       // Fallback: Supabase'den ara
       const { data, error } = await supabase
-        .from("recipes")
-        .select("*")
-        .eq("id", id)
+        .from('recipes')
+        .select('*')
+        .eq('id', id)
         .single();
 
       if (error) {
-        console.warn("⚠️ Supabase getRecipeById failed:", error);
+        console.warn('⚠️ Supabase getRecipeById failed:', error);
         return null;
       }
 
@@ -1042,7 +1038,7 @@ export class RecipeService {
         imageUrl: data.image_url || undefined,
       };
     } catch (error) {
-      console.error("Get recipe error:", error);
+      console.error('Get recipe error:', error);
       return null;
     }
   }
@@ -1052,34 +1048,34 @@ export class RecipeService {
     try {
       // Fallback: Supabase'den al
       const { data, error } = await supabase
-        .from("ingredients")
-        .select("name")
-        .order("name");
+        .from('ingredients')
+        .select('name')
+        .order('name');
 
       if (error) {
         throw error;
       }
 
-      return data?.map((item) => item.name) || [];
+      return data?.map(item => item.name) || [];
     } catch (error) {
-      console.error("Get ingredients error:", error);
+      console.error('Get ingredients error:', error);
       // Güvenli fallback: Temel malzemeler
       return [
-        "Domates",
-        "Soğan",
-        "Sarımsak",
-        "Biber",
-        "Patlıcan",
-        "Havuç",
-        "Patates",
-        "Et",
-        "Tavuk",
-        "Balık",
-        "Pirinç",
-        "Makarna",
-        "Yoğurt",
-        "Peynir",
-        "Yumurta",
+        'Domates',
+        'Soğan',
+        'Sarımsak',
+        'Biber',
+        'Patlıcan',
+        'Havuç',
+        'Patates',
+        'Et',
+        'Tavuk',
+        'Balık',
+        'Pirinç',
+        'Makarna',
+        'Yoğurt',
+        'Peynir',
+        'Yumurta',
       ];
     }
   }
@@ -1106,8 +1102,8 @@ export class RecipeService {
         { recipes: Set<string>; priority: number }
       >();
 
-      allRecipes.forEach((recipe) => {
-        recipe.missingIngredients?.forEach((ingredient) => {
+      allRecipes.forEach(recipe => {
+        recipe.missingIngredients?.forEach(ingredient => {
           if (!userIngredients.includes(ingredient.toLowerCase())) {
             const current = suggestionMap.get(ingredient) || {
               recipes: new Set(),
@@ -1138,7 +1134,7 @@ export class RecipeService {
         .sort((a, b) => b.priority - a.priority)
         .slice(0, 10); // En önemli 10 öneri
     } catch (error) {
-      console.error("Get suggestions error:", error);
+      console.error('Get suggestions error:', error);
       return [];
     }
   }
@@ -1147,9 +1143,9 @@ export class RecipeService {
   static async getRecipesByCategory(category: string): Promise<Recipe[]> {
     try {
       const { data: recipes, error } = await supabase
-        .from("recipes")
-        .select("*")
-        .eq("category", category)
+        .from('recipes')
+        .select('*')
+        .eq('category', category)
         .limit(10);
 
       if (error) {
@@ -1157,7 +1153,7 @@ export class RecipeService {
       }
 
       return (
-        recipes?.map((recipe) => ({
+        recipes?.map(recipe => ({
           id: recipe.id,
           name: recipe.name,
           description: recipe.description || undefined,
@@ -1171,7 +1167,7 @@ export class RecipeService {
         })) || []
       );
     } catch (error) {
-      console.error("Get recipes by category error:", error);
+      console.error('Get recipes by category error:', error);
       return [];
     }
   }
@@ -1195,7 +1191,7 @@ export class RecipeService {
 
       if (paginatedRecipes.length > 0) {
         console.log(
-          "✅ Using mock recipes for getAllRecipes:",
+          '✅ Using mock recipes for getAllRecipes:',
           paginatedRecipes.length
         );
         return {
@@ -1207,13 +1203,13 @@ export class RecipeService {
 
       // Fallback: Supabase'den al
       const { count } = await supabase
-        .from("recipes")
-        .select("*", { count: "exact", head: true });
+        .from('recipes')
+        .select('*', { count: 'exact', head: true });
 
       const { data: recipes, error } = await supabase
-        .from("recipes")
-        .select("*")
-        .order("name")
+        .from('recipes')
+        .select('*')
+        .order('name')
         .range(offset, offset + limit - 1);
 
       if (error) {
@@ -1221,7 +1217,7 @@ export class RecipeService {
       }
 
       const mappedRecipes =
-        recipes?.map((recipe) => ({
+        recipes?.map(recipe => ({
           id: recipe.id,
           name: recipe.name,
           description: recipe.description || undefined,
@@ -1240,7 +1236,7 @@ export class RecipeService {
         hasMore: (count || 0) > offset + limit,
       };
     } catch (error) {
-      console.error("Get all recipes error:", error);
+      console.error('Get all recipes error:', error);
       // Son fallback: Mock veriler
       const allRecipes = MOCK_RECIPES;
       const totalCount = allRecipes.length;
@@ -1271,16 +1267,16 @@ export class RecipeService {
 
       // Toplam sayıyı al
       const { count } = await supabase
-        .from("recipes")
-        .select("*", { count: "exact", head: true })
-        .ilike("name", searchPattern);
+        .from('recipes')
+        .select('*', { count: 'exact', head: true })
+        .ilike('name', searchPattern);
 
       // Tarifleri al
       const { data: recipes, error } = await supabase
-        .from("recipes")
-        .select("*")
-        .ilike("name", searchPattern)
-        .order("name")
+        .from('recipes')
+        .select('*')
+        .ilike('name', searchPattern)
+        .order('name')
         .range(offset, offset + limit - 1);
 
       if (error) {
@@ -1288,7 +1284,7 @@ export class RecipeService {
       }
 
       const mappedRecipes =
-        recipes?.map((recipe) => ({
+        recipes?.map(recipe => ({
           id: recipe.id,
           name: recipe.name,
           description: recipe.description || undefined,
@@ -1307,7 +1303,7 @@ export class RecipeService {
         hasMore: (count || 0) > offset + limit,
       };
     } catch (error) {
-      console.error("Search recipes by name error:", error);
+      console.error('Search recipes by name error:', error);
       return {
         recipes: [],
         totalCount: 0,
@@ -1329,31 +1325,31 @@ export class RecipeService {
   }> {
     try {
       const offset = (page - 1) * limit;
-      let query = supabase.from("recipes").select("*");
+      let query = supabase.from('recipes').select('*');
 
       // Filtreleri uygula
-      if (category && category !== "all") {
-        query = query.eq("category", category);
+      if (category && category !== 'all') {
+        query = query.eq('category', category);
       }
-      if (difficulty && difficulty !== "all") {
-        query = query.eq("difficulty", difficulty);
+      if (difficulty && difficulty !== 'all') {
+        query = query.eq('difficulty', difficulty);
       }
 
       // Toplam sayıyı al
       const countQuery = supabase
-        .from("recipes")
-        .select("*", { count: "exact", head: true });
-      if (category && category !== "all") {
-        countQuery.eq("category", category);
+        .from('recipes')
+        .select('*', { count: 'exact', head: true });
+      if (category && category !== 'all') {
+        countQuery.eq('category', category);
       }
-      if (difficulty && difficulty !== "all") {
-        countQuery.eq("difficulty", difficulty);
+      if (difficulty && difficulty !== 'all') {
+        countQuery.eq('difficulty', difficulty);
       }
       const { count } = await countQuery;
 
       // Tarifleri al
       const { data: recipes, error } = await query
-        .order("name")
+        .order('name')
         .range(offset, offset + limit - 1);
 
       if (error) {
@@ -1361,7 +1357,7 @@ export class RecipeService {
       }
 
       const mappedRecipes =
-        recipes?.map((recipe) => ({
+        recipes?.map(recipe => ({
           id: recipe.id,
           name: recipe.name,
           description: recipe.description || undefined,
@@ -1380,7 +1376,7 @@ export class RecipeService {
         hasMore: (count || 0) > offset + limit,
       };
     } catch (error) {
-      console.error("Get recipes by filter error:", error);
+      console.error('Get recipes by filter error:', error);
       return {
         recipes: [],
         totalCount: 0,
@@ -1406,13 +1402,13 @@ export class RecipeService {
 
     // Supabase durumunu kontrol et
     try {
-      const { error } = await supabase.from("recipes").select("id").limit(1);
+      const { error } = await supabase.from('recipes').select('id').limit(1);
       results.supabase = !error;
     } catch (error) {
-      console.warn("Supabase health check failed:", error);
+      console.warn('Supabase health check failed:', error);
     }
 
-    console.log("🏥 API Health Status:", results);
+    console.log('🏥 API Health Status:', results);
     return results;
   }
 
@@ -1432,22 +1428,22 @@ export class RecipeService {
       }
 
       // Türkçe malzemeler içinde ara
-      const matches = allIngredients.filter((ingredient) =>
+      const matches = allIngredients.filter(ingredient =>
         ingredient.toLowerCase().includes(searchTerm)
       );
 
       // Önce tam eşleşenleri al, sonra kısmi eşleşenleri
-      const exactMatches = matches.filter((ingredient) =>
+      const exactMatches = matches.filter(ingredient =>
         ingredient.toLowerCase().startsWith(searchTerm)
       );
       const partialMatches = matches.filter(
-        (ingredient) => !ingredient.toLowerCase().startsWith(searchTerm)
+        ingredient => !ingredient.toLowerCase().startsWith(searchTerm)
       );
 
       return [...exactMatches, ...partialMatches].slice(0, limit);
     } catch (error) {
       console.warn(
-        "⚠️ getIngredientSuggestions failed, falling back to mobile storage:",
+        '⚠️ getIngredientSuggestions failed, falling back to mobile storage:',
         error
       );
       return await MobileStorageService.getIngredientSuggestions(
@@ -1470,8 +1466,8 @@ export class RecipeService {
   > {
     try {
       const { data, error } = await supabase
-        .from("popular_ingredient_combinations")
-        .select("*")
+        .from('popular_ingredient_combinations')
+        .select('*')
         .limit(limit);
 
       if (error) {
@@ -1479,15 +1475,15 @@ export class RecipeService {
       }
 
       return (
-        data?.map((item) => ({
+        data?.map(item => ({
           combination: item.ingredient_combination || [],
           recipeCount: item.recipe_count || 0,
           avgPopularity: item.avg_popularity || 0,
-          latestRecipe: item.latest_recipe || "",
+          latestRecipe: item.latest_recipe || '',
         })) || []
       );
     } catch (error) {
-      console.error("Get popular combinations error:", error);
+      console.error('Get popular combinations error:', error);
       return [];
     }
   }
@@ -1504,8 +1500,8 @@ export class RecipeService {
   }> {
     try {
       const { data, error } = await supabase
-        .from("ai_recipe_stats")
-        .select("*")
+        .from('ai_recipe_stats')
+        .select('*')
         .single();
 
       if (error) {
@@ -1517,16 +1513,16 @@ export class RecipeService {
         uniqueContributors: data?.unique_contributors || 0,
         avgPopularity: data?.avg_popularity || 0,
         totalTokensUsed: data?.total_tokens_used || 0,
-        latestRecipeDate: data?.latest_recipe_date || "",
+        latestRecipeDate: data?.latest_recipe_date || '',
       };
     } catch (error) {
-      console.error("Get AI recipe stats error:", error);
+      console.error('Get AI recipe stats error:', error);
       return {
         totalAIRecipes: 0,
         uniqueContributors: 0,
         avgPopularity: 0,
         totalTokensUsed: 0,
-        latestRecipeDate: "",
+        latestRecipeDate: '',
       };
     }
   }
@@ -1540,22 +1536,20 @@ export class RecipeService {
   ): Promise<Recipe[]> {
     try {
       const { data, error } = await supabase
-        .from("recipes")
-        .select("*")
-        .eq("created_by_user_id", userId)
-        .eq("ai_generated", true)
-        .order("created_at", { ascending: false })
+        .from('recipes')
+        .select('*')
+        .eq('created_by_user_id', userId)
+        .eq('ai_generated', true)
+        .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) {
         throw error;
       }
 
-      return (
-        data?.map((recipe) => this.mapDatabaseRecipeToRecipe(recipe)) || []
-      );
+      return data?.map(recipe => this.mapDatabaseRecipeToRecipe(recipe)) || [];
     } catch (error) {
-      console.error("Get user AI recipes error:", error);
+      console.error('Get user AI recipes error:', error);
       return [];
     }
   }
@@ -1566,21 +1560,19 @@ export class RecipeService {
   static async getMostPopularAIRecipes(limit: number = 10): Promise<Recipe[]> {
     try {
       const { data, error } = await supabase
-        .from("recipes")
-        .select("*")
-        .eq("ai_generated", true)
-        .order("popularity_score", { ascending: false })
+        .from('recipes')
+        .select('*')
+        .eq('ai_generated', true)
+        .order('popularity_score', { ascending: false })
         .limit(limit);
 
       if (error) {
         throw error;
       }
 
-      return (
-        data?.map((recipe) => this.mapDatabaseRecipeToRecipe(recipe)) || []
-      );
+      return data?.map(recipe => this.mapDatabaseRecipeToRecipe(recipe)) || [];
     } catch (error) {
-      console.error("Get popular AI recipes error:", error);
+      console.error('Get popular AI recipes error:', error);
       return [];
     }
   }
@@ -1589,10 +1581,10 @@ export class RecipeService {
    * Arama geçmişini kaydet
    */
   private static async recordSearchHistory(
-    historyData: Omit<SearchHistoryEntry, "id" | "searchTimestamp">
+    historyData: Omit<SearchHistoryEntry, 'id' | 'searchTimestamp'>
   ): Promise<void> {
     try {
-      const { error } = await supabase.from("user_search_history").insert({
+      const { error } = await supabase.from('user_search_history').insert({
         user_id: historyData.userId,
         search_ingredients: historyData.searchIngredients,
         search_query: historyData.searchQuery,
@@ -1609,12 +1601,12 @@ export class RecipeService {
       });
 
       if (error) {
-        console.warn("⚠️ Failed to record search history:", error);
+        console.warn('⚠️ Failed to record search history:', error);
       } else {
-        console.log("📝 Search history recorded successfully");
+        console.log('📝 Search history recorded successfully');
       }
     } catch (error) {
-      console.warn("⚠️ Search history recording error:", error);
+      console.warn('⚠️ Search history recording error:', error);
     }
   }
 
@@ -1627,10 +1619,10 @@ export class RecipeService {
   ): Promise<SearchHistoryEntry[]> {
     try {
       const { data, error } = await supabase
-        .from("user_search_history")
-        .select("*")
-        .eq("user_id", userId)
-        .order("search_timestamp", { ascending: false })
+        .from('user_search_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('search_timestamp', { ascending: false })
         .limit(limit);
 
       if (error) {
@@ -1638,7 +1630,7 @@ export class RecipeService {
       }
 
       return (
-        data?.map((item) => ({
+        data?.map(item => ({
           id: item.id,
           userId: item.user_id,
           searchIngredients: item.search_ingredients || [],
@@ -1657,7 +1649,7 @@ export class RecipeService {
         })) || []
       );
     } catch (error) {
-      console.error("Get user search history error:", error);
+      console.error('Get user search history error:', error);
       return [];
     }
   }
@@ -1670,9 +1662,9 @@ export class RecipeService {
   ): Promise<UserSearchStats | null> {
     try {
       const { data, error } = await supabase
-        .from("user_search_stats")
-        .select("*")
-        .eq("user_id", userId)
+        .from('user_search_stats')
+        .select('*')
+        .eq('user_id', userId)
         .single();
 
       if (error) {
@@ -1693,7 +1685,7 @@ export class RecipeService {
           }
         : null;
     } catch (error) {
-      console.error("Get user search stats error:", error);
+      console.error('Get user search stats error:', error);
       return null;
     }
   }
@@ -1706,8 +1698,8 @@ export class RecipeService {
   ): Promise<PopularSearchIngredient[]> {
     try {
       const { data, error } = await supabase
-        .from("popular_search_ingredients")
-        .select("*")
+        .from('popular_search_ingredients')
+        .select('*')
         .limit(limit);
 
       if (error) {
@@ -1715,7 +1707,7 @@ export class RecipeService {
       }
 
       return (
-        data?.map((item) => ({
+        data?.map(item => ({
           ingredient: item.ingredient,
           searchCount: item.search_count || 0,
           uniqueUsers: item.unique_users || 0,
@@ -1724,7 +1716,7 @@ export class RecipeService {
         })) || []
       );
     } catch (error) {
-      console.error("Get popular search ingredients error:", error);
+      console.error('Get popular search ingredients error:', error);
       return [];
     }
   }
@@ -1737,22 +1729,22 @@ export class RecipeService {
   ): Promise<SearchAnalytics[]> {
     try {
       const { data, error } = await supabase
-        .from("search_analytics")
-        .select("*")
+        .from('search_analytics')
+        .select('*')
         .gte(
-          "search_date",
+          'search_date',
           new Date(Date.now() - days * 24 * 60 * 60 * 1000)
             .toISOString()
-            .split("T")[0]
+            .split('T')[0]
         )
-        .order("search_date", { ascending: false });
+        .order('search_date', { ascending: false });
 
       if (error) {
         throw error;
       }
 
       return (
-        data?.map((item) => ({
+        data?.map(item => ({
           searchDate: item.search_date,
           totalSearches: item.total_searches || 0,
           uniqueUsers: item.unique_users || 0,
@@ -1766,7 +1758,7 @@ export class RecipeService {
         })) || []
       );
     } catch (error) {
-      console.error("Get search analytics error:", error);
+      console.error('Get search analytics error:', error);
       return [];
     }
   }
@@ -1780,14 +1772,14 @@ export class RecipeService {
   ): Promise<string[]> {
     try {
       const { data, error } = await supabase
-        .from("user_search_history")
-        .select("search_ingredients")
-        .eq("user_id", userId)
+        .from('user_search_history')
+        .select('search_ingredients')
+        .eq('user_id', userId)
         .gte(
-          "search_timestamp",
+          'search_timestamp',
           new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
         ) // Son 30 gün
-        .order("search_timestamp", { ascending: false })
+        .order('search_timestamp', { ascending: false })
         .limit(100);
 
       if (error || !data) {
@@ -1812,7 +1804,7 @@ export class RecipeService {
         .slice(0, limit)
         .map(([ingredient]) => ingredient);
     } catch (error) {
-      console.error("Get user frequent ingredients error:", error);
+      console.error('Get user frequent ingredients error:', error);
       return [];
     }
   }
@@ -1831,7 +1823,7 @@ export class RecipeService {
     staleCache: any
   ): Promise<void> {
     try {
-      console.log("🔄 Updating stale cache in background...");
+      console.log('🔄 Updating stale cache in background...');
 
       // Background'da fresh data çek (ana akışı engelleme)
       setTimeout(async () => {
@@ -1861,14 +1853,14 @@ export class RecipeService {
               freshResult.responseTime
             );
 
-            console.log("✅ Background cache update completed");
+            console.log('✅ Background cache update completed');
           }
         } catch (error) {
-          console.warn("⚠️ Background cache update failed:", error);
+          console.warn('⚠️ Background cache update failed:', error);
         }
       }, 100); // 100ms gecikme ile background'da çalış
     } catch (error) {
-      console.warn("⚠️ Failed to start background update:", error);
+      console.warn('⚠️ Failed to start background update:', error);
     }
   }
 
@@ -1881,7 +1873,7 @@ export class RecipeService {
     useAI: boolean = false
   ): Promise<{
     result: any;
-    source: "community_pool" | "ai_cache" | "ai_generation" | "mock";
+    source: 'community_pool' | 'ai_cache' | 'ai_generation' | 'mock';
     creditsSpent: number;
     responseTime: number;
   } | null> {
@@ -1899,7 +1891,7 @@ export class RecipeService {
       ) {
         return {
           result: communityResults,
-          source: "community_pool",
+          source: 'community_pool',
           creditsSpent: 0,
           responseTime: Date.now() - startTime,
         };
@@ -1913,7 +1905,7 @@ export class RecipeService {
       ) {
         return {
           result: cacheResults,
-          source: "ai_cache",
+          source: 'ai_cache',
           creditsSpent: 0,
           responseTime: Date.now() - startTime,
         };
@@ -1925,12 +1917,12 @@ export class RecipeService {
           const aiResults = await this.searchWithAI(ingredients, userId);
           return {
             result: aiResults,
-            source: "ai_generation",
+            source: 'ai_generation',
             creditsSpent: 1,
             responseTime: Date.now() - startTime,
           };
         } catch (aiError) {
-          console.warn("⚠️ AI search failed in fresh search:", aiError);
+          console.warn('⚠️ AI search failed in fresh search:', aiError);
         }
       }
 
@@ -1938,12 +1930,12 @@ export class RecipeService {
       const mockResults = this.searchInMockRecipes(ingredients, 10);
       return {
         result: mockResults,
-        source: "mock",
+        source: 'mock',
         creditsSpent: 0,
         responseTime: Date.now() - startTime,
       };
     } catch (error) {
-      console.warn("⚠️ Fresh search failed:", error);
+      console.warn('⚠️ Fresh search failed:', error);
       return null;
     }
   }
@@ -1968,17 +1960,15 @@ export class RecipeService {
       priority: number;
     }> = [];
 
-    recipes.forEach((recipe) => {
-      const recipeIngredients = recipe.ingredients.map((ing) =>
+    recipes.forEach(recipe => {
+      const recipeIngredients = recipe.ingredients.map(ing =>
         ing.toLowerCase().trim()
       );
-      const userIngredients = ingredients.map((ing) =>
-        ing.toLowerCase().trim()
-      );
+      const userIngredients = ingredients.map(ing => ing.toLowerCase().trim());
 
-      const matchingIngredients = recipeIngredients.filter((ing) =>
+      const matchingIngredients = recipeIngredients.filter(ing =>
         userIngredients.some(
-          (userIng) =>
+          userIng =>
             ing.includes(userIng) ||
             userIng.includes(ing) ||
             this.areSimilarIngredients(ing, userIng)
@@ -1986,9 +1976,9 @@ export class RecipeService {
       );
 
       const missingIngredients = recipeIngredients.filter(
-        (ing) =>
+        ing =>
           !userIngredients.some(
-            (userIng) =>
+            userIng =>
               ing.includes(userIng) ||
               userIng.includes(ing) ||
               this.areSimilarIngredients(ing, userIng)
@@ -2003,7 +1993,7 @@ export class RecipeService {
       priority += matchRatio * 5;
       priority -= missingCount * 0.5;
 
-      if (matchingIngredients.some((ing) => this.isBasicIngredient(ing))) {
+      if (matchingIngredients.some(ing => this.isBasicIngredient(ing))) {
         priority += 2;
       }
 
@@ -2087,17 +2077,17 @@ export class RecipeService {
    */
   static async syncLocalDataToServer(userId: string): Promise<void> {
     if (!(await MobileStorageService.isOnline())) {
-      console.log("📱 Offline: Cannot sync to server");
+      console.log('📱 Offline: Cannot sync to server');
       return;
     }
 
     try {
-      console.log("🔄 Syncing local data to server...");
+      console.log('🔄 Syncing local data to server...');
 
       // Local search history'yi server'a gönder
       const localHistory = (
         await MobileStorageService.getSearchHistory()
-      ).filter((entry) => !entry.isSynced);
+      ).filter(entry => !entry.isSynced);
 
       for (const entry of localHistory) {
         try {
@@ -2109,7 +2099,7 @@ export class RecipeService {
             resultsFound: entry.resultsCount,
             exactMatches: Math.floor(entry.resultsCount * 0.7), // Estimate
             nearMatches: Math.floor(entry.resultsCount * 0.3), // Estimate
-            usedAI: entry.source.includes("ai_generation"),
+            usedAI: entry.source.includes('ai_generation'),
             // creditsSpent: entry.source.includes("ai_generation") ? 1 : 0, // Removed as not in SearchHistoryEntry type
             responseTimeMs: 0, // Historical data
           });
@@ -2117,20 +2107,20 @@ export class RecipeService {
           // Mark as synced
           entry.isSynced = true;
         } catch (syncError) {
-          console.warn("⚠️ Failed to sync entry:", entry.id, syncError);
+          console.warn('⚠️ Failed to sync entry:', entry.id, syncError);
         }
       }
 
       // Update mobile storage with synced status
       const updatedHistory = await MobileStorageService.getSearchHistory();
       await AsyncStorage.setItem(
-        "@yemek_bulucu:search_history",
+        '@yemek_bulucu:search_history',
         JSON.stringify(updatedHistory)
       );
 
-      console.log("✅ Local data synced to server");
+      console.log('✅ Local data synced to server');
     } catch (error) {
-      console.error("❌ Failed to sync local data:", error);
+      console.error('❌ Failed to sync local data:', error);
     }
   }
 }

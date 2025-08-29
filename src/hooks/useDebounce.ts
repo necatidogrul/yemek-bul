@@ -32,17 +32,15 @@ export const useDebouncedCallback = <T extends (...args: any[]) => any>(
   // Callback'i güncel tut
   callbackRef.current = callback;
 
-  const debouncedCallback = useRef(
-    ((...args: Parameters<T>) => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+  const debouncedCallback = useRef(((...args: Parameters<T>) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
 
-      timeoutRef.current = setTimeout(() => {
-        callbackRef.current(...args);
-      }, delay);
-    }) as T
-  );
+    timeoutRef.current = setTimeout(() => {
+      callbackRef.current(...args);
+    }, delay);
+  }) as T);
 
   // Cleanup
   useEffect(() => {
@@ -59,10 +57,7 @@ export const useDebouncedCallback = <T extends (...args: any[]) => any>(
 /**
  * Search için özel debounce hook'u
  */
-export const useSearchDebounce = (
-  searchTerm: string, 
-  delay: number = 500
-) => {
+export const useSearchDebounce = (searchTerm: string, delay: number = 500) => {
   const debouncedSearchTerm = useDebounce(searchTerm, delay);
   const [isSearching, setIsSearching] = useState(false);
 

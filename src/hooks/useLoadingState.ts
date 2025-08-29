@@ -14,35 +14,44 @@ export interface LoadingState {
  * @param initialLoading - Initial loading state (default: false)
  * @returns LoadingState object with loading, error state and utility functions
  */
-export const useLoadingState = (initialLoading: boolean = false): LoadingState => {
+export const useLoadingState = (
+  initialLoading: boolean = false
+): LoadingState => {
   const [isLoading, setIsLoading] = useState(initialLoading);
   const [error, setError] = useState<string | null>(null);
 
-  const setLoading = useCallback((loading: boolean) => {
-    setIsLoading(loading);
-    if (loading && error) {
-      setError(null); // Clear error when starting new operation
-    }
-  }, [error]);
+  const setLoading = useCallback(
+    (loading: boolean) => {
+      setIsLoading(loading);
+      if (loading && error) {
+        setError(null); // Clear error when starting new operation
+      }
+    },
+    [error]
+  );
 
   const reset = useCallback(() => {
     setIsLoading(false);
     setError(null);
   }, []);
 
-  const executeAsync = useCallback(async <T>(asyncFn: () => Promise<T>): Promise<T | null> => {
-    try {
-      setLoading(true);
-      const result = await asyncFn();
-      setLoading(false);
-      return result;
-    } catch (err) {
-      setLoading(false);
-      const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
-      setError(errorMessage);
-      return null;
-    }
-  }, [setLoading]);
+  const executeAsync = useCallback(
+    async <T>(asyncFn: () => Promise<T>): Promise<T | null> => {
+      try {
+        setLoading(true);
+        const result = await asyncFn();
+        setLoading(false);
+        return result;
+      } catch (err) {
+        setLoading(false);
+        const errorMessage =
+          err instanceof Error ? err.message : 'Bir hata oluştu';
+        setError(errorMessage);
+        return null;
+      }
+    },
+    [setLoading]
+  );
 
   return {
     isLoading,
@@ -59,40 +68,52 @@ export const useLoadingState = (initialLoading: boolean = false): LoadingState =
  * Useful when you have multiple async operations in the same component
  */
 export const useMultipleLoadingStates = () => {
-  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>(
+    {}
+  );
   const [errors, setErrors] = useState<Record<string, string | null>>({});
 
-  const setLoading = useCallback((key: string, loading: boolean) => {
-    setLoadingStates(prev => ({ ...prev, [key]: loading }));
-    if (loading && errors[key]) {
-      setErrors(prev => ({ ...prev, [key]: null }));
-    }
-  }, [errors]);
+  const setLoading = useCallback(
+    (key: string, loading: boolean) => {
+      setLoadingStates(prev => ({ ...prev, [key]: loading }));
+      if (loading && errors[key]) {
+        setErrors(prev => ({ ...prev, [key]: null }));
+      }
+    },
+    [errors]
+  );
 
   const setError = useCallback((key: string, error: string | null) => {
     setErrors(prev => ({ ...prev, [key]: error }));
   }, []);
 
-  const executeAsync = useCallback(async <T>(
-    key: string, 
-    asyncFn: () => Promise<T>
-  ): Promise<T | null> => {
-    try {
-      setLoading(key, true);
-      const result = await asyncFn();
-      setLoading(key, false);
-      return result;
-    } catch (err) {
-      setLoading(key, false);
-      const errorMessage = err instanceof Error ? err.message : 'Bir hata oluştu';
-      setError(key, errorMessage);
-      return null;
-    }
-  }, [setLoading, setError]);
+  const executeAsync = useCallback(
+    async <T>(key: string, asyncFn: () => Promise<T>): Promise<T | null> => {
+      try {
+        setLoading(key, true);
+        const result = await asyncFn();
+        setLoading(key, false);
+        return result;
+      } catch (err) {
+        setLoading(key, false);
+        const errorMessage =
+          err instanceof Error ? err.message : 'Bir hata oluştu';
+        setError(key, errorMessage);
+        return null;
+      }
+    },
+    [setLoading, setError]
+  );
 
-  const isLoading = useCallback((key: string) => loadingStates[key] || false, [loadingStates]);
+  const isLoading = useCallback(
+    (key: string) => loadingStates[key] || false,
+    [loadingStates]
+  );
   const getError = useCallback((key: string) => errors[key] || null, [errors]);
-  const hasAnyLoading = useCallback(() => Object.values(loadingStates).some(Boolean), [loadingStates]);
+  const hasAnyLoading = useCallback(
+    () => Object.values(loadingStates).some(Boolean),
+    [loadingStates]
+  );
 
   const reset = useCallback((key?: string) => {
     if (key) {

@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
 import { ToastConfig, ToastType, ToastPosition } from '../components/ui/Toast';
 
 interface ToastContextType {
@@ -7,10 +14,26 @@ interface ToastContextType {
   hideToast: (id: string) => void;
   hideAllToasts: () => void;
   // Convenience methods
-  showSuccess: (title: string, message?: string, options?: Partial<ToastConfig>) => string;
-  showError: (title: string, message?: string, options?: Partial<ToastConfig>) => string;
-  showWarning: (title: string, message?: string, options?: Partial<ToastConfig>) => string;
-  showInfo: (title: string, message?: string, options?: Partial<ToastConfig>) => string;
+  showSuccess: (
+    title: string,
+    message?: string,
+    options?: Partial<ToastConfig>
+  ) => string;
+  showError: (
+    title: string,
+    message?: string,
+    options?: Partial<ToastConfig>
+  ) => string;
+  showWarning: (
+    title: string,
+    message?: string,
+    options?: Partial<ToastConfig>
+  ) => string;
+  showInfo: (
+    title: string,
+    message?: string,
+    options?: Partial<ToastConfig>
+  ) => string;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -43,35 +66,37 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
     return `toast_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }, []);
 
-  const showToast = useCallback((config: Omit<ToastConfig, 'id'>) => {
-    const id = generateId();
-    const newToast: ToastConfig = {
-      id,
-      duration: defaultDuration,
-      position: defaultPosition,
-      ...config,
-    };
+  const showToast = useCallback(
+    (config: Omit<ToastConfig, 'id'>) => {
+      const id = generateId();
+      const newToast: ToastConfig = {
+        id,
+        duration: defaultDuration,
+        position: defaultPosition,
+        ...config,
+      };
 
-    setToasts(prevToasts => {
-      // Remove oldest toast if we're at max capacity
-      const updatedToasts = prevToasts.length >= maxToasts 
-        ? prevToasts.slice(1) 
-        : prevToasts;
-      
-      return [...updatedToasts, newToast];
-    });
+      setToasts(prevToasts => {
+        // Remove oldest toast if we're at max capacity
+        const updatedToasts =
+          prevToasts.length >= maxToasts ? prevToasts.slice(1) : prevToasts;
 
-    // Auto-hide toast after duration (unless duration is 0)
-    if (newToast.duration && newToast.duration > 0) {
-      const timeout = setTimeout(() => {
-        hideToast(id);
-        timeoutsRef.current.delete(id);
-      }, newToast.duration);
-      timeoutsRef.current.set(id, timeout);
-    }
+        return [...updatedToasts, newToast];
+      });
 
-    return id;
-  }, [generateId, defaultDuration, defaultPosition, maxToasts]);
+      // Auto-hide toast after duration (unless duration is 0)
+      if (newToast.duration && newToast.duration > 0) {
+        const timeout = setTimeout(() => {
+          hideToast(id);
+          timeoutsRef.current.delete(id);
+        }, newToast.duration);
+        timeoutsRef.current.set(id, timeout);
+      }
+
+      return id;
+    },
+    [generateId, defaultDuration, defaultPosition, maxToasts]
+  );
 
   const hideToast = useCallback((id: string) => {
     // Clear timeout if exists
@@ -91,59 +116,55 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
   }, []);
 
   // Convenience methods
-  const showSuccess = useCallback((
-    title: string, 
-    message?: string, 
-    options?: Partial<ToastConfig>
-  ) => {
-    return showToast({
-      type: 'success',
-      title,
-      message,
-      ...options,
-    });
-  }, [showToast]);
+  const showSuccess = useCallback(
+    (title: string, message?: string, options?: Partial<ToastConfig>) => {
+      return showToast({
+        type: 'success',
+        title,
+        message,
+        ...options,
+      });
+    },
+    [showToast]
+  );
 
-  const showError = useCallback((
-    title: string, 
-    message?: string, 
-    options?: Partial<ToastConfig>
-  ) => {
-    return showToast({
-      type: 'error',
-      title,
-      message,
-      duration: 6000, // Errors stay longer by default
-      ...options,
-    });
-  }, [showToast]);
+  const showError = useCallback(
+    (title: string, message?: string, options?: Partial<ToastConfig>) => {
+      return showToast({
+        type: 'error',
+        title,
+        message,
+        duration: 6000, // Errors stay longer by default
+        ...options,
+      });
+    },
+    [showToast]
+  );
 
-  const showWarning = useCallback((
-    title: string, 
-    message?: string, 
-    options?: Partial<ToastConfig>
-  ) => {
-    return showToast({
-      type: 'warning',
-      title,
-      message,
-      duration: 5000, // Warnings stay a bit longer
-      ...options,
-    });
-  }, [showToast]);
+  const showWarning = useCallback(
+    (title: string, message?: string, options?: Partial<ToastConfig>) => {
+      return showToast({
+        type: 'warning',
+        title,
+        message,
+        duration: 5000, // Warnings stay a bit longer
+        ...options,
+      });
+    },
+    [showToast]
+  );
 
-  const showInfo = useCallback((
-    title: string, 
-    message?: string, 
-    options?: Partial<ToastConfig>
-  ) => {
-    return showToast({
-      type: 'info',
-      title,
-      message,
-      ...options,
-    });
-  }, [showToast]);
+  const showInfo = useCallback(
+    (title: string, message?: string, options?: Partial<ToastConfig>) => {
+      return showToast({
+        type: 'info',
+        title,
+        message,
+        ...options,
+      });
+    },
+    [showToast]
+  );
 
   const value: ToastContextType = {
     toasts,
@@ -157,9 +178,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({
   };
 
   return (
-    <ToastContext.Provider value={value}>
-      {children}
-    </ToastContext.Provider>
+    <ToastContext.Provider value={value}>{children}</ToastContext.Provider>
   );
 };
 

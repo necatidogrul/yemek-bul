@@ -14,8 +14,7 @@ export type EmptyStateType =
   | 'no-ingredients'
   | 'offline'
   | 'error'
-  | 'no-suggestions'
-
+  | 'no-suggestions';
 
 interface EmptyStateAction {
   label: string;
@@ -47,25 +46,29 @@ const EMPTY_STATE_CONFIG: Record<
   'no-recipes': {
     icon: 'restaurant-outline',
     title: 'Henüz Tarif Yok',
-    description: 'Tarif koleksiyonumuz güncelleniyor. Yakında yeni tarifler eklenecek!',
+    description:
+      'Tarif koleksiyonumuz güncelleniyor. Yakında yeni tarifler eklenecek!',
     color: 'primary',
   },
   'no-favorites': {
     icon: 'heart-outline',
     title: 'Henüz Favori Tarifiniz Yok',
-    description: 'Beğendiğiniz tarifleri favorilerinize ekleyerek kolayca bulabilirsiniz.',
+    description:
+      'Beğendiğiniz tarifleri favorilerinize ekleyerek kolayca bulabilirsiniz.',
     color: 'secondary',
   },
   'no-search-results': {
     icon: 'search-outline',
     title: 'Sonuç Bulunamadı',
-    description: 'Bu malzemelerle eşleşen tarif bulunamadı. Farklı malzemeler deneyebilirsiniz.',
+    description:
+      'Bu malzemelerle eşleşen tarif bulunamadı. Farklı malzemeler deneyebilirsiniz.',
     color: 'warning',
   },
   'no-ingredients': {
     icon: 'add-circle-outline',
     title: 'Malzeme Eklemediniz',
-    description: 'Mutfağınızdaki malzemeleri ekleyerek size uygun tarifleri bulabilirsiniz.',
+    description:
+      'Mutfağınızdaki malzemeleri ekleyerek size uygun tarifleri bulabilirsiniz.',
     color: 'primary',
   },
   offline: {
@@ -83,10 +86,10 @@ const EMPTY_STATE_CONFIG: Record<
   'no-suggestions': {
     icon: 'bulb-outline',
     title: 'Öneri Bulunamadı',
-    description: 'Şu anda size özel öneri oluşturamadık. Daha sonra tekrar deneyin.',
+    description:
+      'Şu anda size özel öneri oluşturamadık. Daha sonra tekrar deneyin.',
     color: 'secondary',
   },
-
 };
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -154,11 +157,20 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <View style={[containerStyle, style]}>
-      <Card variant="default" size={compact ? 'md' : 'lg'} style={styles.card}>
+      <Card variant='default' size={compact ? 'md' : 'lg'} style={styles.card}>
         {/* Icon or Illustration */}
         {illustration ? (
-          <View style={[styles.illustrationContainer, { height: compact ? 120 : 160 }]}>
-            <Image source={illustration} style={styles.illustration} resizeMode="contain" />
+          <View
+            style={[
+              styles.illustrationContainer,
+              { height: compact ? 120 : 160 },
+            ]}
+          >
+            <Image
+              source={illustration}
+              style={styles.illustration}
+              resizeMode='contain'
+            />
           </View>
         ) : (
           <View
@@ -172,7 +184,11 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               },
             ]}
           >
-            <Ionicons name={finalIcon as any} size={iconSize} color={colorScheme.iconColor} />
+            <Ionicons
+              name={finalIcon as any}
+              size={iconSize}
+              color={colorScheme.iconColor}
+            />
           </View>
         )}
 
@@ -180,8 +196,8 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <View style={styles.content}>
           <Text
             variant={compact ? 'bodyLarge' : 'h3'}
-            weight="bold"
-            align="center"
+            weight='bold'
+            align='center'
             style={{ color: colorScheme.titleColor, marginBottom: spacing[2] }}
           >
             {finalTitle}
@@ -189,7 +205,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
           <Text
             variant={compact ? 'bodySmall' : 'body'}
-            align="center"
+            align='center'
             style={{
               color: colorScheme.descColor,
               lineHeight: compact ? 18 : 22,
@@ -209,9 +225,16 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
                 variant={action.variant || 'primary'}
                 size={compact ? 'md' : 'lg'}
                 onPress={action.onPress}
-                leftIcon={action.icon ? <Ionicons name={action.icon} size={16} /> : undefined}
+                leftIcon={
+                  action.icon ? (
+                    <Ionicons name={action.icon} size={16} />
+                  ) : undefined
+                }
                 style={
-                  [styles.actionButton, actions.length === 1 ? styles.singleAction : {}] as any
+                  [
+                    styles.actionButton,
+                    actions.length === 1 ? styles.singleAction : {},
+                  ] as any
                 }
               >
                 {action.label}
@@ -225,17 +248,29 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 };
 
 // Preset empty states for common scenarios
-export const NoRecipesEmpty: React.FC<{ onRefresh?: () => void }> = ({ onRefresh }) => (
+export const NoRecipesEmpty: React.FC<{ onRefresh?: () => void }> = ({
+  onRefresh,
+}) => (
   <EmptyState
-    type="no-recipes"
-    actions={onRefresh ? [{ label: 'Yenile', onPress: onRefresh, icon: 'refresh' }] : []}
+    type='no-recipes'
+    actions={
+      onRefresh
+        ? [{ label: 'Yenile', onPress: onRefresh, icon: 'refresh' }]
+        : []
+    }
   />
 );
 
-export const NoFavoritesEmpty: React.FC<{ onExplore?: () => void }> = ({ onExplore }) => (
+export const NoFavoritesEmpty: React.FC<{ onExplore?: () => void }> = ({
+  onExplore,
+}) => (
   <EmptyState
-    type="no-favorites"
-    actions={onExplore ? [{ label: 'Tarifleri Keşfet', onPress: onExplore, icon: 'compass' }] : []}
+    type='no-favorites'
+    actions={
+      onExplore
+        ? [{ label: 'Tarifleri Keşfet', onPress: onExplore, icon: 'compass' }]
+        : []
+    }
   />
 );
 
@@ -245,7 +280,7 @@ export const NoSearchResultsEmpty: React.FC<{
   onBrowseAll?: () => void;
 }> = ({ searchTerm, onClearSearch, onBrowseAll }) => (
   <EmptyState
-    type="no-search-results"
+    type='no-search-results'
     description={
       searchTerm
         ? `"${searchTerm}" için sonuç bulunamadı. Farklı kelimeler deneyebilirsiniz.`
@@ -275,17 +310,27 @@ export const NoSearchResultsEmpty: React.FC<{
   />
 );
 
-export const OfflineEmpty: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => (
+export const OfflineEmpty: React.FC<{ onRetry?: () => void }> = ({
+  onRetry,
+}) => (
   <EmptyState
-    type="offline"
-    actions={onRetry ? [{ label: 'Tekrar Dene', onPress: onRetry, icon: 'refresh' }] : []}
+    type='offline'
+    actions={
+      onRetry
+        ? [{ label: 'Tekrar Dene', onPress: onRetry, icon: 'refresh' }]
+        : []
+    }
   />
 );
 
 export const ErrorEmpty: React.FC<{ onRetry?: () => void }> = ({ onRetry }) => (
   <EmptyState
-    type="error"
-    actions={onRetry ? [{ label: 'Tekrar Dene', onPress: onRetry, icon: 'refresh' }] : []}
+    type='error'
+    actions={
+      onRetry
+        ? [{ label: 'Tekrar Dene', onPress: onRetry, icon: 'refresh' }]
+        : []
+    }
   />
 );
 

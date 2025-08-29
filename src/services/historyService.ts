@@ -1,5 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AIRequestHistory, HistoryStats, HistoryFilter } from '../types/History';
+import {
+  AIRequestHistory,
+  HistoryStats,
+  HistoryFilter,
+} from '../types/History';
 
 class HistoryService {
   private static readonly HISTORY_KEY = 'ai_request_history';
@@ -8,7 +12,9 @@ class HistoryService {
   /**
    * Yeni AI isteği kaydeder
    */
-  static async saveRequest(request: Omit<AIRequestHistory, 'id' | 'timestamp'>): Promise<void> {
+  static async saveRequest(
+    request: Omit<AIRequestHistory, 'id' | 'timestamp'>
+  ): Promise<void> {
     try {
       const history = await this.getHistory();
 
@@ -24,7 +30,10 @@ class HistoryService {
       // Maksimum sayıda tutma
       const trimmedHistory = updatedHistory.slice(0, this.MAX_HISTORY_ITEMS);
 
-      await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(trimmedHistory));
+      await AsyncStorage.setItem(
+        this.HISTORY_KEY,
+        JSON.stringify(trimmedHistory)
+      );
 
       console.log('📝 AI Request saved to history:', {
         id: newRequest.id,
@@ -43,7 +52,9 @@ class HistoryService {
   static async getHistory(filter?: HistoryFilter): Promise<AIRequestHistory[]> {
     try {
       const historyData = await AsyncStorage.getItem(this.HISTORY_KEY);
-      let history: AIRequestHistory[] = historyData ? JSON.parse(historyData) : [];
+      let history: AIRequestHistory[] = historyData
+        ? JSON.parse(historyData)
+        : [];
 
       // Filtreleme uygula
       if (filter) {
@@ -81,7 +92,7 @@ class HistoryService {
       const successfulRequests = history.filter(item => item.success).length;
       const totalRecipesGenerated = history.reduce(
         (sum, item) => sum + (item.success ? item.results.count : 0),
-        0,
+        0
       );
 
       // En çok kullanılan malzemeleri hesapla
@@ -89,7 +100,8 @@ class HistoryService {
       history.forEach(item => {
         item.ingredients.forEach(ingredient => {
           const normalized = ingredient.toLowerCase().trim();
-          ingredientCounts[normalized] = (ingredientCounts[normalized] || 0) + 1;
+          ingredientCounts[normalized] =
+            (ingredientCounts[normalized] || 0) + 1;
         });
       });
 
@@ -98,10 +110,15 @@ class HistoryService {
         .sort((a, b) => b.count - a.count)
         .slice(0, 10); // Top 10
 
-      const totalIngredients = history.reduce((sum, item) => sum + item.ingredients.length, 0);
-      const averageIngredientsPerRequest = totalRequests > 0 ? totalIngredients / totalRequests : 0;
+      const totalIngredients = history.reduce(
+        (sum, item) => sum + item.ingredients.length,
+        0
+      );
+      const averageIngredientsPerRequest =
+        totalRequests > 0 ? totalIngredients / totalRequests : 0;
 
-      const lastRequestDate = history.length > 0 ? history[0].timestamp : undefined;
+      const lastRequestDate =
+        history.length > 0 ? history[0].timestamp : undefined;
 
       return {
         totalRequests,
@@ -142,7 +159,10 @@ class HistoryService {
     try {
       const history = await this.getHistory();
       const filteredHistory = history.filter(item => item.id !== id);
-      await AsyncStorage.setItem(this.HISTORY_KEY, JSON.stringify(filteredHistory));
+      await AsyncStorage.setItem(
+        this.HISTORY_KEY,
+        JSON.stringify(filteredHistory)
+      );
       console.log('🗑️ AI Request deleted from history:', id);
     } catch (error) {
       console.error('❌ Failed to delete request from history:', error);
@@ -209,7 +229,7 @@ class HistoryService {
    */
   private static applyFilter(
     history: AIRequestHistory[],
-    filter: HistoryFilter,
+    filter: HistoryFilter
   ): AIRequestHistory[] {
     let filtered = [...history];
 
@@ -242,7 +262,9 @@ class HistoryService {
     if (filter.ingredient) {
       const searchIngredient = filter.ingredient.toLowerCase();
       filtered = filtered.filter(item =>
-        item.ingredients.some(ing => ing.toLowerCase().includes(searchIngredient)),
+        item.ingredients.some(ing =>
+          ing.toLowerCase().includes(searchIngredient)
+        )
       );
     }
 

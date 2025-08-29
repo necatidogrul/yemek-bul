@@ -3,12 +3,12 @@
  * Combines Firebase Analytics, Crashlytics, and custom tracking
  */
 
-import DeviceInfo from "react-native-device-info";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Logger } from "../services/LoggerService";
+import DeviceInfo from 'react-native-device-info';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Logger } from '../services/LoggerService';
 // import crashlytics from '@react-native-firebase/crashlytics';
 // import analytics from '@react-native-firebase/analytics';
-import { Platform } from "react-native";
+import { Platform } from 'react-native';
 
 // Types
 export interface UserProperties {
@@ -57,10 +57,10 @@ class AnalyticsServiceClass {
       this.isEnabled = !__DEV__ || false; // Disable in development
 
       if (__DEV__) {
-        console.log("📊 Analytics initialized (development mode)");
+        console.log('📊 Analytics initialized (development mode)');
       }
     } catch (error) {
-      console.warn("Analytics initialization failed:", error);
+      console.warn('Analytics initialization failed:', error);
     }
   }
 
@@ -76,10 +76,10 @@ class AnalyticsServiceClass {
         // await analytics().setUserId(userId);
         // await crashlytics().setUserId(userId);
 
-        this.logDebug("User ID set", { userId });
+        this.logDebug('User ID set', { userId });
       }
     } catch (error) {
-      console.warn("Failed to set user ID:", error);
+      console.warn('Failed to set user ID:', error);
     }
   }
 
@@ -90,14 +90,14 @@ class AnalyticsServiceClass {
 
         // Store locally for crash reporting
         await AsyncStorage.setItem(
-          "user_properties",
+          'user_properties',
           JSON.stringify(properties)
         );
 
-        this.logDebug("User properties updated", properties);
+        this.logDebug('User properties updated', properties);
       }
     } catch (error) {
-      console.warn("Failed to set user properties:", error);
+      console.warn('Failed to set user properties:', error);
     }
   }
 
@@ -132,7 +132,7 @@ class AnalyticsServiceClass {
 
       this.addBreadcrumb(`Event: ${eventName}`);
     } catch (error) {
-      console.warn("Failed to track event:", error);
+      console.warn('Failed to track event:', error);
     }
   }
 
@@ -141,7 +141,7 @@ class AnalyticsServiceClass {
   // ===============================
 
   async trackAppLaunch() {
-    await this.trackEvent("app_launch", {
+    await this.trackEvent('app_launch', {
       session_id: this.sessionId,
       launch_time: Date.now(),
     });
@@ -149,14 +149,14 @@ class AnalyticsServiceClass {
 
   async trackAppBackground() {
     const sessionDuration = Date.now() - this.sessionStartTime;
-    await this.trackEvent("app_background", {
+    await this.trackEvent('app_background', {
       session_duration: sessionDuration,
       session_id: this.sessionId,
     });
   }
 
   async trackScreenView(screenName: string, previousScreen?: string) {
-    await this.trackEvent("screen_view", {
+    await this.trackEvent('screen_view', {
       screen_name: screenName,
       previous_screen: previousScreen,
     });
@@ -167,35 +167,35 @@ class AnalyticsServiceClass {
   // ===============================
 
   async trackRecipeSearch(ingredients: string[], resultCount: number) {
-    await this.trackEvent("recipe_search", {
+    await this.trackEvent('recipe_search', {
       ingredient_count: ingredients.length,
-      ingredients: ingredients.join(","),
+      ingredients: ingredients.join(','),
       result_count: resultCount,
-      search_type: "ingredient_based",
+      search_type: 'ingredient_based',
     });
   }
 
   async trackAIRecipeGeneration(ingredients: string[], success: boolean) {
-    await this.trackEvent("ai_recipe_generation", {
+    await this.trackEvent('ai_recipe_generation', {
       ingredient_count: ingredients.length,
-      ingredients: ingredients.join(","),
+      ingredients: ingredients.join(','),
       success,
-      generation_method: "openai_gpt",
+      generation_method: 'openai_gpt',
     });
   }
 
   async trackRecipeView(
     recipeId: string,
-    source: "ai" | "database" | "community"
+    source: 'ai' | 'database' | 'community'
   ) {
-    await this.trackEvent("recipe_view", {
+    await this.trackEvent('recipe_view', {
       recipe_id: recipeId,
       recipe_source: source,
     });
   }
 
-  async trackRecipeFavorite(recipeId: string, action: "add" | "remove") {
-    await this.trackEvent("recipe_favorite", {
+  async trackRecipeFavorite(recipeId: string, action: 'add' | 'remove') {
+    await this.trackEvent('recipe_favorite', {
       recipe_id: recipeId,
       action,
     });
@@ -209,25 +209,25 @@ class AnalyticsServiceClass {
     featureName: string,
     usageData: Record<string, any> = {}
   ) {
-    await this.trackEvent("feature_usage", {
+    await this.trackEvent('feature_usage', {
       feature_name: featureName,
       ...usageData,
     });
   }
 
-  async trackSearchHistory(action: "view" | "clear" | "repeat_search") {
-    await this.trackEvent("search_history", { action });
+  async trackSearchHistory(action: 'view' | 'clear' | 'repeat_search') {
+    await this.trackEvent('search_history', { action });
   }
 
   async trackVoiceCommand(success: boolean, command?: string) {
-    await this.trackEvent("voice_command", {
+    await this.trackEvent('voice_command', {
       success,
       command_type: command,
     });
   }
 
   async trackOfflineUsage(feature: string, cacheHit: boolean) {
-    await this.trackEvent("offline_usage", {
+    await this.trackEvent('offline_usage', {
       feature,
       cache_hit: cacheHit,
     });
@@ -257,7 +257,7 @@ class AnalyticsServiceClass {
 
       // Development logging
       if (__DEV__) {
-        console.error("🚨 Error reported:", {
+        console.error('🚨 Error reported:', {
           message: error.message,
           stack: error.stack,
           context: crashData.context,
@@ -266,7 +266,7 @@ class AnalyticsServiceClass {
 
       this.addBreadcrumb(`Error: ${error.message}`);
     } catch (reportError) {
-      console.warn("Failed to report error:", reportError);
+      console.warn('Failed to report error:', reportError);
     }
   }
 
@@ -285,7 +285,7 @@ class AnalyticsServiceClass {
     success: boolean,
     details: Record<string, any> = {}
   ) {
-    await this.trackEvent("performance_metric", {
+    await this.trackEvent('performance_metric', {
       operation,
       duration_ms: duration,
       success,
@@ -337,10 +337,10 @@ class AnalyticsServiceClass {
       return {
         appVersion: version,
         deviceType: deviceType,
-        language: Platform.OS === "ios" ? "tr" : "tr", // Default to Turkish
+        language: Platform.OS === 'ios' ? 'tr' : 'tr', // Default to Turkish
       };
     } catch (error) {
-      console.warn("Failed to get device info:", error);
+      console.warn('Failed to get device info:', error);
       return {};
     }
   }
@@ -357,7 +357,7 @@ class AnalyticsServiceClass {
 
       return defaultValue;
     } catch (error) {
-      console.warn("Failed to get remote config:", error);
+      console.warn('Failed to get remote config:', error);
       return defaultValue;
     }
   }
@@ -368,7 +368,7 @@ class AnalyticsServiceClass {
 
   private logDebug(message: string, data?: any) {
     if (__DEV__) {
-      console.log(`📊 Analytics: ${message}`, data || "");
+      console.log(`📊 Analytics: ${message}`, data || '');
     }
   }
 
@@ -389,7 +389,7 @@ class AnalyticsServiceClass {
     this.sessionId = Date.now().toString();
     this.sessionStartTime = Date.now();
     this.breadcrumbs = [];
-    this.addBreadcrumb("New session started");
+    this.addBreadcrumb('New session started');
   }
 
   // ===============================
@@ -398,22 +398,22 @@ class AnalyticsServiceClass {
 
   async enableAnalytics() {
     this.isEnabled = true;
-    await AsyncStorage.setItem("analytics_enabled", "true");
+    await AsyncStorage.setItem('analytics_enabled', 'true');
     // await analytics().setAnalyticsCollectionEnabled(true);
-    this.logDebug("Analytics enabled");
+    this.logDebug('Analytics enabled');
   }
 
   async disableAnalytics() {
     this.isEnabled = false;
-    await AsyncStorage.setItem("analytics_enabled", "false");
+    await AsyncStorage.setItem('analytics_enabled', 'false');
     // await analytics().setAnalyticsCollectionEnabled(false);
-    this.logDebug("Analytics disabled");
+    this.logDebug('Analytics disabled');
   }
 
   async isAnalyticsEnabled(): Promise<boolean> {
     try {
-      const enabled = await AsyncStorage.getItem("analytics_enabled");
-      return enabled !== "false"; // Default to enabled
+      const enabled = await AsyncStorage.getItem('analytics_enabled');
+      return enabled !== 'false'; // Default to enabled
     } catch {
       return true;
     }

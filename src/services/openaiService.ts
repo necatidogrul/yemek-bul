@@ -1,12 +1,12 @@
-import { Recipe } from "../types/Recipe";
-import { supabase } from "./supabase";
-import { UnsplashService } from "./unsplashService";
-import { GoogleImageService } from "./googleImageService";
+import { Recipe } from '../types/Recipe';
+import { supabase } from './supabase';
+import { UnsplashService } from './unsplashService';
+import { GoogleImageService } from './googleImageService';
 
 export interface RecipeGenerationRequest {
   ingredients: string[];
-  language?: "tr" | "en";
-  mealTime?: "breakfast" | "lunch" | "dinner" | "snack";
+  language?: 'tr' | 'en';
+  mealTime?: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   userProfile?: {
     dietaryRestrictions: string[];
     favoriteCategories: string[];
@@ -14,7 +14,7 @@ export interface RecipeGenerationRequest {
     recipeHistory: number; // kaç tarif denemiş
   };
   preferences?: {
-    difficulty?: "kolay" | "orta" | "zor";
+    difficulty?: 'kolay' | 'orta' | 'zor';
     cookingTime?: number; // dakika
     servings?: number;
     dietary?: string[]; // ['vegan', 'glutensiz', 'laktozsuz']
@@ -35,10 +35,10 @@ export class OpenAIService {
     ? process.env.EXPO_PUBLIC_OPENAI_API_KEY
     : null;
   private static readonly PRODUCTION_URL =
-    process.env.EXPO_PUBLIC_SUPABASE_URL + "/functions/v1/openai-proxy";
+    process.env.EXPO_PUBLIC_SUPABASE_URL + '/functions/v1/openai-proxy';
   private static readonly DEV_URL =
-    "https://api.openai.com/v1/chat/completions";
-  private static readonly MODEL = "gpt-3.5-turbo";
+    'https://api.openai.com/v1/chat/completions';
+  private static readonly MODEL = 'gpt-3.5-turbo';
 
   // Token fiyatlandırması (GPT-3.5-turbo)
   private static readonly TOKEN_COST_PER_1K = 0.002; // $0.002 per 1K tokens
@@ -47,33 +47,33 @@ export class OpenAIService {
    * Dile ve kullanıcı tercihlerine göre system prompt getir
    */
   private static getSystemPrompt(
-    language: "tr" | "en" = "tr",
+    language: 'tr' | 'en' = 'tr',
     userPreferences?: { favoriteCategories?: string[] }
   ): string {
     const favoriteCategories = userPreferences?.favoriteCategories || [];
 
     // Kullanıcının en sevdiği mutfağı belirle
-    let cuisineExpertise = "";
-    if (favoriteCategories.includes("italian")) {
+    let cuisineExpertise = '';
+    if (favoriteCategories.includes('italian')) {
       cuisineExpertise =
-        language === "tr"
-          ? "İtalyan ve uluslararası"
-          : "Italian and international";
-    } else if (favoriteCategories.includes("asian")) {
+        language === 'tr'
+          ? 'İtalyan ve uluslararası'
+          : 'Italian and international';
+    } else if (favoriteCategories.includes('asian')) {
       cuisineExpertise =
-        language === "tr" ? "Asya ve uluslararası" : "Asian and international";
-    } else if (favoriteCategories.includes("healthy")) {
+        language === 'tr' ? 'Asya ve uluslararası' : 'Asian and international';
+    } else if (favoriteCategories.includes('healthy')) {
       cuisineExpertise =
-        language === "tr"
-          ? "sağlıklı beslenme ve uluslararası"
-          : "healthy cooking and international";
-    } else if (favoriteCategories.includes("turkish")) {
+        language === 'tr'
+          ? 'sağlıklı beslenme ve uluslararası'
+          : 'healthy cooking and international';
+    } else if (favoriteCategories.includes('turkish')) {
       cuisineExpertise =
-        language === "tr"
-          ? "Türk ve uluslararası"
-          : "Turkish and international";
+        language === 'tr'
+          ? 'Türk ve uluslararası'
+          : 'Turkish and international';
     } else {
-      cuisineExpertise = language === "tr" ? "uluslararası" : "international";
+      cuisineExpertise = language === 'tr' ? 'uluslararası' : 'international';
     }
 
     const prompts = {
@@ -92,12 +92,12 @@ export class OpenAIService {
     headers: Record<string, string>;
   }> {
     // Her zaman direkt OpenAI API kullan (Supabase Edge Function yok)
-    console.log("🤖 Using direct OpenAI API");
+    console.log('🤖 Using direct OpenAI API');
     return {
       url: this.DEV_URL,
       headers: {
         Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
     };
   }
@@ -109,36 +109,36 @@ export class OpenAIService {
     request: RecipeGenerationRequest
   ): Promise<RecipeGenerationResponse> {
     try {
-      const { language = "tr", userProfile } = request;
+      const { language = 'tr', userProfile } = request;
       const prompt = this.buildPrompt(request);
 
-      console.log("🤖 OpenAI API: Recipe generation started");
-      console.log("📝 Ingredients:", request.ingredients);
-      console.log("🌍 Language:", language);
-      console.log("🍽️ Favorite cuisines:", userProfile?.favoriteCategories);
+      console.log('🤖 OpenAI API: Recipe generation started');
+      console.log('📝 Ingredients:', request.ingredients);
+      console.log('🌍 Language:', language);
+      console.log('🍽️ Favorite cuisines:', userProfile?.favoriteCategories);
 
       const { url, headers } = await this.getApiConfig();
 
       const response = await fetch(url, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify({
           model: this.MODEL,
           messages: [
             {
-              role: "system",
+              role: 'system',
               content: this.getSystemPrompt(language, {
                 favoriteCategories: userProfile?.favoriteCategories,
               }),
             },
             {
-              role: "user",
+              role: 'user',
               content: prompt,
             },
           ],
           max_tokens: 2000,
           temperature: 0.8, // Yaratıcılık için
-          response_format: { type: "json_object" },
+          response_format: { type: 'json_object' },
         }),
       });
 
@@ -166,7 +166,7 @@ export class OpenAIService {
       const tokensUsed = data.usage?.total_tokens || 0;
       const estimatedCost = (tokensUsed / 1000) * this.TOKEN_COST_PER_1K;
 
-      console.log("✅ OpenAI API: Success");
+      console.log('✅ OpenAI API: Success');
       console.log(
         `📊 Tokens used: ${tokensUsed}, Cost: $${estimatedCost.toFixed(4)}`
       );
@@ -178,7 +178,7 @@ export class OpenAIService {
         estimatedCost,
       };
     } catch (error) {
-      console.error("❌ OpenAI API Error:", error);
+      console.error('❌ OpenAI API Error:', error);
       throw error;
     }
   }
@@ -186,60 +186,60 @@ export class OpenAIService {
   /**
    * Dile göre çeviri template'leri
    */
-  private static getPromptTemplates(language: "tr" | "en") {
+  private static getPromptTemplates(language: 'tr' | 'en') {
     const templates = {
       tr: {
         mealTimes: {
-          breakfast: "🌅 KAHVALTI için",
-          lunch: "☀️ ÖĞLE YEMEĞİ için",
-          dinner: "🌆 AKŞAM YEMEĞİ için",
-          snack: "🍿 ATIŞTIRMALIK için",
+          breakfast: '🌅 KAHVALTI için',
+          lunch: '☀️ ÖĞLE YEMEĞİ için',
+          dinner: '🌆 AKŞAM YEMEĞİ için',
+          snack: '🍿 ATIŞTIRMALIK için',
         },
-        basePrompt: "Bu malzemeleri kullanarak 3 tarif öner:",
-        userProfile: "KULLANICI PROFİLİ:",
-        nutrition: "Beslenme:",
-        favorites: "Favori mutfaklar:",
-        experience: "Mutfak deneyimi:",
-        recipeDistribution: "TARİF DAĞILIMI",
-        difficulty: "Zorluk:",
-        time: "Süre: Max",
-        servings: "Porsiyon:",
-        exclude: "Kullanma:",
-        conservative: "3 tarif: Tamamen kullanıcı tercihlerine uygun",
+        basePrompt: 'Bu malzemeleri kullanarak 3 tarif öner:',
+        userProfile: 'KULLANICI PROFİLİ:',
+        nutrition: 'Beslenme:',
+        favorites: 'Favori mutfaklar:',
+        experience: 'Mutfak deneyimi:',
+        recipeDistribution: 'TARİF DAĞILIMI',
+        difficulty: 'Zorluk:',
+        time: 'Süre: Max',
+        servings: 'Porsiyon:',
+        exclude: 'Kullanma:',
+        conservative: '3 tarif: Tamamen kullanıcı tercihlerine uygun',
         balanced: [
-          "2 tarif: Kullanıcı tercihlerine uygun 🎯",
-          "1 tarif: Yeni keşif için farklı mutfaktan 🌟",
+          '2 tarif: Kullanıcı tercihlerine uygun 🎯',
+          '1 tarif: Yeni keşif için farklı mutfaktan 🌟',
         ],
         adventurous: [
-          "1 tarif: Kullanıcı tercihlerine uygun 🎯",
-          "2 tarif: Macera için yeni deneyimler 🌟",
+          '1 tarif: Kullanıcı tercihlerine uygun 🎯',
+          '2 tarif: Macera için yeni deneyimler 🌟',
         ],
       },
       en: {
         mealTimes: {
-          breakfast: "🌅 For BREAKFAST",
-          lunch: "☀️ For LUNCH",
-          dinner: "🌆 For DINNER",
-          snack: "🍿 For SNACK",
+          breakfast: '🌅 For BREAKFAST',
+          lunch: '☀️ For LUNCH',
+          dinner: '🌆 For DINNER',
+          snack: '🍿 For SNACK',
         },
-        basePrompt: "Suggest 3 recipes using these ingredients:",
-        userProfile: "USER PROFILE:",
-        nutrition: "Dietary restrictions:",
-        favorites: "Favorite cuisines:",
-        experience: "Cooking experience:",
-        recipeDistribution: "RECIPE DISTRIBUTION",
-        difficulty: "Difficulty:",
-        time: "Time: Max",
-        servings: "Servings:",
-        exclude: "Exclude:",
-        conservative: "3 recipes: Fully matching user preferences",
+        basePrompt: 'Suggest 3 recipes using these ingredients:',
+        userProfile: 'USER PROFILE:',
+        nutrition: 'Dietary restrictions:',
+        favorites: 'Favorite cuisines:',
+        experience: 'Cooking experience:',
+        recipeDistribution: 'RECIPE DISTRIBUTION',
+        difficulty: 'Difficulty:',
+        time: 'Time: Max',
+        servings: 'Servings:',
+        exclude: 'Exclude:',
+        conservative: '3 recipes: Fully matching user preferences',
         balanced: [
-          "2 recipes: Matching user preferences 🎯",
-          "1 recipe: New discovery from different cuisine 🌟",
+          '2 recipes: Matching user preferences 🎯',
+          '1 recipe: New discovery from different cuisine 🌟',
         ],
         adventurous: [
-          "1 recipe: Matching user preferences 🎯",
-          "2 recipes: New adventures for exploration 🌟",
+          '1 recipe: Matching user preferences 🎯',
+          '2 recipes: New adventures for exploration 🌟',
         ],
       },
     };
@@ -257,35 +257,35 @@ export class OpenAIService {
       userProfile,
       preferences,
       excludeIngredients,
-      language = "tr",
+      language = 'tr',
     } = request;
     const t = this.getPromptTemplates(language);
 
     // Adaptif strateji belirleme
     const recipeHistory = userProfile?.recipeHistory || 0;
-    let strategy = "conservative"; // 3 tercihli
-    if (recipeHistory >= 5) strategy = "balanced"; // 2+1
-    if (recipeHistory >= 20) strategy = "adventurous"; // 1+2
+    let strategy = 'conservative'; // 3 tercihli
+    if (recipeHistory >= 5) strategy = 'balanced'; // 2+1
+    if (recipeHistory >= 20) strategy = 'adventurous'; // 1+2
 
     // Öğün zamanına göre özel öneriler
     const mealTimePrompt =
       mealTime && t.mealTimes[mealTime as keyof typeof t.mealTimes]
         ? t.mealTimes[mealTime as keyof typeof t.mealTimes]
-        : "";
+        : '';
 
-    let prompt = `${mealTimePrompt} ${t.basePrompt} ${ingredients.join(", ")}`;
+    let prompt = `${mealTimePrompt} ${t.basePrompt} ${ingredients.join(', ')}`;
 
     // Kullanıcı profili ekleme
     if (userProfile) {
       prompt += `\n\n${t.userProfile}`;
       if (userProfile.dietaryRestrictions.length) {
         prompt += `\n- ${t.nutrition} ${userProfile.dietaryRestrictions.join(
-          ", "
+          ', '
         )}`;
       }
       if (userProfile.favoriteCategories.length) {
         prompt += `\n- ${t.favorites} ${userProfile.favoriteCategories.join(
-          ", "
+          ', '
         )}`;
       }
       if (userProfile.cookingLevel) {
@@ -296,9 +296,9 @@ export class OpenAIService {
     // Adaptif strateji uygulama
     prompt += `\n\n${t.recipeDistribution} (${strategy.toUpperCase()}):`;
 
-    if (strategy === "conservative") {
+    if (strategy === 'conservative') {
       prompt += `\n- ${t.conservative}`;
-    } else if (strategy === "balanced") {
+    } else if (strategy === 'balanced') {
       prompt += `\n- ${t.balanced[0]}`;
       prompt += `\n- ${t.balanced[1]}`;
     } else {
@@ -312,21 +312,21 @@ export class OpenAIService {
     }
     if (preferences?.cookingTime) {
       prompt += `\n${t.time} ${preferences.cookingTime} ${
-        language === "en" ? "minutes" : "dakika"
+        language === 'en' ? 'minutes' : 'dakika'
       }`;
     }
     if (preferences?.servings) {
       prompt += `\n${t.servings} ${preferences.servings} ${
-        language === "en" ? "people" : "kişi"
+        language === 'en' ? 'people' : 'kişi'
       }`;
     }
     if (excludeIngredients?.length) {
-      prompt += `\n${t.exclude} ${excludeIngredients.join(", ")}`;
+      prompt += `\n${t.exclude} ${excludeIngredients.join(', ')}`;
     }
 
     // JSON formatı talimatları
     const jsonInstructions =
-      language === "en"
+      language === 'en'
         ? `\n\nRespond in this JSON format:
 {
   "recipes": [
@@ -380,7 +380,7 @@ export class OpenAIService {
     const recipes: Recipe[] = [];
 
     if (!aiResponse.recipes || !Array.isArray(aiResponse.recipes)) {
-      throw new Error("AI yanıtı beklenmeyen formatta");
+      throw new Error('AI yanıtı beklenmeyen formatta');
     }
 
     // Her tarif için seri olarak işlem yap (API rate limit için)
@@ -391,31 +391,30 @@ export class OpenAIService {
         const searchTerm = recipe.imageSearchTerm || recipe.name;
 
         // 1) Google görsel arama
-        let imageUrl: string | null = await GoogleImageService.searchImageUrl(
-          searchTerm
-        );
+        let imageUrl: string | null =
+          await GoogleImageService.searchImageUrl(searchTerm);
 
         // 2) AI tarafından verilmiş URL varsa onu kullan (Google sonuç vermediyse)
         if (
           !imageUrl &&
-          typeof recipe.imageUrl === "string" &&
+          typeof recipe.imageUrl === 'string' &&
           recipe.imageUrl.trim()
         ) {
           imageUrl = recipe.imageUrl.trim();
-          console.log("📸 AI imageUrl kullanılıyor:", imageUrl);
+          console.log('📸 AI imageUrl kullanılıyor:', imageUrl);
         }
 
         // 3) Hâlâ yoksa Unsplash fallback
         if (!imageUrl) {
-          console.log("🔍 Unsplash arama terimi:", searchTerm);
+          console.log('🔍 Unsplash arama terimi:', searchTerm);
           imageUrl = await UnsplashService.searchFoodImage(searchTerm);
-          console.log("📸 Unsplash sonucu:", imageUrl);
+          console.log('📸 Unsplash sonucu:', imageUrl);
         }
 
         const parsedRecipe: Recipe = {
           id: `ai_${Date.now()}_${index}`,
-          name: recipe.name || "İsimsiz Tarif",
-          description: recipe.description || "AI tarafından üretilen tarif",
+          name: recipe.name || 'İsimsiz Tarif',
+          description: recipe.description || 'AI tarafından üretilen tarif',
           ingredients: Array.isArray(recipe.ingredients)
             ? recipe.ingredients
             : [],
@@ -423,18 +422,18 @@ export class OpenAIService {
             ? recipe.instructions
             : [],
           preparationTime:
-            typeof recipe.preparationTime === "number"
+            typeof recipe.preparationTime === 'number'
               ? recipe.preparationTime
               : undefined,
           servings:
-            typeof recipe.servings === "number" ? recipe.servings : undefined,
-          difficulty: ["kolay", "orta", "zor"].includes(recipe.difficulty)
+            typeof recipe.servings === 'number' ? recipe.servings : undefined,
+          difficulty: ['kolay', 'orta', 'zor'].includes(recipe.difficulty)
             ? recipe.difficulty
-            : "orta",
-          category: recipe.category || "ana_yemek",
+            : 'orta',
+          category: recipe.category || 'ana_yemek',
           imageUrl: imageUrl || undefined,
           imageSearchTerm: recipe.imageSearchTerm || recipe.name,
-          source: "ai",
+          source: 'ai',
           aiGenerated: true,
           tips: recipe.tips,
         };
@@ -457,18 +456,18 @@ export class OpenAIService {
 
       // Basit test isteği
       const response = await fetch(url, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify({
           model: this.MODEL,
-          messages: [{ role: "user", content: "Test" }],
+          messages: [{ role: 'user', content: 'Test' }],
           max_tokens: 5,
         }),
       });
 
       return response.ok;
     } catch (error) {
-      console.error("❌ OpenAI API status check failed:", error);
+      console.error('❌ OpenAI API status check failed:', error);
       return false;
     }
   }
@@ -483,24 +482,24 @@ export class OpenAIService {
     try {
       const prompt = this.buildQuestionPrompt(recipe, question);
 
-      console.log("🤖 OpenAI API: Recipe Q&A started");
-      console.log("❓ Question:", question);
+      console.log('🤖 OpenAI API: Recipe Q&A started');
+      console.log('❓ Question:', question);
 
       const { url, headers } = await this.getApiConfig();
 
       const response = await fetch(url, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify({
           model: this.MODEL,
           messages: [
             {
-              role: "system",
+              role: 'system',
               content:
-                "Sen deneyimli bir şef ve beslenme uzmanısın. Tariflerdeki soruları detaylı, pratik ve yardımcı şekilde yanıtlıyorsun. Yanıtların Türkçe olsun ve samimi bir dille konuş.",
+                'Sen deneyimli bir şef ve beslenme uzmanısın. Tariflerdeki soruları detaylı, pratik ve yardımcı şekilde yanıtlıyorsun. Yanıtların Türkçe olsun ve samimi bir dille konuş.',
             },
             {
-              role: "user",
+              role: 'user',
               content: prompt,
             },
           ],
@@ -525,10 +524,10 @@ export class OpenAIService {
         throw new Error("OpenAI'dan yanıt alınamadı");
       }
 
-      console.log("✅ OpenAI API: Q&A Success");
+      console.log('✅ OpenAI API: Q&A Success');
       return answer.trim();
     } catch (error) {
-      console.error("❌ OpenAI Q&A Error:", error);
+      console.error('❌ OpenAI Q&A Error:', error);
       throw error;
     }
   }
@@ -541,12 +540,12 @@ export class OpenAIService {
 
 TARİF:
 Adı: ${recipe.name}
-Açıklama: ${recipe.description || ""}
-Malzemeler: ${recipe.ingredients?.join(", ") || ""}
-Tarif: ${recipe.instructions?.join(" ") || ""}
-Süre: ${recipe.preparationTime || recipe.cookingTime || "Belirtilmemiş"} dakika
-Porsiyon: ${recipe.servings || "Belirtilmemiş"} kişi
-Zorluk: ${recipe.difficulty || "Belirtilmemiş"}
+Açıklama: ${recipe.description || ''}
+Malzemeler: ${recipe.ingredients?.join(', ') || ''}
+Tarif: ${recipe.instructions?.join(' ') || ''}
+Süre: ${recipe.preparationTime || recipe.cookingTime || 'Belirtilmemiş'} dakika
+Porsiyon: ${recipe.servings || 'Belirtilmemiş'} kişi
+Zorluk: ${recipe.difficulty || 'Belirtilmemiş'}
 
 SORU: ${question}
 
@@ -558,7 +557,7 @@ Lütfen bu soruyu net, pratik ve yardımcı şekilde yanıtla. Gerekirse alterna
    */
   private static getMealTimePrompt(mealTime?: string): string {
     // Bu fonksiyon artık kullanılmıyor, template sistemi kullanılıyor
-    return "";
+    return '';
   }
 
   /**

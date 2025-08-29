@@ -17,15 +17,15 @@ import { colors, spacing, borderRadius } from '../../theme/design-tokens';
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const TourOverlay: React.FC = () => {
-  const { 
-    isActive, 
-    currentTour, 
-    currentStep, 
-    totalSteps, 
-    nextStep, 
-    previousStep, 
+  const {
+    isActive,
+    currentTour,
+    currentStep,
+    totalSteps,
+    nextStep,
+    previousStep,
     skipTour,
-    completeTour 
+    completeTour,
   } = useTour();
 
   if (!isActive || !currentTour) {
@@ -80,7 +80,7 @@ const TourOverlay: React.FC = () => {
     <Modal
       visible={isActive}
       transparent
-      animationType="fade"
+      animationType='fade'
       statusBarTranslucent
     >
       <View style={styles.overlay}>
@@ -91,23 +91,27 @@ const TourOverlay: React.FC = () => {
 
         {/* Tooltip */}
         <View style={[styles.tooltip, getTooltipPosition()]}>
-          <Card variant="elevated" size="lg" style={styles.tooltipCard}>
+          <Card variant='elevated' size='lg' style={styles.tooltipCard}>
             {/* Header */}
             <View style={styles.tooltipHeader}>
-              <Text variant="h3" weight="bold" color="primary">
+              <Text variant='h3' weight='bold' color='primary'>
                 {currentTour.title}
               </Text>
-              
+
               {currentTour.showSkip && (
                 <TouchableOpacity onPress={skipTour} style={styles.skipButton}>
-                  <Ionicons name="close" size={20} color={colors.neutral[500]} />
+                  <Ionicons
+                    name='close'
+                    size={20}
+                    color={colors.neutral[500]}
+                  />
                 </TouchableOpacity>
               )}
             </View>
 
             {/* Content */}
             <View style={styles.tooltipContent}>
-              <Text variant="body" color="secondary" style={styles.description}>
+              <Text variant='body' color='secondary' style={styles.description}>
                 {currentTour.description}
               </Text>
             </View>
@@ -123,15 +127,16 @@ const TourOverlay: React.FC = () => {
                       style={[
                         styles.progressDot,
                         {
-                          backgroundColor: index === currentStep 
-                            ? colors.primary[500] 
-                            : colors.neutral[300],
+                          backgroundColor:
+                            index === currentStep
+                              ? colors.primary[500]
+                              : colors.neutral[300],
                         },
                       ]}
                     />
                   ))}
                 </View>
-                <Text variant="caption" color="secondary">
+                <Text variant='caption' color='secondary'>
                   {currentStep + 1} / {totalSteps}
                 </Text>
               </View>
@@ -140,24 +145,24 @@ const TourOverlay: React.FC = () => {
               <View style={styles.buttonContainer}>
                 {!isFirstStep && (
                   <Button
-                    variant="outline"
-                    size="sm"
+                    variant='outline'
+                    size='sm'
                     onPress={previousStep}
-                    leftIcon={<Ionicons name="arrow-back" size={16} />}
+                    leftIcon={<Ionicons name='arrow-back' size={16} />}
                   >
                     Geri
                   </Button>
                 )}
 
                 <Button
-                  variant="primary"
-                  size="sm"
+                  variant='primary'
+                  size='sm'
                   onPress={isLastStep ? completeTour : nextStep}
                   rightIcon={
                     isLastStep ? (
-                      <Ionicons name="checkmark" size={16} />
+                      <Ionicons name='checkmark' size={16} />
                     ) : (
-                      <Ionicons name="arrow-forward" size={16} />
+                      <Ionicons name='arrow-forward' size={16} />
                     )
                   }
                 >
@@ -169,10 +174,14 @@ const TourOverlay: React.FC = () => {
 
           {/* Pointer arrow */}
           {currentTour.placement !== 'center' && (
-            <View style={[
-              styles.arrow, 
-              currentTour.placement === 'top' ? styles.arrowDown : styles.arrowUp
-            ]} />
+            <View
+              style={[
+                styles.arrow,
+                currentTour.placement === 'top'
+                  ? styles.arrowDown
+                  : styles.arrowUp,
+              ]}
+            />
           )}
         </View>
       </View>

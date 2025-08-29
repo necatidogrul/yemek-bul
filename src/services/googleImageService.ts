@@ -18,7 +18,7 @@ export interface GoogleImageSearchResponse {
 
 export class GoogleImageService {
   private static readonly API_URL =
-    "https://www.googleapis.com/customsearch/v1";
+    'https://www.googleapis.com/customsearch/v1';
   private static readonly API_KEY =
     process.env.EXPO_PUBLIC_GOOGLE_CUSTOM_SEARCH_API_KEY;
   private static readonly CSE_ID = process.env.EXPO_PUBLIC_GOOGLE_CSE_ID; // cx
@@ -30,7 +30,7 @@ export class GoogleImageService {
     try {
       if (!this.API_KEY || !this.CSE_ID) {
         console.warn(
-          "⚠️ Google CSE yapılandırması eksik (API_KEY veya CSE_ID)."
+          '⚠️ Google CSE yapılandırması eksik (API_KEY veya CSE_ID).'
         );
         return null;
       }
@@ -39,10 +39,10 @@ export class GoogleImageService {
         key: this.API_KEY,
         cx: this.CSE_ID,
         q: query,
-        searchType: "image",
-        num: "1",
-        safe: "active",
-        imgSize: "large",
+        searchType: 'image',
+        num: '1',
+        safe: 'active',
+        imgSize: 'large',
       });
 
       const url = `${this.API_URL}?${params.toString()}`;
@@ -58,7 +58,7 @@ export class GoogleImageService {
 
       return null;
     } catch (error) {
-      console.error("❌ GoogleImageService Error:", error);
+      console.error('❌ GoogleImageService Error:', error);
       return null;
     }
   }
@@ -73,7 +73,7 @@ export class GoogleImageService {
     try {
       if (!this.API_KEY || !this.CSE_ID) {
         console.warn(
-          "⚠️ Google CSE yapılandırması eksik (API_KEY veya CSE_ID)."
+          '⚠️ Google CSE yapılandırması eksik (API_KEY veya CSE_ID).'
         );
         return [];
       }
@@ -83,10 +83,10 @@ export class GoogleImageService {
         key: this.API_KEY,
         cx: this.CSE_ID,
         q: query,
-        searchType: "image",
+        searchType: 'image',
         num: String(clamped),
-        safe: "active",
-        imgSize: "large",
+        safe: 'active',
+        imgSize: 'large',
       });
 
       const url = `${this.API_URL}?${params.toString()}`;
@@ -96,9 +96,9 @@ export class GoogleImageService {
       }
 
       const data: GoogleImageSearchResponse = await response.json();
-      return (data.items || []).map((item) => item.link).filter(Boolean);
+      return (data.items || []).map(item => item.link).filter(Boolean);
     } catch (error) {
-      console.error("❌ GoogleImageService (multiple) Error:", error);
+      console.error('❌ GoogleImageService (multiple) Error:', error);
       return [];
     }
   }

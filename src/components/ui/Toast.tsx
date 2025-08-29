@@ -46,7 +46,9 @@ export const Toast: React.FC<ToastProps> = ({
   onDismiss,
 }) => {
   const { colors, isDark } = useThemedStyles();
-  const translateY = useRef(new Animated.Value(position === 'top' ? -100 : 100)).current;
+  const translateY = useRef(
+    new Animated.Value(position === 'top' ? -100 : 100)
+  ).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -160,17 +162,31 @@ export const Toast: React.FC<ToastProps> = ({
         ]}
       >
         {/* Icon */}
-        <View style={[styles.iconContainer, { backgroundColor: toastStyles.iconBg }]}>
-          <Ionicons name={toastStyles.iconName} size={20} color={toastStyles.iconColor} />
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: toastStyles.iconBg },
+          ]}
+        >
+          <Ionicons
+            name={toastStyles.iconName}
+            size={20}
+            color={toastStyles.iconColor}
+          />
         </View>
 
         {/* Content */}
         <View style={styles.content}>
-          <Text variant="bodyMedium" weight="semibold" numberOfLines={1}>
+          <Text variant='bodyMedium' weight='semibold' numberOfLines={1}>
             {title}
           </Text>
           {message && (
-            <Text variant="bodySmall" color="secondary" numberOfLines={2} style={styles.message}>
+            <Text
+              variant='bodySmall'
+              color='secondary'
+              numberOfLines={2}
+              style={styles.message}
+            >
               {message}
             </Text>
           )}
@@ -179,7 +195,11 @@ export const Toast: React.FC<ToastProps> = ({
         {/* Action Button */}
         {actionLabel && onAction && (
           <TouchableOpacity style={styles.action} onPress={onAction}>
-            <Text variant="bodySmall" weight="semibold" style={{ color: toastStyles.iconColor }}>
+            <Text
+              variant='bodySmall'
+              weight='semibold'
+              style={{ color: toastStyles.iconColor }}
+            >
               {actionLabel}
             </Text>
           </TouchableOpacity>
@@ -188,7 +208,7 @@ export const Toast: React.FC<ToastProps> = ({
         {/* Dismiss Button */}
         {onDismiss && (
           <TouchableOpacity style={styles.dismiss} onPress={onDismiss}>
-            <Ionicons name="close" size={16} color={colors.text.tertiary} />
+            <Ionicons name='close' size={16} color={colors.text.tertiary} />
           </TouchableOpacity>
         )}
       </View>

@@ -13,21 +13,21 @@ export interface Recipe {
   preparationTime?: number; // dakika cinsinden
   cookingTime?: number; // dakika cinsinden
   servings?: number;
-  difficulty?: "kolay" | "orta" | "zor";
+  difficulty?: 'kolay' | 'orta' | 'zor';
   category?:
-    | "çorba"
-    | "ana_yemek"
-    | "salata"
-    | "tatlı"
-    | "aperatif"
-    | "kahvaltı";
+    | 'çorba'
+    | 'ana_yemek'
+    | 'salata'
+    | 'tatlı'
+    | 'aperatif'
+    | 'kahvaltı';
   imageUrl?: string;
   imageSearchTerm?: string; // Unsplash API için İngilizce arama kelimesi
   missingIngredients?: string[];
   matchingIngredients?: number;
   totalIngredients?: number;
   isFavorite?: boolean;
-  source?: "ai" | "database" | "mock"; // Tarif kaynağı
+  source?: 'ai' | 'database' | 'mock'; // Tarif kaynağı
   aiGenerated?: boolean; // AI tarafından üretildi mi
   tips?: string; // Ek ipuçları
   tokensUsed?: number; // AI için kullanılan token sayısı
@@ -53,7 +53,7 @@ export interface SearchHistoryEntry {
   userId: string;
   searchIngredients: string[];
   searchQuery?: string;
-  resultType: "community_pool" | "ai_cache" | "ai_generation" | "mock";
+  resultType: 'community_pool' | 'ai_cache' | 'ai_generation' | 'mock';
   resultsFound: number;
   exactMatches: number;
   nearMatches: number;

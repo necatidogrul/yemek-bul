@@ -43,7 +43,7 @@ class HapticService {
    */
   private async triggerHaptic(
     hapticFunction: () => Promise<void>,
-    options: HapticOptions = {},
+    options: HapticOptions = {}
   ): Promise<void> {
     const { enabled = this.enabled, delay = 0 } = options;
 
@@ -69,7 +69,10 @@ class HapticService {
    * Use for: hovering, light touches, minor selections
    */
   async light(options?: HapticOptions): Promise<void> {
-    await this.triggerHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), options);
+    await this.triggerHaptic(
+      () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light),
+      options
+    );
   }
 
   /**
@@ -79,7 +82,7 @@ class HapticService {
   async medium(options?: HapticOptions): Promise<void> {
     await this.triggerHaptic(
       () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
-      options,
+      options
     );
   }
 
@@ -88,7 +91,10 @@ class HapticService {
    * Use for: confirmations, major actions, deletions
    */
   async heavy(options?: HapticOptions): Promise<void> {
-    await this.triggerHaptic(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), options);
+    await this.triggerHaptic(
+      () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy),
+      options
+    );
   }
 
   /**
@@ -98,7 +104,7 @@ class HapticService {
   async success(options?: HapticOptions): Promise<void> {
     await this.triggerHaptic(
       () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success),
-      options,
+      options
     );
   }
 
@@ -109,7 +115,7 @@ class HapticService {
   async warning(options?: HapticOptions): Promise<void> {
     await this.triggerHaptic(
       () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning),
-      options,
+      options
     );
   }
 
@@ -120,7 +126,7 @@ class HapticService {
   async error(options?: HapticOptions): Promise<void> {
     await this.triggerHaptic(
       () => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error),
-      options,
+      options
     );
   }
 
@@ -279,7 +285,10 @@ class HapticService {
   /**
    * Generic feedback by type
    */
-  async trigger(type: HapticFeedbackType, options?: HapticOptions): Promise<void> {
+  async trigger(
+    type: HapticFeedbackType,
+    options?: HapticOptions
+  ): Promise<void> {
     switch (type) {
       case 'light':
         await this.light(options);

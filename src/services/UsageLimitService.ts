@@ -1,6 +1,6 @@
 /**
  * Usage Limit Service
- * 
+ *
  * Free kullanıcılar için günlük istek limiti yönetimi
  */
 
@@ -16,7 +16,7 @@ export interface DailyUsage {
 export class UsageLimitService {
   private static readonly STORAGE_KEY = 'daily_usage';
   private static readonly FREE_DAILY_LIMIT = 2;
-  
+
   /**
    * Bugünün tarihini YYYY-MM-DD formatında al
    */
@@ -32,10 +32,10 @@ export class UsageLimitService {
     try {
       const todayDate = this.getTodayDateString();
       const storedUsage = await AsyncStorage.getItem(this.STORAGE_KEY);
-      
+
       if (storedUsage) {
         const usage: DailyUsage = JSON.parse(storedUsage);
-        
+
         // Eğer tarih bugün değilse, yeni gün başlat
         if (usage.date !== todayDate) {
           const newUsage: DailyUsage = {
@@ -46,23 +46,22 @@ export class UsageLimitService {
           await this.saveDailyUsage(newUsage);
           return newUsage;
         }
-        
+
         return usage;
       }
-      
+
       // İlk kez kullanım
       const newUsage: DailyUsage = {
         date: todayDate,
         requestsUsed: 0,
         maxRequests: this.FREE_DAILY_LIMIT,
       };
-      
+
       await this.saveDailyUsage(newUsage);
       return newUsage;
-      
     } catch (error) {
       console.error('Error getting daily usage:', error);
-      
+
       // Hata durumunda varsayılan döndür
       return {
         date: this.getTodayDateString(),
@@ -97,12 +96,12 @@ export class UsageLimitService {
    */
   static async useRequest(): Promise<DailyUsage> {
     const usage = await this.getDailyUsage();
-    
+
     if (usage.requestsUsed < usage.maxRequests) {
       usage.requestsUsed++;
       await this.saveDailyUsage(usage);
     }
-    
+
     return usage;
   }
 
@@ -125,14 +124,17 @@ export class UsageLimitService {
   }> {
     const usage = await this.getDailyUsage();
     const canMakeRequest = usage.requestsUsed < usage.maxRequests;
-    const remainingRequests = Math.max(0, usage.maxRequests - usage.requestsUsed);
+    const remainingRequests = Math.max(
+      0,
+      usage.maxRequests - usage.requestsUsed
+    );
     const isLimitReached = usage.requestsUsed >= usage.maxRequests;
-    
+
     // Yarın saat 00:00'da reset olur
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
-    
+
     return {
       canMakeRequest,
       remainingRequests,

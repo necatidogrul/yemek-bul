@@ -11,7 +11,7 @@
   "scope": "/",
   "lang": "tr",
   "dir": "ltr",
-  "categories": ["food", "lifestyle", "productivity"],  
+  "categories": ["food", "lifestyle", "productivity"],
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -20,14 +20,14 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-96x96.png", 
+      "src": "/icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
       "src": "/icons/icon-128x128.png",
-      "sizes": "128x128", 
+      "sizes": "128x128",
       "type": "image/png",
       "purpose": "any maskable"
     },
@@ -40,7 +40,7 @@
     {
       "src": "/icons/icon-152x152.png",
       "sizes": "152x152",
-      "type": "image/png", 
+      "type": "image/png",
       "purpose": "any maskable"
     },
     {
@@ -51,7 +51,7 @@
     },
     {
       "src": "/icons/icon-384x384.png",
-      "sizes": "384x384", 
+      "sizes": "384x384",
       "type": "image/png",
       "purpose": "any maskable"
     },
@@ -71,7 +71,7 @@
       "label": "Ana Sayfa - Malzeme Girişi"
     },
     {
-      "src": "/screenshots/results.png", 
+      "src": "/screenshots/results.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
@@ -79,7 +79,7 @@
     },
     {
       "src": "/screenshots/recipe-detail.png",
-      "sizes": "390x844", 
+      "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Tarif Detayı"
@@ -87,7 +87,7 @@
     {
       "src": "/screenshots/desktop-home.png",
       "sizes": "1280x720",
-      "type": "image/png", 
+      "type": "image/png",
       "form_factor": "wide",
       "label": "Masaüstü Ana Sayfa"
     }
@@ -95,7 +95,7 @@
   "shortcuts": [
     {
       "name": "Hızlı Arama",
-      "short_name": "Ara",  
+      "short_name": "Ara",
       "description": "Malzemelerinizle hızlıca tarif bulun",
       "url": "/?shortcut=search",
       "icons": [
@@ -109,12 +109,12 @@
     {
       "name": "Favorilerim",
       "short_name": "Favoriler",
-      "description": "Favori tariflerinizi görüntüleyin", 
+      "description": "Favori tariflerinizi görüntüleyin",
       "url": "/favorites?shortcut=favorites",
       "icons": [
         {
           "src": "/icons/shortcut-favorites.png",
-          "sizes": "96x96", 
+          "sizes": "96x96",
           "type": "image/png"
         }
       ]
@@ -123,7 +123,7 @@
       "name": "Geçmiş",
       "short_name": "Geçmiş",
       "description": "Arama geçmişinizi inceleyin",
-      "url": "/history?shortcut=history", 
+      "url": "/history?shortcut=history",
       "icons": [
         {
           "src": "/icons/shortcut-history.png",
@@ -139,7 +139,7 @@
       "url": "/?ai=true&shortcut=ai",
       "icons": [
         {
-          "src": "/icons/shortcut-ai.png", 
+          "src": "/icons/shortcut-ai.png",
           "sizes": "96x96",
           "type": "image/png"
         }
@@ -163,7 +163,7 @@
     "enctype": "multipart/form-data",
     "params": {
       "title": "title",
-      "text": "text", 
+      "text": "text",
       "url": "url",
       "files": [
         {
@@ -188,11 +188,5 @@
   },
   "handle_links": "preferred",
   "offline_enabled": true,
-  "features": [
-    "ai-recipe-generation",
-    "offline-search", 
-    "smart-caching",
-    "background-sync",
-    "push-notifications"
-  ]
+  "features": ["ai-recipe-generation", "offline-search", "smart-caching", "background-sync", "push-notifications"]
 }

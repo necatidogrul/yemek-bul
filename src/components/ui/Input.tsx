@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   TextInput,
   View,
@@ -8,19 +8,19 @@ import {
   TextStyle,
   TextInputProps,
   Animated,
-} from "react-native";
+} from 'react-native';
 import {
   typography,
   spacing,
   borderRadius,
   shadows,
-} from "../../theme/design-tokens";
-import { useThemedStyles } from "../../hooks/useThemedStyles";
+} from '../../theme/design-tokens';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
 
-type InputVariant = "default" | "filled" | "outline" | "modern";
-type InputSize = "sm" | "md" | "lg" | "xl";
+type InputVariant = 'default' | 'filled' | 'outline' | 'modern';
+type InputSize = 'sm' | 'md' | 'lg' | 'xl';
 
-interface InputProps extends Omit<TextInputProps, "style"> {
+interface InputProps extends Omit<TextInputProps, 'style'> {
   label?: string;
   placeholder?: string;
   value?: string;
@@ -41,8 +41,8 @@ const Input: React.FC<InputProps> = ({
   placeholder,
   value,
   onChangeText,
-  variant = "outline",
-  size = "md",
+  variant = 'outline',
+  size = 'md',
   disabled = false,
   error,
   leftIcon,
@@ -58,10 +58,10 @@ const Input: React.FC<InputProps> = ({
 
   const getContainerStyles = (): ViewStyle => {
     const baseStyles: ViewStyle = {
-      flexDirection: "row",
-      alignItems: "center",
-      borderRadius: variant === "modern" ? borderRadius.xl : borderRadius.lg,
-      position: "relative",
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: variant === 'modern' ? borderRadius.xl : borderRadius.lg,
+      position: 'relative',
     };
 
     // Size styles
@@ -113,7 +113,7 @@ const Input: React.FC<InputProps> = ({
       ? {
           borderColor: colors.primary[500],
           backgroundColor: colors.surface.primary,
-          ...(variant === "modern" ? shadows.md : {}),
+          ...(variant === 'modern' ? shadows.md : {}),
         }
       : {};
 
@@ -122,7 +122,7 @@ const Input: React.FC<InputProps> = ({
       ? {
           borderColor: colors.error[500],
           backgroundColor:
-            variant === "modern" ? colors.error[50] : colors.surface.primary,
+            variant === 'modern' ? colors.error[50] : colors.surface.primary,
         }
       : {};
 
@@ -152,7 +152,7 @@ const Input: React.FC<InputProps> = ({
       fontSize: typography.fontSize.base,
       color: colors.text.primary,
       paddingVertical: 0,
-      fontWeight: variant === "modern" ? ("500" as const) : ("400" as const),
+      fontWeight: variant === 'modern' ? ('500' as const) : ('400' as const),
     };
 
     // Size text styles
@@ -186,19 +186,19 @@ const Input: React.FC<InputProps> = ({
 
   const getLabelStyles = (): TextStyle => ({
     fontSize:
-      variant === "modern" ? typography.fontSize.base : typography.fontSize.sm,
-    fontWeight: "600" as const,
+      variant === 'modern' ? typography.fontSize.base : typography.fontSize.sm,
+    fontWeight: '600' as const,
     color: error
       ? colors.error[600]
       : isFocused
-      ? colors.primary[600]
-      : colors.text.secondary,
+        ? colors.primary[600]
+        : colors.text.secondary,
     marginBottom: spacing[2],
   });
 
   const getErrorStyles = (): TextStyle => ({
     fontSize: typography.fontSize.sm,
-    fontWeight: "500" as const,
+    fontWeight: '500' as const,
     color: colors.error[600],
     marginTop: spacing[1.5],
   });
@@ -240,10 +240,10 @@ const Input: React.FC<InputProps> = ({
 
       <View style={getContainerStyles()}>
         {/* Modern variant focus border animation */}
-        {variant === "modern" && (
+        {variant === 'modern' && (
           <Animated.View
             style={{
-              position: "absolute",
+              position: 'absolute',
               top: -2,
               left: -2,
               right: -2,
@@ -298,8 +298,8 @@ const Input: React.FC<InputProps> = ({
       {error && (
         <View
           style={{
-            flexDirection: "row",
-            alignItems: "center",
+            flexDirection: 'row',
+            alignItems: 'center',
             marginTop: spacing[1.5],
           }}
         >

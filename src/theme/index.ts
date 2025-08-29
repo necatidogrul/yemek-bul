@@ -1,5 +1,5 @@
 // Re-export design tokens for backward compatibility
-export * from "./design-tokens";
+export * from './design-tokens';
 
 // Export the main theme object
 import {
@@ -11,7 +11,7 @@ import {
   animation,
   breakpoints,
   components,
-} from "./design-tokens";
+} from './design-tokens';
 
 export const theme = {
   colors,

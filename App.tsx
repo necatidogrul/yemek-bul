@@ -1,33 +1,33 @@
-import React, { useState, useEffect } from "react";
-import { NavigationContainer } from "@react-navigation/native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { UserPreferencesService } from "./src/services/UserPreferencesService";
-import { RevenueCatService } from "./src/services/RevenueCatService";
+import React, { useState, useEffect } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { UserPreferencesService } from './src/services/UserPreferencesService';
+import { RevenueCatService } from './src/services/RevenueCatService';
 
 // Initialize i18n
-import "./src/locales";
+import './src/locales';
 
 // Contexts
-import { ThemeProvider } from "./src/contexts/ThemeContext";
-import { ToastProvider } from "./src/contexts/ToastContext";
-import { TourProvider } from "./src/contexts/TourContext";
-import { PremiumProvider } from "./src/contexts/PremiumContext";
-import { HapticProvider } from "./src/hooks/useHaptics";
-import { LanguageProvider } from "./src/contexts/LanguageContext";
+import { ThemeProvider } from './src/contexts/ThemeContext';
+import { ToastProvider } from './src/contexts/ToastContext';
+import { TourProvider } from './src/contexts/TourContext';
+import { PremiumProvider } from './src/contexts/PremiumContext';
+import { HapticProvider } from './src/hooks/useHaptics';
+import { LanguageProvider } from './src/contexts/LanguageContext';
 
 // UI Components
-import TourOverlay from "./src/components/ui/TourOverlay";
-import { ToastContainer } from "./src/components/ui/ToastContainer";
-import { ThemedStatusBar } from "./src/components/theme/ThemedStatusBar";
-import { GlobalErrorHandler } from "./src/components/error/GlobalErrorHandler";
-import { ErrorBoundary } from "./src/components/error/ErrorBoundary";
+import TourOverlay from './src/components/ui/TourOverlay';
+import { ToastContainer } from './src/components/ui/ToastContainer';
+import { ThemedStatusBar } from './src/components/theme/ThemedStatusBar';
+import { GlobalErrorHandler } from './src/components/error/GlobalErrorHandler';
+import { ErrorBoundary } from './src/components/error/ErrorBoundary';
 
 // Screens
-import OnboardingScreen from "./src/screens/OnboardingScreen";
+import OnboardingScreen from './src/screens/OnboardingScreen';
 
 // Import themed navigators
-import { MainTabNavigator } from "./src/components/navigation/ThemedNavigators";
+import { MainTabNavigator } from './src/components/navigation/ThemedNavigators';
 
 // Re-export navigation types for backward compatibility
 export type {
@@ -35,11 +35,11 @@ export type {
   FavoritesStackParamList,
   HistoryStackParamList,
   TabParamList,
-} from "./src/components/navigation/ThemedNavigators";
+} from './src/components/navigation/ThemedNavigators';
 
 // For backward compatibility
 export type RootStackParamList =
-  import("./src/components/navigation/ThemedNavigators").HomeStackParamList;
+  import('./src/components/navigation/ThemedNavigators').HomeStackParamList;
 
 export default function App(): React.ReactElement {
   const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<
@@ -57,7 +57,7 @@ export default function App(): React.ReactElement {
     onTimeout?: () => void
   ): Promise<T | null> => {
     let timeoutId: NodeJS.Timeout;
-    const timeoutPromise = new Promise<null>((resolve) => {
+    const timeoutPromise = new Promise<null>(resolve => {
       timeoutId = setTimeout(() => {
         if (onTimeout) onTimeout();
         resolve(null);
@@ -72,16 +72,26 @@ export default function App(): React.ReactElement {
   const initializeApp = async () => {
     try {
       // 1) Initialize RevenueCat first (critical for premium features)
-      await withTimeout(
+      console.log('🚀 Initializing RevenueCat...');
+      const revenueCatResult = await withTimeout(
         RevenueCatService.initialize(),
-        5000, // 5 second timeout
-        () => console.warn("⚠️ RevenueCat initialization timed out")
+        10000, // 10 second timeout for production
+        () => {
+          console.warn('⚠️ RevenueCat initialization timed out, continuing...');
+          return null;
+        }
       );
+
+      if (revenueCatResult === null) {
+        console.warn('⚠️ RevenueCat initialization failed or timed out');
+      } else {
+        console.log('✅ RevenueCat initialized successfully');
+      }
 
       // 2) Check onboarding status
       await checkOnboardingStatus();
     } catch (error) {
-      console.error("App initialization error:", error);
+      console.error('App initialization error:', error);
 
       // Onboarding status is already checked; nothing else to block UI
     }
@@ -90,7 +100,7 @@ export default function App(): React.ReactElement {
   const checkOnboardingStatus = async () => {
     try {
       const preferences = await UserPreferencesService.getUserPreferences();
-      console.log("🔍 Onboarding status check:", {
+      console.log('🔍 Onboarding status check:', {
         onboardingCompleted: preferences.onboardingCompleted,
         fullPreferences: preferences,
       });
@@ -98,33 +108,33 @@ export default function App(): React.ReactElement {
       // DEVELOPMENT ONLY: Force onboarding to show for testing
       if (__DEV__) {
         // Reset onboarding for development
-        await AsyncStorage.removeItem("onboarding_completed");
-        await AsyncStorage.removeItem("user_preferences");
-        console.log("🔄 Reset onboarding for testing");
+        await AsyncStorage.removeItem('onboarding_completed');
+        await AsyncStorage.removeItem('user_preferences');
+        console.log('🔄 Reset onboarding for testing');
         setIsOnboardingCompleted(false);
         return;
       }
 
       setIsOnboardingCompleted(preferences.onboardingCompleted);
     } catch (error) {
-      console.error("Onboarding check error:", error);
+      console.error('Onboarding check error:', error);
       setIsOnboardingCompleted(false);
     }
   };
 
   const handleOnboardingComplete = async () => {
-    console.log("🎉 Onboarding completed, updating state");
+    console.log('🎉 Onboarding completed, updating state');
     setIsOnboardingCompleted(true);
 
     // Double-check that it was actually saved
     try {
       const preferences = await UserPreferencesService.getUserPreferences();
       console.log(
-        "✅ Verified onboarding status after completion:",
+        '✅ Verified onboarding status after completion:',
         preferences.onboardingCompleted
       );
     } catch (error) {
-      console.error("Error verifying onboarding completion:", error);
+      console.error('Error verifying onboarding completion:', error);
     }
   };
 

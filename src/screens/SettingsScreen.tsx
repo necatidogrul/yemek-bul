@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,15 +9,15 @@ import {
   Alert,
   Switch,
   Linking,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import Constants from "expo-constants";
-import * as Haptics from "expo-haptics";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import Constants from 'expo-constants';
+import * as Haptics from 'expo-haptics';
 
-import { useTheme } from "../contexts/ThemeContext";
-import { useToast } from "../contexts/ToastContext";
-import { useTranslation } from "../hooks/useTranslation";
+import { useTheme } from '../contexts/ThemeContext';
+import { useToast } from '../contexts/ToastContext';
+import { useTranslation } from '../hooks/useTranslation';
 
 export const SettingsScreen: React.FC = () => {
   const { colors } = useTheme();
@@ -66,7 +66,7 @@ export const SettingsScreen: React.FC = () => {
       }
 
       setShowDeveloperOptions(true);
-      showSuccess("Developer options enabled");
+      showSuccess('Developer options enabled');
     }
 
     // 15 taps = Show debug information (development only)
@@ -76,29 +76,29 @@ export const SettingsScreen: React.FC = () => {
       }
 
       Alert.alert(
-        "Debug Information",
-        `Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT || "development"}
-Version: ${Constants.expoConfig?.version || "unknown"}
+        'Debug Information',
+        `Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT || 'development'}
+Version: ${Constants.expoConfig?.version || 'unknown'}
 Build: ${
           Constants.expoConfig?.ios?.buildNumber ||
           Constants.expoConfig?.android?.versionCode ||
-          "unknown"
+          'unknown'
         }`,
-        [{ text: "OK" }]
+        [{ text: 'OK' }]
       );
     }
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL("https://your-domain.com/privacy-policy");
+    Linking.openURL('https://your-domain.com/privacy-policy');
   };
 
   const openTermsOfService = () => {
-    Linking.openURL("https://your-domain.com/terms-of-service");
+    Linking.openURL('https://your-domain.com/terms-of-service');
   };
 
   const handleContactSupport = () => {
-    Linking.openURL("mailto:support@yemekbulucu.com?subject=Support Request");
+    Linking.openURL('mailto:support@yemekbulucu.com?subject=Support Request');
   };
 
   const SettingItem = ({
@@ -135,7 +135,7 @@ Build: ${
             styles.iconContainer,
             {
               backgroundColor: isDanger
-                ? colors.semantic.error + "30"
+                ? colors.semantic.error + '30'
                 : colors.primary[200],
             },
           ]}
@@ -168,7 +168,7 @@ Build: ${
         {rightElement}
         {showChevron && !rightElement && (
           <Ionicons
-            name="chevron-forward"
+            name='chevron-forward'
             size={20}
             color={colors.text.secondary}
           />
@@ -195,7 +195,7 @@ Build: ${
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+          <Ionicons name='arrow-back' size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text.primary }]}>
           Settings
@@ -204,20 +204,20 @@ Build: ${
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Account Settings */}
-        <SectionHeader title="Account" />
+        <SectionHeader title='Account' />
         <View style={styles.section}>
           <SettingItem
-            icon="person-outline"
-            title="Profile"
-            subtitle="Manage your profile information"
+            icon='person-outline'
+            title='Profile'
+            subtitle='Manage your profile information'
             onPress={() => {
               /* Navigate to profile */
             }}
           />
           <SettingItem
-            icon="notifications-outline"
-            title="Notifications"
-            subtitle="Push notifications and alerts"
+            icon='notifications-outline'
+            title='Notifications'
+            subtitle='Push notifications and alerts'
             rightElement={
               <Switch
                 value={notificationsEnabled}
@@ -236,26 +236,26 @@ Build: ${
             showChevron={false}
           />
           <SettingItem
-            icon="language-outline"
-            title="Language"
-            subtitle={currentLanguage === "tr" ? "Türkçe" : "English"}
+            icon='language-outline'
+            title='Language'
+            subtitle={currentLanguage === 'tr' ? 'Türkçe' : 'English'}
             onPress={() => {
-              const newLang = currentLanguage === "tr" ? "en" : "tr";
+              const newLang = currentLanguage === 'tr' ? 'en' : 'tr';
               changeLanguage(newLang);
               showSuccess(
-                `Language changed to ${newLang === "tr" ? "Türkçe" : "English"}`
+                `Language changed to ${newLang === 'tr' ? 'Türkçe' : 'English'}`
               );
             }}
           />
         </View>
 
         {/* App Settings */}
-        <SectionHeader title="App Settings" />
+        <SectionHeader title='App Settings' />
         <View style={styles.section}>
           <SettingItem
-            icon="volume-high-outline"
-            title="Sound Effects"
-            subtitle="App sounds and feedback"
+            icon='volume-high-outline'
+            title='Sound Effects'
+            subtitle='App sounds and feedback'
             rightElement={
               <Switch
                 value={soundEnabled}
@@ -272,9 +272,9 @@ Build: ${
             showChevron={false}
           />
           <SettingItem
-            icon="phone-portrait-outline"
-            title="Haptic Feedback"
-            subtitle="Vibration feedback"
+            icon='phone-portrait-outline'
+            title='Haptic Feedback'
+            subtitle='Vibration feedback'
             rightElement={
               <Switch
                 value={hapticFeedback}
@@ -295,23 +295,23 @@ Build: ${
         {/* Developer Options (Hidden - Only shown after version taps) */}
         {showDeveloperOptions && __DEV__ && (
           <>
-            <SectionHeader title="Developer Tools" />
+            <SectionHeader title='Developer Tools' />
             <View style={styles.section}>
               <SettingItem
-                icon="code-outline"
-                title="Development Mode"
+                icon='code-outline'
+                title='Development Mode'
                 subtitle={`Environment: ${
-                  process.env.EXPO_PUBLIC_ENVIRONMENT || "development"
+                  process.env.EXPO_PUBLIC_ENVIRONMENT || 'development'
                 }`}
-                onPress={() => showSuccess("Debug tools activated")}
+                onPress={() => showSuccess('Debug tools activated')}
               />
               <SettingItem
-                icon="bug-outline"
-                title="Debug Logs"
-                subtitle="View application debug information"
+                icon='bug-outline'
+                title='Debug Logs'
+                subtitle='View application debug information'
                 onPress={() =>
                   Alert.alert(
-                    "Debug Info",
+                    'Debug Info',
                     `Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT}\nVersion: ${Constants.expoConfig?.version}`
                   )
                 }
@@ -321,26 +321,26 @@ Build: ${
         )}
 
         {/* Support */}
-        <SectionHeader title="Support" />
+        <SectionHeader title='Support' />
         <View style={styles.section}>
           <SettingItem
-            icon="help-circle-outline"
-            title="Help Center"
-            subtitle="FAQs and guides"
+            icon='help-circle-outline'
+            title='Help Center'
+            subtitle='FAQs and guides'
             onPress={() => {
               /* Navigate to help */
             }}
           />
           <SettingItem
-            icon="mail-outline"
-            title="Contact Support"
-            subtitle="Get help from our team"
+            icon='mail-outline'
+            title='Contact Support'
+            subtitle='Get help from our team'
             onPress={handleContactSupport}
           />
           <SettingItem
-            icon="star-outline"
-            title="Rate App"
-            subtitle="Leave a review"
+            icon='star-outline'
+            title='Rate App'
+            subtitle='Leave a review'
             onPress={() => {
               /* Open app store */
             }}
@@ -348,22 +348,22 @@ Build: ${
         </View>
 
         {/* Legal */}
-        <SectionHeader title="Legal" />
+        <SectionHeader title='Legal' />
         <View style={styles.section}>
           <SettingItem
-            icon="document-text-outline"
-            title="Privacy Policy"
+            icon='document-text-outline'
+            title='Privacy Policy'
             onPress={openPrivacyPolicy}
           />
           <SettingItem
-            icon="document-outline"
-            title="Terms of Service"
+            icon='document-outline'
+            title='Terms of Service'
             onPress={openTermsOfService}
           />
         </View>
 
         {/* About */}
-        <SectionHeader title="About" />
+        <SectionHeader title='About' />
         <View style={[styles.section, styles.lastSection]}>
           <TouchableOpacity
             style={[
@@ -380,7 +380,7 @@ Build: ${
                 ]}
               >
                 <Ionicons
-                  name="information-circle-outline"
+                  name='information-circle-outline'
                   size={20}
                   color={colors.text.secondary}
                 />
@@ -397,7 +397,7 @@ Build: ${
                     { color: colors.text.secondary },
                   ]}
                 >
-                  {Constants.expoConfig?.version || "1.0.0"}
+                  {Constants.expoConfig?.version || '1.0.0'}
                   {versionTapCount > 0 && ` (${versionTapCount}/10)`}
                 </Text>
               </View>
@@ -417,8 +417,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
@@ -429,7 +429,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   content: {
     flex: 1,
@@ -441,35 +441,35 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: '600',
     letterSpacing: 0.5,
   },
   section: {
     marginHorizontal: 16,
     borderRadius: 12,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   lastSection: {
     marginBottom: 0,
   },
   settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
   },
   settingLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   iconContainer: {
     width: 32,
     height: 32,
     borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
   textContainer: {
@@ -477,15 +477,15 @@ const styles = StyleSheet.create({
   },
   settingTitle: {
     fontSize: 16,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   settingSubtitle: {
     fontSize: 14,
     marginTop: 2,
   },
   settingRight: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 

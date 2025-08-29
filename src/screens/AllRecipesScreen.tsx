@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -11,31 +11,31 @@ import {
   StatusBar,
   Animated,
   ScrollView,
-} from "react-native";
-import { Logger } from "../services/LoggerService";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { HomeStackParamList } from "../../App";
-import { Recipe } from "../types/Recipe";
-import { RecipeService } from "../services/recipeService";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { debounce } from "lodash";
-import { spacing, borderRadius, elevation } from "../contexts/ThemeContext";
+} from 'react-native';
+import { Logger } from '../services/LoggerService';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { HomeStackParamList } from '../../App';
+import { Recipe } from '../types/Recipe';
+import { RecipeService } from '../services/recipeService';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { debounce } from 'lodash';
+import { spacing, borderRadius, elevation } from '../contexts/ThemeContext';
 
 // UI Components
-import { Input, Text, Card, Button } from "../components/ui";
-import { RecipeCard } from "../components/ui/RecipeCard";
-import { PullToRefresh } from "../components/ui/PullToRefresh";
-import { usePullToRefresh } from "../hooks/usePullToRefresh";
-import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
-import { useTheme } from "../contexts/ThemeContext";
-import { useToast } from "../contexts/ToastContext";
-import { useHaptics } from "../hooks/useHaptics";
+import { Input, Text, Card, Button } from '../components/ui';
+import { RecipeCard } from '../components/ui/RecipeCard';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { useOptimizedFlatList } from '../hooks/useOptimizedFlatList';
+import { useTheme } from '../contexts/ThemeContext';
+import { useToast } from '../contexts/ToastContext';
+import { useHaptics } from '../hooks/useHaptics';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 type AllRecipesScreenProps = {
-  navigation: StackNavigationProp<HomeStackParamList, "AllRecipes">;
+  navigation: StackNavigationProp<HomeStackParamList, 'AllRecipes'>;
 };
 
 interface FilterState {
@@ -46,20 +46,20 @@ interface FilterState {
   ingredients: string[];
 }
 
-type ViewMode = "list" | "grid";
-type SortOption = "popular" | "recent" | "name" | "cookingTime" | "rating";
+type ViewMode = 'list' | 'grid';
+type SortOption = 'popular' | 'recent' | 'name' | 'cookingTime' | 'rating';
 
 const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [filteredRecipes, setFilteredRecipes] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [sortBy, setSortBy] = useState<SortOption>("popular");
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [sortBy, setSortBy] = useState<SortOption>('popular');
   const [showFilters, setShowFilters] = useState(false);
 
   const { colors } = useTheme();
@@ -67,10 +67,10 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
   const haptics = useHaptics();
 
   const [filters, setFilters] = useState<FilterState>({
-    category: "",
-    difficulty: "",
-    cookingTime: "",
-    servings: "",
+    category: '',
+    difficulty: '',
+    cookingTime: '',
+    servings: '',
     ingredients: [],
   });
 
@@ -79,52 +79,52 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
 
   // Categories and filter options
   const categories = [
-    { id: "", name: "Tümü", icon: "🍽️" },
-    { id: "breakfast", name: "Kahvaltı", icon: "🥞" },
-    { id: "lunch", name: "Öğle Yemeği", icon: "🥗" },
-    { id: "dinner", name: "Akşam Yemeği", icon: "🍖" },
-    { id: "dessert", name: "Tatlı", icon: "🍰" },
-    { id: "snack", name: "Atıştırmalık", icon: "🥜" },
-    { id: "soup", name: "Çorba", icon: "🍲" },
-    { id: "salad", name: "Salata", icon: "🥗" },
-    { id: "drink", name: "İçecek", icon: "🥤" },
+    { id: '', name: 'Tümü', icon: '🍽️' },
+    { id: 'breakfast', name: 'Kahvaltı', icon: '🥞' },
+    { id: 'lunch', name: 'Öğle Yemeği', icon: '🥗' },
+    { id: 'dinner', name: 'Akşam Yemeği', icon: '🍖' },
+    { id: 'dessert', name: 'Tatlı', icon: '🍰' },
+    { id: 'snack', name: 'Atıştırmalık', icon: '🥜' },
+    { id: 'soup', name: 'Çorba', icon: '🍲' },
+    { id: 'salad', name: 'Salata', icon: '🥗' },
+    { id: 'drink', name: 'İçecek', icon: '🥤' },
   ];
 
   const difficulties = [
-    { id: "", name: "Tümü" },
-    { id: "easy", name: "Kolay" },
-    { id: "medium", name: "Orta" },
-    { id: "hard", name: "Zor" },
+    { id: '', name: 'Tümü' },
+    { id: 'easy', name: 'Kolay' },
+    { id: 'medium', name: 'Orta' },
+    { id: 'hard', name: 'Zor' },
   ];
 
   const cookingTimes = [
-    { id: "", name: "Tümü" },
-    { id: "0-15", name: "0-15 dk" },
-    { id: "15-30", name: "15-30 dk" },
-    { id: "30-60", name: "30-60 dk" },
-    { id: "60+", name: "60+ dk" },
+    { id: '', name: 'Tümü' },
+    { id: '0-15', name: '0-15 dk' },
+    { id: '15-30', name: '15-30 dk' },
+    { id: '30-60', name: '30-60 dk' },
+    { id: '60+', name: '60+ dk' },
   ];
 
   const servingSizes = [
-    { id: "", name: "Tümü" },
-    { id: "1-2", name: "1-2 kişi" },
-    { id: "3-4", name: "3-4 kişi" },
-    { id: "5+", name: "5+ kişi" },
+    { id: '', name: 'Tümü' },
+    { id: '1-2', name: '1-2 kişi' },
+    { id: '3-4', name: '3-4 kişi' },
+    { id: '5+', name: '5+ kişi' },
   ];
 
   const popularIngredients = [
-    "Tavuk",
-    "Et",
-    "Balık",
-    "Domates",
-    "Soğan",
-    "Sarımsak",
-    "Patates",
-    "Pirinç",
-    "Makarna",
-    "Peynir",
-    "Yumurta",
-    "Süt",
+    'Tavuk',
+    'Et',
+    'Balık',
+    'Domates',
+    'Soğan',
+    'Sarımsak',
+    'Patates',
+    'Pirinç',
+    'Makarna',
+    'Peynir',
+    'Yumurta',
+    'Süt',
   ];
 
   // Debounced search
@@ -141,33 +141,33 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
 
     // Apply filters
     if (filters.category) {
-      result = result.filter((recipe) => recipe.category === filters.category);
+      result = result.filter(recipe => recipe.category === filters.category);
     }
 
     if (filters.difficulty) {
       const difficultyMap: { [key: string]: string[] } = {
-        easy: ["kolay"],
-        medium: ["orta"],
-        hard: ["zor"],
+        easy: ['kolay'],
+        medium: ['orta'],
+        hard: ['zor'],
       };
-      result = result.filter((recipe) =>
+      result = result.filter(recipe =>
         difficultyMap[filters.difficulty]?.includes(
-          (recipe.difficulty || "") as string
+          (recipe.difficulty || '') as string
         )
       );
     }
 
     if (filters.cookingTime) {
-      result = result.filter((recipe) => {
+      result = result.filter(recipe => {
         const time = recipe.cookingTime || 30;
         switch (filters.cookingTime) {
-          case "0-15":
+          case '0-15':
             return time <= 15;
-          case "15-30":
+          case '15-30':
             return time > 15 && time <= 30;
-          case "30-60":
+          case '30-60':
             return time > 30 && time <= 60;
-          case "60+":
+          case '60+':
             return time > 60;
           default:
             return true;
@@ -176,14 +176,14 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
     }
 
     if (filters.servings) {
-      result = result.filter((recipe) => {
+      result = result.filter(recipe => {
         const servings = recipe.servings || 4;
         switch (filters.servings) {
-          case "1-2":
+          case '1-2':
             return servings <= 2;
-          case "3-4":
+          case '3-4':
             return servings >= 3 && servings <= 4;
-          case "5+":
+          case '5+':
             return servings >= 5;
           default:
             return true;
@@ -192,9 +192,9 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
     }
 
     if (filters.ingredients.length > 0) {
-      result = result.filter((recipe) =>
-        filters.ingredients.some((ingredient) =>
-          recipe.ingredients?.some((recipeIngredient) =>
+      result = result.filter(recipe =>
+        filters.ingredients.some(ingredient =>
+          recipe.ingredients?.some(recipeIngredient =>
             recipeIngredient.toLowerCase().includes(ingredient.toLowerCase())
           )
         )
@@ -204,18 +204,18 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
     // Apply sorting
     result.sort((a, b) => {
       switch (sortBy) {
-        case "name":
+        case 'name':
           return a.name.localeCompare(b.name);
-        case "cookingTime":
+        case 'cookingTime':
           return (a.cookingTime || 30) - (b.cookingTime || 30);
-        case "rating":
+        case 'rating':
           return (b.popularityScore || 0) - (a.popularityScore || 0);
-        case "recent":
+        case 'recent':
           return (
             new Date(b.createdAt || 0).getTime() -
             new Date(a.createdAt || 0).getTime()
           );
-        case "popular":
+        case 'popular':
         default:
           return (b.popularityScore || 0) - (a.popularityScore || 0);
       }
@@ -234,8 +234,8 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
 
   const { optimizedProps, onEndReached } = useOptimizedFlatList<Recipe>({
     enableGetItemLayout: true,
-    itemHeight: viewMode === "grid" ? 200 : 120,
-    keyExtractor: (item) => item.id,
+    itemHeight: viewMode === 'grid' ? 200 : 120,
+    keyExtractor: item => item.id,
   });
 
   async function loadRecipes(refresh = false) {
@@ -256,17 +256,17 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
       if (refresh) {
         setRecipes(newRecipes);
       } else {
-        setRecipes((prev) => [...prev, ...newRecipes]);
+        setRecipes(prev => [...prev, ...newRecipes]);
       }
 
       setHasMore(moreAvailable);
       setTotalCount(totalCount);
-      setCurrentPage((prev) => (refresh ? 2 : prev + 1));
+      setCurrentPage(prev => (refresh ? 2 : prev + 1));
 
       Logger.info(`Loaded ${newRecipes.length} recipes, total: ${totalCount}`);
     } catch (error) {
-      Logger.error("Failed to load recipes:", error);
-      showError("Tarifler yüklenemedi");
+      Logger.error('Failed to load recipes:', error);
+      showError('Tarifler yüklenemedi');
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -283,8 +283,8 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
       const searchResults = await RecipeService.searchRecipesByName(term);
       setFilteredRecipes(searchResults.recipes);
     } catch (error) {
-      Logger.error("Search failed:", error);
-      showError("Arama başarısız");
+      Logger.error('Search failed:', error);
+      showError('Arama başarısız');
     }
   }
 
@@ -301,7 +301,7 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
   }, [searchTerm, debouncedSearch, processRecipes]);
 
   const handleRecipePress = (recipe: Recipe) => {
-    navigation.navigate("RecipeDetail", {
+    navigation.navigate('RecipeDetail', {
       recipeId: recipe.id,
       recipeName: recipe.name,
       recipe,
@@ -322,20 +322,20 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
 
   const clearFilters = () => {
     setFilters({
-      category: "",
-      difficulty: "",
-      cookingTime: "",
-      servings: "",
+      category: '',
+      difficulty: '',
+      cookingTime: '',
+      servings: '',
       ingredients: [],
     });
-    setSortBy("popular");
-    setSearchTerm("");
+    setSortBy('popular');
+    setSearchTerm('');
     haptics.selection();
   };
 
   const addIngredientFilter = (ingredient: string) => {
     if (!filters.ingredients.includes(ingredient)) {
-      setFilters((prev) => ({
+      setFilters(prev => ({
         ...prev,
         ingredients: [...prev.ingredients, ingredient],
       }));
@@ -343,9 +343,9 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
   };
 
   const removeIngredientFilter = (ingredient: string) => {
-    setFilters((prev) => ({
+    setFilters(prev => ({
       ...prev,
-      ingredients: prev.ingredients.filter((i) => i !== ingredient),
+      ingredients: prev.ingredients.filter(i => i !== ingredient),
     }));
   };
 
@@ -359,10 +359,10 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
         colors={[colors.primary[400], colors.primary[600]]}
         style={styles.gridItemImage}
       >
-        <Ionicons name="restaurant" size={32} color="white" />
+        <Ionicons name='restaurant' size={32} color='white' />
 
         {/* Popularity Badge */}
-        {typeof item.popularityScore === "number" &&
+        {typeof item.popularityScore === 'number' &&
           item.popularityScore > 0 && (
             <View
               style={[
@@ -370,11 +370,11 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
                 { backgroundColor: colors.accent.gold },
               ]}
             >
-              <Ionicons name="star" size={12} color="white" />
+              <Ionicons name='star' size={12} color='white' />
               <Text
-                variant="labelSmall"
-                weight="600"
-                style={{ color: "white" }}
+                variant='labelSmall'
+                weight='600'
+                style={{ color: 'white' }}
               >
                 {item.popularityScore.toFixed(1)}
               </Text>
@@ -386,11 +386,11 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
           <View
             style={[
               styles.categoryBadge,
-              { backgroundColor: "rgba(0,0,0,0.6)" },
+              { backgroundColor: 'rgba(0,0,0,0.6)' },
             ]}
           >
-            <Text variant="labelSmall" weight="500" style={{ color: "white" }}>
-              {categories.find((c) => c.id === item.category)?.name ||
+            <Text variant='labelSmall' weight='500' style={{ color: 'white' }}>
+              {categories.find(c => c.id === item.category)?.name ||
                 item.category}
             </Text>
           </View>
@@ -398,30 +398,30 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
       </LinearGradient>
 
       <View style={styles.gridItemContent}>
-        <Text variant="labelLarge" weight="600" numberOfLines={2}>
+        <Text variant='labelLarge' weight='600' numberOfLines={2}>
           {item.name}
         </Text>
 
         <View style={styles.gridItemStats}>
           <View style={styles.gridItemStat}>
             <Ionicons
-              name="time-outline"
+              name='time-outline'
               size={12}
               color={colors.text.secondary}
             />
-            <Text variant="labelSmall" color="secondary">
-              {item.cookingTime || "30"}dk
+            <Text variant='labelSmall' color='secondary'>
+              {item.cookingTime || '30'}dk
             </Text>
           </View>
 
           <View style={styles.gridItemStat}>
             <Ionicons
-              name="people-outline"
+              name='people-outline'
               size={12}
               color={colors.text.secondary}
             />
-            <Text variant="labelSmall" color="secondary">
-              {item.servings || "4"}
+            <Text variant='labelSmall' color='secondary'>
+              {item.servings || '4'}
             </Text>
           </View>
         </View>
@@ -433,24 +433,24 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
               styles.difficultyIndicator,
               {
                 backgroundColor:
-                  item.difficulty === "kolay"
-                    ? colors.semantic.success + "20"
-                    : item.difficulty === "orta"
-                    ? colors.semantic.warning + "20"
-                    : colors.semantic.error + "20",
+                  item.difficulty === 'kolay'
+                    ? colors.semantic.success + '20'
+                    : item.difficulty === 'orta'
+                      ? colors.semantic.warning + '20'
+                      : colors.semantic.error + '20',
               },
             ]}
           >
             <Text
-              variant="labelSmall"
-              weight="500"
+              variant='labelSmall'
+              weight='500'
               style={{
                 color:
-                  item.difficulty === "kolay"
+                  item.difficulty === 'kolay'
                     ? colors.semantic.success
-                    : item.difficulty === "orta"
-                    ? colors.semantic.warning
-                    : colors.semantic.error,
+                    : item.difficulty === 'orta'
+                      ? colors.semantic.warning
+                      : colors.semantic.error,
               }}
             >
               {item.difficulty}
@@ -464,7 +464,7 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
   const renderListItem = ({ item }: { item: Recipe }) => (
     <RecipeCard
       recipe={item}
-      variant="default"
+      variant='default'
       onPress={() => handleRecipePress(item)}
     />
   );
@@ -475,45 +475,45 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
         colors={[colors.primary[100], colors.primary[200]]}
         style={styles.emptyIcon}
       >
-        <Ionicons name="search-outline" size={60} color={colors.primary[500]} />
+        <Ionicons name='search-outline' size={60} color={colors.primary[500]} />
       </LinearGradient>
 
       <Text
-        variant="headlineSmall"
-        weight="600"
-        align="center"
+        variant='headlineSmall'
+        weight='600'
+        align='center'
         style={{ marginVertical: spacing.lg }}
       >
         {searchTerm ||
         Object.values(filters).some(
-          (f) => f && (Array.isArray(f) ? f.length > 0 : true)
+          f => f && (Array.isArray(f) ? f.length > 0 : true)
         )
-          ? "Sonuç Bulunamadı"
-          : "Tarifler Yükleniyor"}
+          ? 'Sonuç Bulunamadı'
+          : 'Tarifler Yükleniyor'}
       </Text>
 
       <Text
-        variant="bodyMedium"
-        color="secondary"
-        align="center"
+        variant='bodyMedium'
+        color='secondary'
+        align='center'
         style={{ marginBottom: spacing.xl }}
       >
         {searchTerm ||
         Object.values(filters).some(
-          (f) => f && (Array.isArray(f) ? f.length > 0 : true)
+          f => f && (Array.isArray(f) ? f.length > 0 : true)
         )
-          ? "Arama kriterlerinize uygun tarif bulunamadı"
-          : "Lütfen bekleyin..."}
+          ? 'Arama kriterlerinize uygun tarif bulunamadı'
+          : 'Lütfen bekleyin...'}
       </Text>
 
       {(searchTerm ||
         Object.values(filters).some(
-          (f) => f && (Array.isArray(f) ? f.length > 0 : true)
+          f => f && (Array.isArray(f) ? f.length > 0 : true)
         )) && (
         <Button
-          variant="outline"
+          variant='outline'
           onPress={clearFilters}
-          leftIcon={<Ionicons name="refresh" size={20} />}
+          leftIcon={<Ionicons name='refresh' size={20} />}
         >
           Filtreleri Temizle
         </Button>
@@ -539,15 +539,15 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
         {/* Categories */}
         <View style={styles.filterSection}>
           <Text
-            variant="labelLarge"
-            weight="600"
+            variant='labelLarge'
+            weight='600'
             style={{ marginBottom: spacing.sm }}
           >
             Kategori
           </Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={styles.categoryFilters}>
-              {categories.map((category) => (
+              {categories.map(category => (
                 <TouchableOpacity
                   key={category.id}
                   style={[
@@ -560,21 +560,21 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
                     },
                   ]}
                   onPress={() =>
-                    setFilters((prev) => ({
+                    setFilters(prev => ({
                       ...prev,
                       category:
-                        prev.category === category.id ? "" : category.id,
+                        prev.category === category.id ? '' : category.id,
                     }))
                   }
                 >
-                  <Text variant="bodyMedium">{category.icon}</Text>
+                  <Text variant='bodyMedium'>{category.icon}</Text>
                   <Text
-                    variant="labelSmall"
-                    weight="500"
+                    variant='labelSmall'
+                    weight='500'
                     style={{
                       color:
                         filters.category === category.id
-                          ? "white"
+                          ? 'white'
                           : colors.primary[700],
                     }}
                   >
@@ -589,8 +589,8 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
         {/* Quick Filters */}
         <View style={styles.filterSection}>
           <Text
-            variant="labelLarge"
-            weight="600"
+            variant='labelLarge'
+            weight='600'
             style={{ marginBottom: spacing.sm }}
           >
             Hızlı Filtreler
@@ -598,11 +598,11 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
 
           <View style={styles.quickFilters}>
             <View style={styles.filterRow}>
-              <Text variant="labelMedium" weight="500">
+              <Text variant='labelMedium' weight='500'>
                 Zorluk:
               </Text>
               <View style={styles.filterOptions}>
-                {difficulties.map((difficulty) => (
+                {difficulties.map(difficulty => (
                   <TouchableOpacity
                     key={difficulty.id}
                     style={[
@@ -611,27 +611,27 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
                         backgroundColor:
                           filters.difficulty === difficulty.id
                             ? colors.secondary[500]
-                            : "transparent",
+                            : 'transparent',
                         borderColor: colors.secondary[500],
                       },
                     ]}
                     onPress={() =>
-                      setFilters((prev) => ({
+                      setFilters(prev => ({
                         ...prev,
                         difficulty:
                           prev.difficulty === difficulty.id
-                            ? ""
+                            ? ''
                             : difficulty.id,
                       }))
                     }
                   >
                     <Text
-                      variant="labelSmall"
-                      weight="500"
+                      variant='labelSmall'
+                      weight='500'
                       style={{
                         color:
                           filters.difficulty === difficulty.id
-                            ? "white"
+                            ? 'white'
                             : colors.secondary[500],
                       }}
                     >
@@ -643,11 +643,11 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
             </View>
 
             <View style={styles.filterRow}>
-              <Text variant="labelMedium" weight="500">
+              <Text variant='labelMedium' weight='500'>
                 Süre:
               </Text>
               <View style={styles.filterOptions}>
-                {cookingTimes.map((time) => (
+                {cookingTimes.map(time => (
                   <TouchableOpacity
                     key={time.id}
                     style={[
@@ -656,25 +656,25 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
                         backgroundColor:
                           filters.cookingTime === time.id
                             ? colors.semantic.warning
-                            : "transparent",
+                            : 'transparent',
                         borderColor: colors.semantic.warning,
                       },
                     ]}
                     onPress={() =>
-                      setFilters((prev) => ({
+                      setFilters(prev => ({
                         ...prev,
                         cookingTime:
-                          prev.cookingTime === time.id ? "" : time.id,
+                          prev.cookingTime === time.id ? '' : time.id,
                       }))
                     }
                   >
                     <Text
-                      variant="labelSmall"
-                      weight="500"
+                      variant='labelSmall'
+                      weight='500'
                       style={{
                         color:
                           filters.cookingTime === time.id
-                            ? "white"
+                            ? 'white'
                             : colors.semantic.warning,
                       }}
                     >
@@ -690,15 +690,15 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
         {/* Popular Ingredients */}
         <View style={styles.filterSection}>
           <Text
-            variant="labelLarge"
-            weight="600"
+            variant='labelLarge'
+            weight='600'
             style={{ marginBottom: spacing.sm }}
           >
             Popüler Malzemeler
           </Text>
 
           <View style={styles.ingredientFilters}>
-            {popularIngredients.map((ingredient) => (
+            {popularIngredients.map(ingredient => (
               <TouchableOpacity
                 key={ingredient}
                 style={[
@@ -719,18 +719,18 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
                 }}
               >
                 <Text
-                  variant="labelSmall"
-                  weight="500"
+                  variant='labelSmall'
+                  weight='500'
                   style={{
                     color: filters.ingredients.includes(ingredient)
-                      ? "white"
+                      ? 'white'
                       : colors.primary[600],
                   }}
                 >
                   {ingredient}
                 </Text>
                 {filters.ingredients.includes(ingredient) && (
-                  <Ionicons name="checkmark" size={12} color="white" />
+                  <Ionicons name='checkmark' size={12} color='white' />
                 )}
               </TouchableOpacity>
             ))}
@@ -745,8 +745,8 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
           ]}
           onPress={clearFilters}
         >
-          <Ionicons name="refresh" size={16} color={colors.text.secondary} />
-          <Text variant="labelMedium" color="secondary">
+          <Ionicons name='refresh' size={16} color={colors.text.secondary} />
+          <Text variant='labelMedium' color='secondary'>
             Tüm Filtreleri Temizle
           </Text>
         </TouchableOpacity>
@@ -758,19 +758,19 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar barStyle='dark-content' backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerTop}>
           <View style={styles.headerLeft}>
-            <Text variant="displaySmall" weight="700">
+            <Text variant='displaySmall' weight='700'>
               Tüm Tarifler
             </Text>
-            <Text variant="bodyMedium" color="secondary">
+            <Text variant='bodyMedium' color='secondary'>
               {totalCount > 0
                 ? `${filteredRecipes.length}/${totalCount} tarif`
-                : "Yükleniyor..."}
+                : 'Yükleniyor...'}
             </Text>
           </View>
 
@@ -780,18 +780,18 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
                 styles.headerButton,
                 {
                   backgroundColor:
-                    viewMode === "grid" ? colors.primary[500] : colors.surface,
+                    viewMode === 'grid' ? colors.primary[500] : colors.surface,
                 },
               ]}
               onPress={() => {
-                setViewMode("grid");
+                setViewMode('grid');
                 haptics.selection();
               }}
             >
               <Ionicons
-                name="grid"
+                name='grid'
                 size={20}
-                color={viewMode === "grid" ? "white" : colors.text.primary}
+                color={viewMode === 'grid' ? 'white' : colors.text.primary}
               />
             </TouchableOpacity>
 
@@ -800,18 +800,18 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
                 styles.headerButton,
                 {
                   backgroundColor:
-                    viewMode === "list" ? colors.primary[500] : colors.surface,
+                    viewMode === 'list' ? colors.primary[500] : colors.surface,
                 },
               ]}
               onPress={() => {
-                setViewMode("list");
+                setViewMode('list');
                 haptics.selection();
               }}
             >
               <Ionicons
-                name="list"
+                name='list'
                 size={20}
-                color={viewMode === "list" ? "white" : colors.text.primary}
+                color={viewMode === 'list' ? 'white' : colors.text.primary}
               />
             </TouchableOpacity>
           </View>
@@ -822,18 +822,18 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
           <View
             style={[styles.searchInput, { backgroundColor: colors.surface }]}
           >
-            <Ionicons name="search" size={20} color={colors.text.secondary} />
+            <Ionicons name='search' size={20} color={colors.text.secondary} />
             <TextInput
               value={searchTerm}
               onChangeText={setSearchTerm}
-              placeholder="Tarif ara..."
+              placeholder='Tarif ara...'
               placeholderTextColor={colors.text.secondary}
               style={[styles.searchText, { color: colors.text.primary }]}
             />
             {searchTerm.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchTerm("")}>
+              <TouchableOpacity onPress={() => setSearchTerm('')}>
                 <Ionicons
-                  name="close-circle"
+                  name='close-circle'
                   size={20}
                   color={colors.text.secondary}
                 />
@@ -853,12 +853,12 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
             onPress={toggleFilters}
           >
             <Ionicons
-              name="options"
+              name='options'
               size={20}
-              color={showFilters ? "white" : colors.text.primary}
+              color={showFilters ? 'white' : colors.text.primary}
             />
             {Object.values(filters).some(
-              (f) => f && (Array.isArray(f) ? f.length > 0 : true)
+              f => f && (Array.isArray(f) ? f.length > 0 : true)
             ) && (
               <View
                 style={[
@@ -877,12 +877,12 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
           style={styles.sortContainer}
         >
           {[
-            { key: "popular", label: "Popüler", icon: "flame" },
-            { key: "recent", label: "En Yeni", icon: "time" },
-            { key: "rating", label: "En İyi", icon: "star" },
-            { key: "name", label: "A-Z", icon: "text" },
-            { key: "cookingTime", label: "Hızlı", icon: "speedometer" },
-          ].map((sort) => (
+            { key: 'popular', label: 'Popüler', icon: 'flame' },
+            { key: 'recent', label: 'En Yeni', icon: 'time' },
+            { key: 'rating', label: 'En İyi', icon: 'star' },
+            { key: 'name', label: 'A-Z', icon: 'text' },
+            { key: 'cookingTime', label: 'Hızlı', icon: 'speedometer' },
+          ].map(sort => (
             <TouchableOpacity
               key={sort.key}
               style={[
@@ -897,13 +897,13 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
               <Ionicons
                 name={sort.icon as any}
                 size={16}
-                color={sortBy === sort.key ? "white" : colors.text.primary}
+                color={sortBy === sort.key ? 'white' : colors.text.primary}
               />
               <Text
-                variant="labelMedium"
-                weight="500"
+                variant='labelMedium'
+                weight='500'
                 style={{
-                  color: sortBy === sort.key ? "white" : colors.text.primary,
+                  color: sortBy === sort.key ? 'white' : colors.text.primary,
                 }}
               >
                 {sort.label}
@@ -919,10 +919,10 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
       {/* Content */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size='large' color={colors.primary[500]} />
           <Text
-            variant="bodyMedium"
-            color="secondary"
+            variant='bodyMedium'
+            color='secondary'
             style={{ marginTop: spacing.md }}
           >
             Tarifler yükleniyor...
@@ -931,8 +931,8 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
       ) : (
         <FlatList
           data={filteredRecipes}
-          renderItem={viewMode === "grid" ? renderGridItem : renderListItem}
-          numColumns={viewMode === "grid" ? 2 : 1}
+          renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
+          numColumns={viewMode === 'grid' ? 2 : 1}
           key={viewMode} // Force re-render when switching modes
           contentContainerStyle={[
             styles.listContainer,
@@ -941,7 +941,7 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
           ]}
           bounces={true}
           nestedScrollEnabled={true}
-          columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
+          columnWrapperStyle={viewMode === 'grid' ? styles.gridRow : undefined}
           showsVerticalScrollIndicator={false}
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
@@ -950,15 +950,15 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
           {...optimizedProps}
           ListEmptyComponent={renderEmpty}
           ItemSeparatorComponent={() =>
-            viewMode === "list" ? <View style={{ height: spacing.sm }} /> : null
+            viewMode === 'list' ? <View style={{ height: spacing.sm }} /> : null
           }
           ListFooterComponent={() =>
             isLoadingMore ? (
               <View style={styles.loadMoreContainer}>
-                <ActivityIndicator size="small" color={colors.primary[500]} />
+                <ActivityIndicator size='small' color={colors.primary[500]} />
                 <Text
-                  variant="labelMedium"
-                  color="secondary"
+                  variant='labelMedium'
+                  color='secondary'
                   style={{ marginLeft: spacing.sm }}
                 >
                   Daha fazla yükleniyor...
@@ -985,37 +985,37 @@ const styles = StyleSheet.create({
     ...elevation.low,
   },
   headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: spacing.lg,
   },
   headerLeft: {
     flex: 1,
   },
   headerRight: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.xs,
   },
   headerButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     ...elevation.low,
   },
 
   // Search
   searchContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
   searchInput: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.medium,
@@ -1030,13 +1030,13 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     ...elevation.low,
-    position: "relative",
+    position: 'relative',
   },
   filterIndicator: {
-    position: "absolute",
+    position: 'absolute',
     top: 8,
     right: 8,
     width: 8,
@@ -1049,8 +1049,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   sortOption: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
@@ -1063,18 +1063,18 @@ const styles = StyleSheet.create({
   filterPanel: {
     borderRadius: borderRadius.large,
     padding: spacing.md,
-    overflow: "hidden",
+    overflow: 'hidden',
     ...elevation.medium,
   },
   filterSection: {
     marginBottom: spacing.lg,
   },
   categoryFilters: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.sm,
   },
   categoryFilter: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.medium,
@@ -1088,8 +1088,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   filterOptions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.xs,
   },
   filterOption: {
@@ -1099,13 +1099,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   ingredientFilters: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.xs,
   },
   ingredientFilter: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
@@ -1113,9 +1113,9 @@ const styles = StyleSheet.create({
     gap: spacing.tiny,
   },
   clearFiltersButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing.md,
     borderRadius: borderRadius.medium,
     borderWidth: 1,
@@ -1126,8 +1126,8 @@ const styles = StyleSheet.create({
   // Content
   loadingContainer: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.xl,
   },
   listContainer: {
@@ -1135,16 +1135,16 @@ const styles = StyleSheet.create({
   },
   emptyListContainer: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   gridRow: {
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.xs,
   },
   loadMoreContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing.lg,
   },
 
@@ -1152,29 +1152,29 @@ const styles = StyleSheet.create({
   gridItem: {
     width: (screenWidth - spacing.md * 3) / 2,
     borderRadius: borderRadius.large,
-    overflow: "hidden",
+    overflow: 'hidden',
     marginBottom: spacing.md,
     ...elevation.low,
   },
   gridItemImage: {
     height: 140,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   ratingBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: spacing.xs,
     left: spacing.xs,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.tiny,
     borderRadius: borderRadius.small,
     gap: spacing.tiny,
   },
   categoryBadge: {
-    position: "absolute",
+    position: 'absolute',
     bottom: spacing.xs,
     left: spacing.xs,
     paddingHorizontal: spacing.xs,
@@ -1185,17 +1185,17 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   gridItemStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginVertical: spacing.xs,
   },
   gridItemStat: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.tiny,
   },
   difficultyIndicator: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.tiny,
     borderRadius: borderRadius.full,
@@ -1204,7 +1204,7 @@ const styles = StyleSheet.create({
 
   // Empty State
   emptyContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xxxl,
   },
@@ -1212,8 +1212,8 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

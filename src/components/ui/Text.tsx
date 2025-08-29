@@ -41,7 +41,14 @@ type TextWeight =
   | '700'
   | '800'
   | '900';
-type TextColor = 'primary' | 'secondary' | 'accent' | 'inverse' | 'success' | 'warning' | 'error';
+type TextColor =
+  | 'primary'
+  | 'secondary'
+  | 'accent'
+  | 'inverse'
+  | 'success'
+  | 'warning'
+  | 'error';
 
 interface TextProps {
   children: React.ReactNode;
@@ -211,7 +218,11 @@ const Text: React.FC<TextProps> = ({
   const getAccessibilityRole = (): AccessibilityRole => {
     if (accessibilityRole) return accessibilityRole;
 
-    if (variant.includes('display') || variant.includes('headline') || accessibilityHeading) {
+    if (
+      variant.includes('display') ||
+      variant.includes('headline') ||
+      accessibilityHeading
+    ) {
       return 'header';
     }
 

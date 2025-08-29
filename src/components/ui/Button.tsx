@@ -13,7 +13,12 @@ import { useHaptics } from '../../hooks/useHaptics';
 import { useAccessibility } from '../../hooks/useAccessibility';
 
 // Modern Button Variants - Simplified for Professional Design
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'destructive';
+type ButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'outline'
+  | 'ghost'
+  | 'destructive';
 
 type ButtonSize = 'sm' | 'md' | 'lg';
 
@@ -57,7 +62,8 @@ const Button: React.FC<ButtonProps> = ({
   accessibilityState,
   testID,
 }) => {
-  const { colors, typography, spacing, elevation, borderRadius, animation } = useTheme();
+  const { colors, typography, spacing, elevation, borderRadius, animation } =
+    useTheme();
   const haptics = useHaptics();
   const { generateHint, shouldReduceMotion } = useAccessibility();
   const getButtonStyles = (): ViewStyle => {
@@ -228,18 +234,24 @@ const Button: React.FC<ButtonProps> = ({
     <>
       {loading ? (
         <ActivityIndicator
-          size="small"
+          size='small'
           color={
-            variant === 'outline' || variant === 'ghost' ? colors.text.primary : colors.neutral[0]
+            variant === 'outline' || variant === 'ghost'
+              ? colors.text.primary
+              : colors.neutral[0]
           }
         />
       ) : (
         <>
-          {leftIcon && <View style={{ marginRight: iconSpacing }}>{leftIcon}</View>}
+          {leftIcon && (
+            <View style={{ marginRight: iconSpacing }}>{leftIcon}</View>
+          )}
 
           <Text style={[getTextStyles(), textStyle]}>{children}</Text>
 
-          {rightIcon && <View style={{ marginLeft: iconSpacing }}>{rightIcon}</View>}
+          {rightIcon && (
+            <View style={{ marginLeft: iconSpacing }}>{rightIcon}</View>
+          )}
         </>
       )}
     </>
@@ -255,7 +267,7 @@ const Button: React.FC<ButtonProps> = ({
       activeOpacity={shouldReduceMotion() ? 1 : 0.85}
       // Accessibility props
       accessible={true}
-      accessibilityRole="button"
+      accessibilityRole='button'
       accessibilityLabel={getAccessibilityLabel()}
       accessibilityHint={getAccessibilityHint()}
       accessibilityState={getAccessibilityState()}

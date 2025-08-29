@@ -1,19 +1,25 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from '@supabase/supabase-js';
 import Constants from 'expo-constants';
 import { debugLog } from '../config/environment';
 
 // Güvenli Supabase bağlantı bilgileri - environment variables'dan alınır
-const supabaseUrl = Constants.expoConfig?.extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = Constants.expoConfig?.extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl =
+  Constants.expoConfig?.extra?.supabaseUrl ||
+  process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey =
+  Constants.expoConfig?.extra?.supabaseAnonKey ||
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('🚨 Supabase configuration missing! Check environment variables.');
+  throw new Error(
+    '🚨 Supabase configuration missing! Check environment variables.'
+  );
 }
 
 // Debug logging - sadece dev mode'da URL göster
 debugLog('🔌 Supabase connection initialized', {
   url: supabaseUrl ? '***masked***' : 'missing',
-  hasAnonKey: !!supabaseAnonKey
+  hasAnonKey: !!supabaseAnonKey,
 });
 
 // Create client with security-focused configuration
@@ -148,7 +154,12 @@ export interface Database {
         Row: {
           id: string;
           user_id: string;
-          transaction_type: 'earn' | 'spend' | 'purchase' | 'bonus' | 'daily_free';
+          transaction_type:
+            | 'earn'
+            | 'spend'
+            | 'purchase'
+            | 'bonus'
+            | 'daily_free';
           amount: number;
           description: string;
           related_action: string | null;
@@ -159,7 +170,12 @@ export interface Database {
         Insert: {
           id?: string;
           user_id: string;
-          transaction_type: 'earn' | 'spend' | 'purchase' | 'bonus' | 'daily_free';
+          transaction_type:
+            | 'earn'
+            | 'spend'
+            | 'purchase'
+            | 'bonus'
+            | 'daily_free';
           amount: number;
           description: string;
           related_action?: string | null;
@@ -170,7 +186,12 @@ export interface Database {
         Update: {
           id?: string;
           user_id?: string;
-          transaction_type?: 'earn' | 'spend' | 'purchase' | 'bonus' | 'daily_free';
+          transaction_type?:
+            | 'earn'
+            | 'spend'
+            | 'purchase'
+            | 'bonus'
+            | 'daily_free';
           amount?: number;
           description?: string;
           related_action?: string | null;

@@ -5,26 +5,26 @@
  * güvenli bir configuration sistemi sağlar.
  */
 
-export type Environment = "development" | "testing" | "production";
+export type Environment = 'development' | 'testing' | 'production';
 
 // Current environment detection
 export const getCurrentEnvironment = (): Environment => {
   // Check if explicitly set for testing
-  if (process.env.EXPO_PUBLIC_ENVIRONMENT === "testing") {
-    return "testing";
+  if (process.env.EXPO_PUBLIC_ENVIRONMENT === 'testing') {
+    return 'testing';
   }
 
   // Check NODE_ENV first (more reliable for builds)
-  if (process.env.NODE_ENV === "development") {
-    return "development";
+  if (process.env.NODE_ENV === 'development') {
+    return 'development';
   }
 
   // Check if in development
   if (__DEV__) {
-    return "development";
+    return 'development';
   }
 
-  return "production";
+  return 'production';
 };
 
 export const ENV = getCurrentEnvironment();
@@ -55,9 +55,9 @@ export const CONFIG = {
 export const CURRENT_CONFIG = CONFIG[ENV];
 
 // Utility functions
-export const isDevelopment = () => ENV === "development";
-export const isTesting = () => ENV === "testing";
-export const isProduction = () => ENV === "production";
+export const isDevelopment = () => ENV === 'development';
+export const isTesting = () => ENV === 'testing';
+export const isProduction = () => ENV === 'production';
 
 // Debug logging helper
 export const debugLog = (message: string, ...args: any[]) => {

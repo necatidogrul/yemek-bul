@@ -1,22 +1,22 @@
-import React from "react";
-import { View, Platform, TouchableOpacity, Text } from "react-native";
-import { createStackNavigator } from "@react-navigation/stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useThemedStyles } from "../../hooks/useThemedStyles";
-import { shadows, borderRadius } from "../../theme/design-tokens";
+import React from 'react';
+import { View, Platform, TouchableOpacity, Text } from 'react-native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
+import { shadows, borderRadius } from '../../theme/design-tokens';
 
 // Screens
-import ModernHomeScreen from "../../screens/ModernHomeScreen";
-import RecipeDetailScreen from "../../screens/RecipeDetailScreen";
-import RecipeResultsScreen from "../../screens/RecipeResultsScreen";
-import FavoritesScreen from "../../screens/FavoritesScreen";
-import AllRecipesScreen from "../../screens/AllRecipesScreen";
+import ModernHomeScreen from '../../screens/ModernHomeScreen';
+import RecipeDetailScreen from '../../screens/RecipeDetailScreen';
+import RecipeResultsScreen from '../../screens/RecipeResultsScreen';
+import FavoritesScreen from '../../screens/FavoritesScreen';
+import AllRecipesScreen from '../../screens/AllRecipesScreen';
 
-import HistoryScreen from "../../screens/HistoryScreen";
+import HistoryScreen from '../../screens/HistoryScreen';
 
-import SettingsScreen from "../../screens/SettingsScreen";
+import SettingsScreen from '../../screens/SettingsScreen';
 
 // Navigation Types
 export type HomeStackParamList = {
@@ -75,7 +75,7 @@ const ModernHeader = ({ title, colors }: { title: string; colors: any }) => {
     <LinearGradient
       colors={[colors.primary[500], colors.primary[600]]}
       style={{
-        paddingTop: Platform.OS === "ios" ? 50 : 25,
+        paddingTop: Platform.OS === 'ios' ? 50 : 25,
         paddingBottom: 15,
         paddingHorizontal: 20,
         borderBottomLeftRadius: borderRadius.lg,
@@ -85,47 +85,47 @@ const ModernHeader = ({ title, colors }: { title: string; colors: any }) => {
     >
       <View
         style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <View
           style={{
-            backgroundColor: "rgba(255,255,255,0.2)",
+            backgroundColor: 'rgba(255,255,255,0.2)',
             width: 40,
             height: 40,
             borderRadius: 20,
-            alignItems: "center",
-            justifyContent: "center",
+            alignItems: 'center',
+            justifyContent: 'center',
             marginRight: 12,
           }}
         >
           <Ionicons
             name={
-              title.includes("Ana Sayfa")
-                ? "home"
-                : title.includes("Tarif")
-                ? "restaurant"
-                : title.includes("Tüm")
-                ? "library"
-                : title.includes("Favori")
-                ? "heart"
-                : "apps"
+              title.includes('Ana Sayfa')
+                ? 'home'
+                : title.includes('Tarif')
+                  ? 'restaurant'
+                  : title.includes('Tüm')
+                    ? 'library'
+                    : title.includes('Favori')
+                      ? 'heart'
+                      : 'apps'
             }
             size={20}
-            color="white"
+            color='white'
           />
         </View>
         <Text
           style={{
-            color: "white",
+            color: 'white',
             fontSize: 20,
-            fontWeight: "700",
-            textAlign: "center",
+            fontWeight: '700',
+            textAlign: 'center',
           }}
         >
-          {title.replace(/[🍳📝👨‍🍳📚❤️👑]/g, "").trim()}
+          {title.replace(/[🍳📝👨‍🍳📚❤️👑]/g, '').trim()}
         </Text>
       </View>
     </LinearGradient>
@@ -166,35 +166,35 @@ export function HomeStackScreen() {
       }}
     >
       <HomeStack.Screen
-        name="HomeMain"
+        name='HomeMain'
         component={ModernHomeScreen}
         options={{
           headerShown: false,
         }}
       />
       <HomeStack.Screen
-        name="RecipeResults"
+        name='RecipeResults'
         component={RecipeResultsScreen}
         options={{
           headerShown: false,
         }}
       />
       <HomeStack.Screen
-        name="RecipeDetail"
+        name='RecipeDetail'
         component={RecipeDetailScreen}
         options={{
           headerShown: false,
         }}
       />
       <HomeStack.Screen
-        name="AllRecipes"
+        name='AllRecipes'
         component={AllRecipesScreen}
         options={{
           headerShown: false,
         }}
       />
       <HomeStack.Screen
-        name="History"
+        name='History'
         component={HistoryScreen}
         options={{
           headerShown: false,
@@ -202,7 +202,7 @@ export function HomeStackScreen() {
       />
 
       <HomeStack.Screen
-        name="Settings"
+        name='Settings'
         component={SettingsScreen}
         options={{
           headerShown: false,
@@ -246,21 +246,21 @@ export function HistoryStackScreen() {
       }}
     >
       <HistoryStack.Screen
-        name="HistoryMain"
+        name='HistoryMain'
         component={HistoryScreen}
         options={{
           headerShown: false,
         }}
       />
       <HistoryStack.Screen
-        name="RecipeResults"
+        name='RecipeResults'
         component={RecipeResultsScreen}
         options={{
           headerShown: false,
         }}
       />
       <HistoryStack.Screen
-        name="RecipeDetail"
+        name='RecipeDetail'
         component={RecipeDetailScreen}
         options={{
           headerShown: false,
@@ -284,7 +284,7 @@ export function SettingsStackScreen() {
       }}
     >
       <SettingsStack.Screen
-        name="SettingsMain"
+        name='SettingsMain'
         component={SettingsScreen}
         options={{
           headerShown: false,
@@ -328,14 +328,14 @@ export function FavoritesStackScreen() {
       }}
     >
       <FavoritesStack.Screen
-        name="FavoritesMain"
+        name='FavoritesMain'
         component={FavoritesScreen}
         options={{
           headerShown: false,
         }}
       />
       <FavoritesStack.Screen
-        name="RecipeDetail"
+        name='RecipeDetail'
         component={RecipeDetailScreen}
         options={{
           headerShown: false,
@@ -354,16 +354,16 @@ const ModernTabBar = ({ state, descriptors, navigation, colors }: any) => {
         borderTopLeftRadius: borderRadius.xl,
         borderTopRightRadius: borderRadius.xl,
         ...shadows.lg,
-        paddingBottom: Platform.OS === "ios" ? 25 : 10,
+        paddingBottom: Platform.OS === 'ios' ? 25 : 10,
         paddingTop: 15,
         paddingHorizontal: 20,
       }}
     >
       <View
         style={{
-          flexDirection: "row",
-          justifyContent: "space-around",
-          alignItems: "center",
+          flexDirection: 'row',
+          justifyContent: 'space-around',
+          alignItems: 'center',
         }}
       >
         {state.routes.map((route: any, index: number) => {
@@ -372,14 +372,14 @@ const ModernTabBar = ({ state, descriptors, navigation, colors }: any) => {
             options.tabBarLabel !== undefined
               ? options.tabBarLabel
               : options.title !== undefined
-              ? options.title
-              : route.name;
+                ? options.title
+                : route.name;
 
           const isFocused = state.index === index;
 
           const onPress = () => {
             const event = navigation.emit({
-              type: "tabPress",
+              type: 'tabPress',
               target: route.key,
               canPreventDefault: true,
             });
@@ -392,20 +392,20 @@ const ModernTabBar = ({ state, descriptors, navigation, colors }: any) => {
           let iconName: keyof typeof Ionicons.glyphMap;
           let gradientColors: string[];
 
-          if (route.name === "HomeTab") {
-            iconName = "home";
+          if (route.name === 'HomeTab') {
+            iconName = 'home';
             gradientColors = [colors.primary[500], colors.primary[600]];
-          } else if (route.name === "HistoryTab") {
-            iconName = "time";
+          } else if (route.name === 'HistoryTab') {
+            iconName = 'time';
             gradientColors = [colors.secondary[500], colors.secondary[600]];
-          } else if (route.name === "FavoritesTab") {
-            iconName = "heart";
+          } else if (route.name === 'FavoritesTab') {
+            iconName = 'heart';
             gradientColors = [colors.error[500], colors.error[600]];
-          } else if (route.name === "SettingsTab") {
-            iconName = "settings";
+          } else if (route.name === 'SettingsTab') {
+            iconName = 'settings';
             gradientColors = [colors.neutral[500], colors.neutral[600]];
           } else {
-            iconName = "help-outline";
+            iconName = 'help-outline';
             gradientColors = [colors.neutral[500], colors.neutral[600]];
           }
 
@@ -414,13 +414,13 @@ const ModernTabBar = ({ state, descriptors, navigation, colors }: any) => {
               key={index}
               onPress={onPress}
               style={{
-                alignItems: "center",
+                alignItems: 'center',
                 paddingVertical: 8,
                 paddingHorizontal: 16,
                 borderRadius: borderRadius.lg,
                 backgroundColor: isFocused
                   ? `${gradientColors[0]}15`
-                  : "transparent",
+                  : 'transparent',
                 minWidth: 70,
               }}
               activeOpacity={0.8}
@@ -432,13 +432,13 @@ const ModernTabBar = ({ state, descriptors, navigation, colors }: any) => {
                     width: 40,
                     height: 40,
                     borderRadius: 20,
-                    alignItems: "center",
-                    justifyContent: "center",
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     marginBottom: 4,
                     ...shadows.md,
                   }}
                 >
-                  <Ionicons name={iconName} size={22} color="white" />
+                  <Ionicons name={iconName} size={22} color='white' />
                 </LinearGradient>
               ) : (
                 <View
@@ -446,8 +446,8 @@ const ModernTabBar = ({ state, descriptors, navigation, colors }: any) => {
                     width: 40,
                     height: 40,
                     borderRadius: 20,
-                    alignItems: "center",
-                    justifyContent: "center",
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     marginBottom: 4,
                     backgroundColor: colors.neutral[100],
                   }}
@@ -463,8 +463,8 @@ const ModernTabBar = ({ state, descriptors, navigation, colors }: any) => {
                 style={{
                   color: isFocused ? gradientColors[0] : colors.text.tertiary,
                   fontSize: 11,
-                  fontWeight: isFocused ? "700" : "500",
-                  textAlign: "center",
+                  fontWeight: isFocused ? '700' : '500',
+                  textAlign: 'center',
                 }}
               >
                 {label}
@@ -483,37 +483,37 @@ export function MainTabNavigator() {
 
   return (
     <Tab.Navigator
-      tabBar={(props) => <ModernTabBar {...props} colors={colors} />}
+      tabBar={props => <ModernTabBar {...props} colors={colors} />}
       screenOptions={{
         headerShown: false,
       }}
     >
       <Tab.Screen
-        name="HomeTab"
+        name='HomeTab'
         component={HomeStackScreen}
         options={{
-          tabBarLabel: "Ana Sayfa",
+          tabBarLabel: 'Ana Sayfa',
         }}
       />
       <Tab.Screen
-        name="HistoryTab"
+        name='HistoryTab'
         component={HistoryStackScreen}
         options={{
-          tabBarLabel: "Geçmiş",
+          tabBarLabel: 'Geçmiş',
         }}
       />
       <Tab.Screen
-        name="FavoritesTab"
+        name='FavoritesTab'
         component={FavoritesStackScreen}
         options={{
-          tabBarLabel: "Favoriler",
+          tabBarLabel: 'Favoriler',
         }}
       />
       <Tab.Screen
-        name="SettingsTab"
+        name='SettingsTab'
         component={SettingsStackScreen}
         options={{
-          tabBarLabel: "Ayarlar",
+          tabBarLabel: 'Ayarlar',
         }}
       />
     </Tab.Navigator>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   ScrollView,
@@ -10,39 +10,39 @@ import {
   ActivityIndicator,
   Dimensions,
   StatusBar,
-} from "react-native";
-import { Logger } from "../services/LoggerService";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { StackNavigationProp } from "@react-navigation/stack";
+} from 'react-native';
+import { Logger } from '../services/LoggerService';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 // Services & Types
-import { HistoryService } from "../services/historyService";
+import { HistoryService } from '../services/historyService';
 import {
   AIRequestHistory,
   HistoryStats,
   HistoryFilter,
-} from "../types/History";
+} from '../types/History';
 
 // UI Components
-import { Text, Card, Button } from "../components/ui";
-import { useThemedStyles } from "../hooks/useThemedStyles";
-import { spacing, borderRadius, shadows } from "../theme/design-tokens";
+import { Text, Card, Button } from '../components/ui';
+import { useThemedStyles } from '../hooks/useThemedStyles';
+import { spacing, borderRadius, shadows } from '../theme/design-tokens';
 
-const { width: screenWidth } = Dimensions.get("window");
+const { width: screenWidth } = Dimensions.get('window');
 
 interface HistoryScreenProps {
-  navigation: StackNavigationProp<any, "History">;
+  navigation: StackNavigationProp<any, 'History'>;
 }
 
-type ViewMode = "list" | "stats";
+type ViewMode = 'list' | 'stats';
 
 const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const [history, setHistory] = useState<AIRequestHistory[]>([]);
   const [stats, setStats] = useState<HistoryStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [filter, setFilter] = useState<HistoryFilter>({ dateRange: "all" });
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [filter, setFilter] = useState<HistoryFilter>({ dateRange: 'all' });
   const [popularCombinations, setPopularCombinations] = useState<
     Array<{
       ingredients: string[];
@@ -70,7 +70,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
       setStats(statsData);
       setPopularCombinations(popularData);
     } catch (error) {
-      console.error("History loading error:", error);
+      console.error('History loading error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -80,15 +80,15 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     (item: AIRequestHistory) => {
       if (item.success && item.results.recipes.length > 0) {
         // Sonuçları direkt göster
-        navigation.navigate("RecipeResults", {
+        navigation.navigate('RecipeResults', {
           ingredients: item.ingredients,
           aiRecipes: item.results.recipes,
           fromHistory: true,
         });
       } else {
         // Başarısız aramalar için ana sayfaya yönlendir
-        navigation.getParent()?.navigate("HomeTab", {
-          screen: "HomeMain",
+        navigation.getParent()?.navigate('HomeTab', {
+          screen: 'HomeMain',
           params: { prefillIngredients: item.ingredients },
         });
       }
@@ -98,13 +98,13 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
   const handleDeleteItem = useCallback(async (id: string) => {
     Alert.alert(
-      "Geçmişi Sil",
-      "Bu arama geçmişini silmek istediğinizden emin misiniz?",
+      'Geçmişi Sil',
+      'Bu arama geçmişini silmek istediğinizden emin misiniz?',
       [
-        { text: "İptal", style: "cancel" },
+        { text: 'İptal', style: 'cancel' },
         {
-          text: "Sil",
-          style: "destructive",
+          text: 'Sil',
+          style: 'destructive',
           onPress: async () => {
             await HistoryService.deleteRequest(id);
             loadHistoryData();
@@ -116,13 +116,13 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
   const handleClearHistory = useCallback(() => {
     Alert.alert(
-      "Tüm Geçmişi Sil",
-      "Tüm arama geçmişinizi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.",
+      'Tüm Geçmişi Sil',
+      'Tüm arama geçmişinizi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
       [
-        { text: "İptal", style: "cancel" },
+        { text: 'İptal', style: 'cancel' },
         {
-          text: "Tümünü Sil",
-          style: "destructive",
+          text: 'Tümünü Sil',
+          style: 'destructive',
           onPress: async () => {
             await HistoryService.clearHistory();
             loadHistoryData();
@@ -138,19 +138,19 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     const diffTime = now.getTime() - date.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) return "Bugün";
-    if (diffDays === 2) return "Dün";
+    if (diffDays === 1) return 'Bugün';
+    if (diffDays === 2) return 'Dün';
     if (diffDays <= 7) return `${diffDays - 1} gün önce`;
 
-    return date.toLocaleDateString("tr-TR", {
-      day: "numeric",
-      month: "short",
-      year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
+    return date.toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'short',
+      year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
     });
   };
 
   const renderHistoryItem = ({ item }: { item: AIRequestHistory }) => (
-    <Card variant="elevated" size="lg" style={styles.historyItem}>
+    <Card variant='elevated' size='lg' style={styles.historyItem}>
       <View style={styles.historyItemHeader}>
         <View style={styles.historyItemInfo}>
           <View style={styles.statusContainer}>
@@ -164,12 +164,12 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 },
               ]}
             />
-            <Text variant="labelSmall" color="secondary">
+            <Text variant='labelSmall' color='secondary'>
               {formatDate(item.timestamp)}
             </Text>
           </View>
-          <Text variant="bodyLarge" weight="semibold" color="primary">
-            {item.results.count} tarif {item.success ? "bulundu" : "bulunamadı"}
+          <Text variant='bodyLarge' weight='semibold' color='primary'>
+            {item.results.count} tarif {item.success ? 'bulundu' : 'bulunamadı'}
           </Text>
         </View>
 
@@ -177,7 +177,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           style={styles.deleteButton}
           onPress={() => handleDeleteItem(item.id)}
         >
-          <Ionicons name="trash-outline" size={18} color={colors.error[500]} />
+          <Ionicons name='trash-outline' size={18} color={colors.error[500]} />
         </TouchableOpacity>
       </View>
 
@@ -191,8 +191,8 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             ]}
           >
             <Text
-              variant="bodySmall"
-              weight="medium"
+              variant='bodySmall'
+              weight='medium'
               style={{ color: colors.primary[700] }}
             >
               {ingredient}
@@ -204,20 +204,20 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
       {item.success && item.results.recipes.length > 0 && (
         <View style={styles.recipesPreview}>
           <Text
-            variant="bodySmall"
-            color="secondary"
+            variant='bodySmall'
+            color='secondary'
             style={styles.recipesTitle}
           >
             Bulunan tarifler:
           </Text>
           <View style={styles.recipesList}>
             {item.results.recipes.slice(0, 3).map((recipe, index) => (
-              <Text key={recipe.id} variant="labelSmall" color="primary">
+              <Text key={recipe.id} variant='labelSmall' color='primary'>
                 • {recipe.name}
               </Text>
             ))}
             {item.results.recipes.length > 3 && (
-              <Text variant="labelSmall" color="secondary">
+              <Text variant='labelSmall' color='secondary'>
                 +{item.results.recipes.length - 3} daha fazla
               </Text>
             )}
@@ -227,15 +227,15 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
       <View style={styles.historyItemActions}>
         <Button
-          variant={item.success ? "primary" : "outline"}
-          size="sm"
+          variant={item.success ? 'primary' : 'outline'}
+          size='sm'
           onPress={() => handleViewResults(item)}
           leftIcon={
-            <Ionicons name={item.success ? "eye" : "refresh"} size={16} />
+            <Ionicons name={item.success ? 'eye' : 'refresh'} size={16} />
           }
           style={styles.repeatButton}
         >
-          {item.success ? "Sonuçları Gör" : "Tekrar Dene"}
+          {item.success ? 'Sonuçları Gör' : 'Tekrar Dene'}
         </Button>
 
         {item.preferences && (
@@ -243,19 +243,19 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             {item.preferences.difficulty && (
               <View style={styles.preferenceTag}>
                 <Ionicons
-                  name="bar-chart"
+                  name='bar-chart'
                   size={12}
                   color={colors.neutral[500]}
                 />
-                <Text variant="labelSmall" color="secondary">
+                <Text variant='labelSmall' color='secondary'>
                   {item.preferences.difficulty}
                 </Text>
               </View>
             )}
             {item.preferences.cookingTime && (
               <View style={styles.preferenceTag}>
-                <Ionicons name="time" size={12} color={colors.neutral[500]} />
-                <Text variant="labelSmall" color="secondary">
+                <Ionicons name='time' size={12} color={colors.neutral[500]} />
+                <Text variant='labelSmall' color='secondary'>
                   {item.preferences.cookingTime}dk
                 </Text>
               </View>
@@ -273,24 +273,24 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
       <View style={styles.statsContainer}>
         {/* Stats Cards */}
         <View style={styles.statsGrid}>
-          <Card variant="elevated" size="lg" style={styles.statCard}>
+          <Card variant='elevated' size='lg' style={styles.statCard}>
             <View
               style={[
                 styles.statIcon,
                 { backgroundColor: colors.primary[100] },
               ]}
             >
-              <Ionicons name="search" size={24} color={colors.primary[600]} />
+              <Ionicons name='search' size={24} color={colors.primary[600]} />
             </View>
-            <Text variant="headlineMedium" weight="bold" color="primary">
+            <Text variant='headlineMedium' weight='bold' color='primary'>
               {stats.totalRequests}
             </Text>
-            <Text variant="bodySmall" color="secondary" align="center">
+            <Text variant='bodySmall' color='secondary' align='center'>
               Toplam Arama
             </Text>
           </Card>
 
-          <Card variant="elevated" size="lg" style={styles.statCard}>
+          <Card variant='elevated' size='lg' style={styles.statCard}>
             <View
               style={[
                 styles.statIcon,
@@ -298,20 +298,20 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               ]}
             >
               <Ionicons
-                name="checkmark-circle"
+                name='checkmark-circle'
                 size={24}
                 color={colors.success[600]}
               />
             </View>
-            <Text variant="headlineMedium" weight="bold" color="success">
+            <Text variant='headlineMedium' weight='bold' color='success'>
               {stats.successfulRequests}
             </Text>
-            <Text variant="bodySmall" color="secondary" align="center">
+            <Text variant='bodySmall' color='secondary' align='center'>
               Başarılı Arama
             </Text>
           </Card>
 
-          <Card variant="elevated" size="lg" style={styles.statCard}>
+          <Card variant='elevated' size='lg' style={styles.statCard}>
             <View
               style={[
                 styles.statIcon,
@@ -319,15 +319,15 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               ]}
             >
               <Ionicons
-                name="restaurant"
+                name='restaurant'
                 size={24}
                 color={colors.warning[600]}
               />
             </View>
-            <Text variant="headlineMedium" weight="bold" color="warning">
+            <Text variant='headlineMedium' weight='bold' color='warning'>
               {stats.totalRecipesGenerated}
             </Text>
-            <Text variant="bodySmall" color="secondary" align="center">
+            <Text variant='bodySmall' color='secondary' align='center'>
               Tarif Bulundu
             </Text>
           </Card>
@@ -335,7 +335,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
         {/* Most Used Ingredients */}
         {stats.mostUsedIngredients.length > 0 && (
-          <Card variant="elevated" size="lg" style={styles.statsSection}>
+          <Card variant='elevated' size='lg' style={styles.statsSection}>
             <View style={styles.statsSectionHeader}>
               <View
                 style={[
@@ -343,9 +343,9 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                   { backgroundColor: colors.primary[100] },
                 ]}
               >
-                <Ionicons name="star" size={20} color={colors.primary[600]} />
+                <Ionicons name='star' size={20} color={colors.primary[600]} />
               </View>
-              <Text variant="headlineSmall" weight="bold" color="primary">
+              <Text variant='headlineSmall' weight='bold' color='primary'>
                 En Çok Kullanılan Malzemeler
               </Text>
             </View>
@@ -354,10 +354,10 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               {stats.mostUsedIngredients.slice(0, 5).map((item, index) => (
                 <View key={item.ingredient} style={styles.ingredientStat}>
                   <View style={styles.ingredientStatInfo}>
-                    <Text variant="bodyMedium" weight="medium" color="primary">
+                    <Text variant='bodyMedium' weight='medium' color='primary'>
                       {item.ingredient}
                     </Text>
-                    <Text variant="bodySmall" color="secondary">
+                    <Text variant='bodySmall' color='secondary'>
                       {item.count} kez kullanıldı
                     </Text>
                   </View>
@@ -368,9 +368,9 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                     ]}
                   >
                     <Text
-                      variant="labelSmall"
-                      weight="bold"
-                      style={{ color: "white" }}
+                      variant='labelSmall'
+                      weight='bold'
+                      style={{ color: 'white' }}
                     >
                       {item.count}
                     </Text>
@@ -383,7 +383,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
         {/* Popular Combinations */}
         {popularCombinations.length > 0 && (
-          <Card variant="elevated" size="lg" style={styles.statsSection}>
+          <Card variant='elevated' size='lg' style={styles.statsSection}>
             <View style={styles.statsSectionHeader}>
               <View
                 style={[
@@ -392,12 +392,12 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 ]}
               >
                 <Ionicons
-                  name="trending-up"
+                  name='trending-up'
                   size={20}
                   color={colors.success[600]}
                 />
               </View>
-              <Text variant="headlineSmall" weight="bold" color="primary">
+              <Text variant='headlineSmall' weight='bold' color='primary'>
                 Popüler Kombinasyonlar
               </Text>
             </View>
@@ -408,8 +408,8 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                   key={index}
                   style={styles.combinationItem}
                   onPress={() =>
-                    navigation.getParent()?.navigate("HomeTab", {
-                      screen: "HomeMain",
+                    navigation.getParent()?.navigate('HomeTab', {
+                      screen: 'HomeMain',
                       params: { prefillIngredients: combo.ingredients },
                     })
                   }
@@ -424,7 +424,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                         ]}
                       >
                         <Text
-                          variant="labelSmall"
+                          variant='labelSmall'
                           style={{ color: colors.success[700] }}
                         >
                           {ingredient}
@@ -433,12 +433,12 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                     ))}
                   </View>
                   <View style={styles.combinationStats}>
-                    <Text variant="bodySmall" color="secondary">
-                      {combo.count} kez • %{Math.round(combo.successRate * 100)}{" "}
+                    <Text variant='bodySmall' color='secondary'>
+                      {combo.count} kez • %{Math.round(combo.successRate * 100)}{' '}
                       başarı
                     </Text>
                     <Ionicons
-                      name="chevron-forward"
+                      name='chevron-forward'
                       size={16}
                       color={colors.neutral[400]}
                     />
@@ -453,18 +453,18 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   };
 
   const renderFilterBar = () => (
-    <Card variant="default" size="md" style={styles.filterBar}>
+    <Card variant='default' size='md' style={styles.filterBar}>
       <View style={styles.filterContent}>
-        <Text variant="bodySmall" weight="medium" color="secondary">
+        <Text variant='bodySmall' weight='medium' color='secondary'>
           Filtrele:
         </Text>
         <View style={styles.filterButtons}>
           {[
-            { key: "all", label: "Tümü" },
-            { key: "today", label: "Bugün" },
-            { key: "week", label: "Bu Hafta" },
-            { key: "month", label: "Bu Ay" },
-          ].map((item) => (
+            { key: 'all', label: 'Tümü' },
+            { key: 'today', label: 'Bugün' },
+            { key: 'week', label: 'Bu Hafta' },
+            { key: 'month', label: 'Bu Ay' },
+          ].map(item => (
             <TouchableOpacity
               key={item.key}
               style={[
@@ -482,12 +482,12 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               }
             >
               <Text
-                variant="labelSmall"
-                weight="medium"
+                variant='labelSmall'
+                weight='medium'
                 style={{
                   color:
                     filter.dateRange === item.key
-                      ? "white"
+                      ? 'white'
                       : colors.neutral[600],
                 }}
               >
@@ -509,7 +509,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
         ]}
       >
         <StatusBar
-          barStyle="light-content"
+          barStyle='light-content'
           backgroundColor={colors.primary[600]}
         />
 
@@ -528,19 +528,19 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             <View style={styles.headerContainer}>
               <View style={styles.headerLeft}>
                 <View style={styles.heroIcon}>
-                  <Ionicons name="time" size={24} color="white" />
+                  <Ionicons name='time' size={24} color='white' />
                 </View>
                 <View>
                   <Text
-                    variant="headlineMedium"
-                    weight="bold"
-                    style={{ color: "white" }}
+                    variant='headlineMedium'
+                    weight='bold'
+                    style={{ color: 'white' }}
                   >
                     Arama Geçmişi
                   </Text>
                   <Text
-                    variant="bodySmall"
-                    style={{ color: "rgba(255,255,255,0.8)" }}
+                    variant='bodySmall'
+                    style={{ color: 'rgba(255,255,255,0.8)' }}
                   >
                     Yükleniyor...
                   </Text>
@@ -552,7 +552,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 onPress={() => navigation.goBack()}
                 activeOpacity={0.8}
               >
-                <Ionicons name="arrow-back" size={24} color="white" />
+                <Ionicons name='arrow-back' size={24} color='white' />
               </TouchableOpacity>
             </View>
           </SafeAreaView>
@@ -563,21 +563,21 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             colors={[colors.primary[100], colors.primary[200]]}
             style={styles.loadingIcon}
           >
-            <Ionicons name="time" size={32} color={colors.primary[500]} />
+            <Ionicons name='time' size={32} color={colors.primary[500]} />
           </LinearGradient>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size='large' color={colors.primary[500]} />
           <Text
-            variant="headlineSmall"
-            weight="semibold"
-            color="primary"
-            align="center"
+            variant='headlineSmall'
+            weight='semibold'
+            color='primary'
+            align='center'
           >
             Geçmiş Yükleniyor...
           </Text>
           <Text
-            variant="bodyMedium"
-            color="secondary"
-            align="center"
+            variant='bodyMedium'
+            color='secondary'
+            align='center'
             style={styles.loadingSubtext}
           >
             Arama geçmişiniz hazırlanıyor
@@ -592,7 +592,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
       <StatusBar
-        barStyle="light-content"
+        barStyle='light-content'
         backgroundColor={colors.primary[600]}
       />
 
@@ -607,21 +607,21 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           <View style={styles.headerContainer}>
             <View style={styles.headerLeft}>
               <View style={styles.heroIcon}>
-                <Ionicons name="time" size={24} color="white" />
+                <Ionicons name='time' size={24} color='white' />
               </View>
               <View>
                 <Text
-                  variant="headlineMedium"
-                  weight="bold"
-                  style={{ color: "white" }}
+                  variant='headlineMedium'
+                  weight='bold'
+                  style={{ color: 'white' }}
                 >
                   Arama Geçmişi
                 </Text>
                 <Text
-                  variant="bodySmall"
-                  style={{ color: "rgba(255,255,255,0.8)" }}
+                  variant='bodySmall'
+                  style={{ color: 'rgba(255,255,255,0.8)' }}
                 >
-                  {stats ? `${stats.totalRequests} arama` : "Geçmiş aramaların"}
+                  {stats ? `${stats.totalRequests} arama` : 'Geçmiş aramaların'}
                 </Text>
               </View>
             </View>
@@ -631,7 +631,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               onPress={() => navigation.goBack()}
               activeOpacity={0.8}
             >
-              <Ionicons name="arrow-back" size={24} color="white" />
+              <Ionicons name='arrow-back' size={24} color='white' />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -644,32 +644,32 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
         nestedScrollEnabled={true}
       >
         {/* View Mode Toggle */}
-        <Card variant="elevated" size="lg" style={styles.controlsCard}>
+        <Card variant='elevated' size='lg' style={styles.controlsCard}>
           <View style={styles.viewModeContainer}>
             <View style={styles.viewModeToggle}>
               <TouchableOpacity
                 style={[
                   styles.viewModeButton,
-                  viewMode === "list" && styles.viewModeButtonActive,
+                  viewMode === 'list' && styles.viewModeButtonActive,
                   {
                     backgroundColor:
-                      viewMode === "list"
+                      viewMode === 'list'
                         ? colors.primary[500]
                         : colors.neutral[100],
                   },
                 ]}
-                onPress={() => setViewMode("list")}
+                onPress={() => setViewMode('list')}
               >
                 <Ionicons
-                  name="list"
+                  name='list'
                   size={16}
-                  color={viewMode === "list" ? "white" : colors.neutral[600]}
+                  color={viewMode === 'list' ? 'white' : colors.neutral[600]}
                 />
                 <Text
-                  variant="bodySmall"
-                  weight="medium"
+                  variant='bodySmall'
+                  weight='medium'
                   style={{
-                    color: viewMode === "list" ? "white" : colors.neutral[600],
+                    color: viewMode === 'list' ? 'white' : colors.neutral[600],
                     marginLeft: spacing[1],
                   }}
                 >
@@ -679,26 +679,26 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               <TouchableOpacity
                 style={[
                   styles.viewModeButton,
-                  viewMode === "stats" && styles.viewModeButtonActive,
+                  viewMode === 'stats' && styles.viewModeButtonActive,
                   {
                     backgroundColor:
-                      viewMode === "stats"
+                      viewMode === 'stats'
                         ? colors.primary[500]
                         : colors.neutral[100],
                   },
                 ]}
-                onPress={() => setViewMode("stats")}
+                onPress={() => setViewMode('stats')}
               >
                 <Ionicons
-                  name="stats-chart"
+                  name='stats-chart'
                   size={16}
-                  color={viewMode === "stats" ? "white" : colors.neutral[600]}
+                  color={viewMode === 'stats' ? 'white' : colors.neutral[600]}
                 />
                 <Text
-                  variant="bodySmall"
-                  weight="medium"
+                  variant='bodySmall'
+                  weight='medium'
                   style={{
-                    color: viewMode === "stats" ? "white" : colors.neutral[600],
+                    color: viewMode === 'stats' ? 'white' : colors.neutral[600],
                     marginLeft: spacing[1],
                   }}
                 >
@@ -715,10 +715,10 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 ]}
                 onPress={handleClearHistory}
               >
-                <Ionicons name="trash" size={16} color={colors.error[500]} />
+                <Ionicons name='trash' size={16} color={colors.error[500]} />
                 <Text
-                  variant="labelSmall"
-                  weight="medium"
+                  variant='labelSmall'
+                  weight='medium'
                   style={{ color: colors.error[500] }}
                 >
                   Temizle
@@ -728,7 +728,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           </View>
         </Card>
 
-        {viewMode === "list" ? (
+        {viewMode === 'list' ? (
           <>
             {renderFilterBar()}
 
@@ -739,33 +739,33 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                   style={styles.emptyIcon}
                 >
                   <Ionicons
-                    name="time-outline"
+                    name='time-outline'
                     size={48}
                     color={colors.primary[400]}
                   />
                 </LinearGradient>
                 <Text
-                  variant="headlineMedium"
-                  weight="bold"
-                  color="primary"
-                  align="center"
+                  variant='headlineMedium'
+                  weight='bold'
+                  color='primary'
+                  align='center'
                 >
                   Henüz Arama Geçmişi Yok
                 </Text>
                 <Text
-                  variant="bodyMedium"
-                  color="secondary"
-                  align="center"
+                  variant='bodyMedium'
+                  color='secondary'
+                  align='center'
                   style={styles.emptyDescription}
                 >
                   AI ile tarif aramaya başladığınızda geçmişiniz burada
                   görünecek
                 </Text>
                 <Button
-                  variant="primary"
-                  size="lg"
-                  onPress={() => navigation.getParent()?.navigate("HomeTab")}
-                  leftIcon={<Ionicons name="search" size={20} />}
+                  variant='primary'
+                  size='lg'
+                  onPress={() => navigation.getParent()?.navigate('HomeTab')}
+                  leftIcon={<Ionicons name='search' size={20} />}
                   style={styles.startSearchButton}
                 >
                   İlk Aramayı Yap
@@ -773,7 +773,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               </View>
             ) : (
               <View style={styles.historyList}>
-                {history.map((item) => (
+                {history.map(item => (
                   <View key={item.id} style={{ marginBottom: spacing[4] }}>
                     {renderHistoryItem({ item })}
                   </View>
@@ -800,33 +800,33 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing[4],
     paddingTop: spacing[2],
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   heroIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: spacing[3],
   },
   backButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Controls
@@ -835,19 +835,19 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   viewModeContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   viewModeToggle: {
-    flexDirection: "row",
+    flexDirection: 'row',
     borderRadius: borderRadius.lg,
     padding: spacing[1],
-    backgroundColor: "rgba(0,0,0,0.05)",
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   viewModeButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
     borderRadius: borderRadius.md,
@@ -857,8 +857,8 @@ const styles = StyleSheet.create({
     ...shadows.sm,
   },
   clearButton: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
     borderRadius: borderRadius.md,
@@ -871,12 +871,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   filterContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing[3],
   },
   filterButtons: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing[2],
     flex: 1,
   },
@@ -885,7 +885,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[2],
     borderRadius: borderRadius.md,
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
   filterButtonActive: {
     ...shadows.sm,
@@ -909,9 +909,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing[0],
   },
   historyItemHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: spacing[3],
   },
   historyItemInfo: {
@@ -919,8 +919,8 @@ const styles = StyleSheet.create({
     gap: spacing[1],
   },
   statusContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing[2],
   },
   statusDot: {
@@ -931,11 +931,11 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: spacing[2],
     borderRadius: borderRadius.md,
-    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
   },
   ingredientsList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing[2],
     marginBottom: spacing[3],
   },
@@ -944,12 +944,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[2],
     borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: "rgba(59, 130, 246, 0.2)",
+    borderColor: 'rgba(59, 130, 246, 0.2)',
   },
   recipesPreview: {
     marginBottom: spacing[3],
     padding: spacing[3],
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: 'rgba(0,0,0,0.02)',
     borderRadius: borderRadius.md,
   },
   recipesTitle: {
@@ -959,20 +959,20 @@ const styles = StyleSheet.create({
     gap: spacing[1],
   },
   historyItemActions: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   repeatButton: {
     paddingHorizontal: spacing[4],
   },
   preferencesInfo: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing[2],
   },
   preferenceTag: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing[1],
   },
 
@@ -982,43 +982,43 @@ const styles = StyleSheet.create({
     gap: spacing[4],
   },
   statsGrid: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing[3],
   },
   statCard: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
     gap: spacing[2],
   },
   statIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statsSection: {
     gap: spacing[4],
   },
   statsSectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing[3],
   },
   sectionIcon: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   ingredientsStats: {
     gap: spacing[3],
   },
   ingredientStat: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   ingredientStatInfo: {
     flex: 1,
@@ -1028,7 +1028,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[1],
     borderRadius: borderRadius.md,
     minWidth: 32,
-    alignItems: "center",
+    alignItems: 'center',
   },
   combinationsStats: {
     gap: spacing[3],
@@ -1036,14 +1036,14 @@ const styles = StyleSheet.create({
   combinationItem: {
     gap: spacing[3],
     padding: spacing[3],
-    backgroundColor: "rgba(0,0,0,0.02)",
+    backgroundColor: 'rgba(0,0,0,0.02)',
     borderRadius: borderRadius.md,
     borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.05)",
+    borderColor: 'rgba(0,0,0,0.05)',
   },
   combinationIngredients: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing[1],
   },
   miniChip: {
@@ -1052,16 +1052,16 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   combinationStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 
   // Loading & Empty States
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: spacing[6],
     gap: spacing[4],
   },
@@ -1069,16 +1069,16 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingSubtext: {
     marginTop: spacing[2],
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: spacing[6],
     gap: spacing[4],
   },
@@ -1086,8 +1086,8 @@ const styles = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyDescription: {
     maxWidth: 280,

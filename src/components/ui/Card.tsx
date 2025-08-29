@@ -1,10 +1,10 @@
-import React from "react";
-import { View, ViewStyle } from "react-native";
-import { spacing, borderRadius, shadows } from "../../theme/design-tokens";
-import { useThemedStyles } from "../../hooks/useThemedStyles";
+import React from 'react';
+import { View, ViewStyle } from 'react-native';
+import { spacing, borderRadius, shadows } from '../../theme/design-tokens';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
 
-type CardVariant = "default" | "elevated" | "outlined" | "filled";
-type CardSize = "sm" | "md" | "lg" | "xl";
+type CardVariant = 'default' | 'elevated' | 'outlined' | 'filled';
+type CardSize = 'sm' | 'md' | 'lg' | 'xl';
 
 interface CardProps {
   children: React.ReactNode;
@@ -15,8 +15,8 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({
   children,
-  variant = "default",
-  size = "md",
+  variant = 'default',
+  size = 'md',
   style,
 }) => {
   const { colors } = useThemedStyles();

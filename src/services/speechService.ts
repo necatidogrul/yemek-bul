@@ -60,7 +60,7 @@ export class SpeechService {
       language?: string;
       pitch?: number;
       rate?: number;
-    },
+    }
   ): void {
     const speechOptions = {
       language: options?.language || 'tr-TR',
@@ -277,7 +277,9 @@ export class SpeechService {
     const foundIngredients = new Set<string>(); // Duplicate önlemek için Set kullan
 
     // Uzun malzemelerden başla (daha spesifik eşleşmeler için)
-    const sortedIngredients = ingredientDictionary.sort((a, b) => b.length - a.length);
+    const sortedIngredients = ingredientDictionary.sort(
+      (a, b) => b.length - a.length
+    );
 
     sortedIngredients.forEach(ingredient => {
       if (lowerText.includes(ingredient)) {
@@ -302,8 +304,8 @@ export class SpeechService {
       // Kullanıcıya manuel giriş yapması için yönlendirme
       reject(
         new Error(
-          'Sesli giriş özelliği şu anda desteklenmiyor. Lütfen malzemelerinizi manuel olarak girin.',
-        ),
+          'Sesli giriş özelliği şu anda desteklenmiyor. Lütfen malzemelerinizi manuel olarak girin.'
+        )
       );
     });
   }

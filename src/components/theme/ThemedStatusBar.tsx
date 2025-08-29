@@ -4,11 +4,11 @@ import { useTheme } from '../../contexts/ThemeContext';
 
 export const ThemedStatusBar: React.FC = () => {
   const { isDark } = useTheme();
-  
+
   return (
-    <StatusBar 
-      style={isDark ? 'light' : 'dark'} 
-      backgroundColor="transparent"
+    <StatusBar
+      style={isDark ? 'light' : 'dark'}
+      backgroundColor='transparent'
       translucent
     />
   );

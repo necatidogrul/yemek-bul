@@ -1,4 +1,9 @@
-import React, { useCallback, useContext, createContext, ReactNode } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  createContext,
+  ReactNode,
+} from 'react';
 import { HapticFeedback, HapticFeedbackType } from '../services/HapticService';
 
 interface HapticContextType {
@@ -71,9 +76,9 @@ interface HapticProviderProps {
   initialEnabled?: boolean;
 }
 
-export const HapticProvider: React.FC<HapticProviderProps> = ({ 
-  children, 
-  initialEnabled = true 
+export const HapticProvider: React.FC<HapticProviderProps> = ({
+  children,
+  initialEnabled = true,
 }) => {
   const setEnabled = useCallback((enabled: boolean) => {
     HapticFeedback.setEnabled(enabled);
@@ -184,7 +189,7 @@ export const HapticProvider: React.FC<HapticProviderProps> = ({
     addFavorite,
     removeFavorite,
     searchStart,
-    searchComplete, 
+    searchComplete,
     voiceStart,
     voiceStop,
     purchaseSuccess,
@@ -199,8 +204,6 @@ export const HapticProvider: React.FC<HapticProviderProps> = ({
   };
 
   return (
-    <HapticContext.Provider value={value}>
-      {children}
-    </HapticContext.Provider>
+    <HapticContext.Provider value={value}>{children}</HapticContext.Provider>
   );
 };

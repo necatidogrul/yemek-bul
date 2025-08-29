@@ -8,7 +8,7 @@ export enum LogLevel {
   INFO = 1,
   WARN = 2,
   ERROR = 3,
-  NONE = 4
+  NONE = 4,
 }
 
 interface LogEntry {
@@ -48,7 +48,7 @@ class LoggerServiceClass {
 
   error(message: string, error?: any, userId?: string) {
     this.log(LogLevel.ERROR, message, error, userId);
-    
+
     // In production, send critical errors to crash reporting
     if (!__DEV__ && error) {
       this.reportError(message, error, userId);
@@ -64,7 +64,7 @@ class LoggerServiceClass {
       message,
       data,
       userId,
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
 
     // Store in memory
@@ -78,18 +78,23 @@ class LoggerServiceClass {
       const emoji = this.getLevelEmoji(level);
       const timestamp = entry.timestamp.toISOString().substr(11, 12);
       const userInfo = userId ? ` [${userId}]` : '';
-      
+
       console.log(`${emoji} ${timestamp}${userInfo} ${message}`, data || '');
     }
   }
 
   private getLevelEmoji(level: LogLevel): string {
     switch (level) {
-      case LogLevel.DEBUG: return '🔍';
-      case LogLevel.INFO: return 'ℹ️';
-      case LogLevel.WARN: return '⚠️';
-      case LogLevel.ERROR: return '❌';
-      default: return '📝';
+      case LogLevel.DEBUG:
+        return '🔍';
+      case LogLevel.INFO:
+        return 'ℹ️';
+      case LogLevel.WARN:
+        return '⚠️';
+      case LogLevel.ERROR:
+        return '❌';
+      default:
+        return '📝';
     }
   }
 
@@ -103,9 +108,9 @@ class LoggerServiceClass {
         stack: error?.stack,
         userId,
         timestamp: new Date().toISOString(),
-        sessionId: this.sessionId
+        sessionId: this.sessionId,
       };
-      
+
       // In a real app, send to crash reporting service
       console.error('🚨 Production Error Report:', errorReport);
     } catch (reportError) {
@@ -144,10 +149,14 @@ class LoggerServiceClass {
 export const Logger = new LoggerServiceClass();
 
 // Convenience functions for easy migration from console.log
-export const logDebug = (message: string, data?: any, userId?: string) => Logger.debug(message, data, userId);
-export const logInfo = (message: string, data?: any, userId?: string) => Logger.info(message, data, userId);
-export const logWarn = (message: string, data?: any, userId?: string) => Logger.warn(message, data, userId);
-export const logError = (message: string, error?: any, userId?: string) => Logger.error(message, error, userId);
+export const logDebug = (message: string, data?: any, userId?: string) =>
+  Logger.debug(message, data, userId);
+export const logInfo = (message: string, data?: any, userId?: string) =>
+  Logger.info(message, data, userId);
+export const logWarn = (message: string, data?: any, userId?: string) =>
+  Logger.warn(message, data, userId);
+export const logError = (message: string, error?: any, userId?: string) =>
+  Logger.error(message, error, userId);
 
 // Production-safe console replacement
 export const prodLog = {
@@ -155,5 +164,5 @@ export const prodLog = {
   info: logInfo,
   warn: logWarn,
   error: logError,
-  log: logInfo // For console.log migration
+  log: logInfo, // For console.log migration
 };

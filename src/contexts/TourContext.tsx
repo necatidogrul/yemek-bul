@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import { UserPreferencesService } from '../services/UserPreferencesService';
 import { Logger } from '../services/LoggerService';
 
@@ -35,7 +41,8 @@ const HOME_TOUR_STEPS: TourStep[] = [
     id: 'welcome',
     target: 'home-screen',
     title: '🏠 Ana Sayfa',
-    description: 'Burada evdeki malzemelerinizi girip tarif önerileri alabilirsiniz.',
+    description:
+      'Burada evdeki malzemelerinizi girip tarif önerileri alabilirsiniz.',
     placement: 'center',
     showSkip: true,
   },
@@ -43,14 +50,16 @@ const HOME_TOUR_STEPS: TourStep[] = [
     id: 'ingredient-input',
     target: 'ingredient-input',
     title: '🥕 Malzeme Girişi',
-    description: 'Malzemelerinizi yazın veya mikrofon butonuna basarak sesli giriş yapın.',
+    description:
+      'Malzemelerinizi yazın veya mikrofon butonuna basarak sesli giriş yapın.',
     placement: 'bottom',
   },
   {
     id: 'search-button',
     target: 'search-recipes-button',
     title: '🔍 Tarif Arama',
-    description: 'Bu butona basarak girdiğiniz malzemelerle yapılabilecek tarifleri görün.',
+    description:
+      'Bu butona basarak girdiğiniz malzemelerle yapılabilecek tarifleri görün.',
     placement: 'top',
   },
   {
@@ -81,9 +90,10 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
 
   const checkFirstTimeUser = async () => {
     try {
-      const hasCompletedTour = await UserPreferencesService.hasCompletedFirstTimeTour();
+      const hasCompletedTour =
+        await UserPreferencesService.hasCompletedFirstTimeTour();
       setIsFirstTimeUser(!hasCompletedTour);
-      
+
       // Auto-start tour for first-time users after a short delay
       if (!hasCompletedTour) {
         setTimeout(() => {
@@ -119,7 +129,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     setIsActive(false);
     setCurrentStep(0);
     setTourSteps([]);
-    
+
     if (isFirstTimeUser) {
       try {
         await UserPreferencesService.markFirstTimeTourCompleted();
@@ -134,7 +144,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     setIsActive(false);
     setCurrentStep(0);
     setTourSteps([]);
-    
+
     if (isFirstTimeUser) {
       try {
         await UserPreferencesService.markFirstTimeTourCompleted();
@@ -158,11 +168,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
     isFirstTimeUser,
   };
 
-  return (
-    <TourContext.Provider value={value}>
-      {children}
-    </TourContext.Provider>
-  );
+  return <TourContext.Provider value={value}>{children}</TourContext.Provider>;
 };
 
 export const useTour = (): TourContextType => {

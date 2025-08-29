@@ -1,5 +1,5 @@
-import { AccessibilityInfo, Platform } from "react-native";
-import { Logger } from "../services/LoggerService";
+import { AccessibilityInfo, Platform } from 'react-native';
+import { Logger } from '../services/LoggerService';
 
 export interface AccessibilityState {
   isScreenReaderEnabled: boolean;
@@ -46,16 +46,16 @@ class AccessibilityService {
         isScreenReaderEnabled,
         isReduceMotionEnabled,
         isHighContrastEnabled: false, // Will be implemented when available
-        isVoiceOverRunning: isScreenReaderEnabled && Platform.OS === "ios",
+        isVoiceOverRunning: isScreenReaderEnabled && Platform.OS === 'ios',
       };
 
       // Set up listeners for accessibility changes
       const screenReaderSub = AccessibilityInfo.addEventListener(
-        "screenReaderChanged",
+        'screenReaderChanged',
         this.handleScreenReaderChange
       );
       const reduceMotionSub = AccessibilityInfo.addEventListener(
-        "reduceMotionChanged",
+        'reduceMotionChanged',
         this.handleReduceMotionChange
       );
 
@@ -64,7 +64,7 @@ class AccessibilityService {
       // Notify initial state
       this.notifyListeners();
     } catch (error) {
-      console.warn("Accessibility initialization failed:", error);
+      console.warn('Accessibility initialization failed:', error);
     }
   }
 
@@ -73,7 +73,7 @@ class AccessibilityService {
    */
   private handleScreenReaderChange = (isEnabled: boolean) => {
     this.currentState.isScreenReaderEnabled = isEnabled;
-    this.currentState.isVoiceOverRunning = isEnabled && Platform.OS === "ios";
+    this.currentState.isVoiceOverRunning = isEnabled && Platform.OS === 'ios';
     this.notifyListeners();
   };
 
@@ -108,11 +108,11 @@ class AccessibilityService {
    * Notify all listeners of state changes
    */
   private notifyListeners(): void {
-    this.listeners.forEach((listener) => {
+    this.listeners.forEach(listener => {
       try {
         listener(this.currentState);
       } catch (error) {
-        console.warn("Accessibility listener error:", error);
+        console.warn('Accessibility listener error:', error);
       }
     });
   }
@@ -194,10 +194,10 @@ class AccessibilityService {
     }
 
     if (recipe.isFavorite) {
-      parts.push("Favori");
+      parts.push('Favori');
     }
 
-    return parts.join(", ");
+    return parts.join(', ');
   }
 
   /**
@@ -205,19 +205,19 @@ class AccessibilityService {
    */
   generateAccessibilityHint(action: string, context?: string): string {
     const hints: Record<string, string> = {
-      add_ingredient: "Malzemeyi listeye eklemek için çift dokunun",
-      remove_ingredient: "Malzemeyi listeden çıkarmak için çift dokunun",
-      start_voice_input: "Sesli malzeme girişi başlatmak için çift dokunun",
-      search_recipes: "Yemek tariflerini aramak için çift dokunun",
-      view_recipe: "Tarif detaylarını görüntülemek için çift dokunun",
-      add_to_favorites: "Favorilere eklemek için çift dokunun",
-      remove_from_favorites: "Favorilerden çıkarmak için çift dokunun",
-      toggle_theme: "Tema değiştirmek için çift dokunın",
-      close_modal: "Pencereyi kapatmak için çift dokunun",
-      navigate_back: "Önceki sayfaya dönmek için çift dokunun",
+      add_ingredient: 'Malzemeyi listeye eklemek için çift dokunun',
+      remove_ingredient: 'Malzemeyi listeden çıkarmak için çift dokunun',
+      start_voice_input: 'Sesli malzeme girişi başlatmak için çift dokunun',
+      search_recipes: 'Yemek tariflerini aramak için çift dokunun',
+      view_recipe: 'Tarif detaylarını görüntülemek için çift dokunun',
+      add_to_favorites: 'Favorilere eklemek için çift dokunun',
+      remove_from_favorites: 'Favorilerden çıkarmak için çift dokunun',
+      toggle_theme: 'Tema değiştirmek için çift dokunın',
+      close_modal: 'Pencereyi kapatmak için çift dokunun',
+      navigate_back: 'Önceki sayfaya dönmek için çift dokunun',
     };
 
-    const baseHint = hints[action] || "Etkinleştirmek için çift dokunun";
+    const baseHint = hints[action] || 'Etkinleştirmek için çift dokunun';
     return context ? `${baseHint}. ${context}` : baseHint;
   }
 
@@ -225,7 +225,7 @@ class AccessibilityService {
    * Cleanup listeners
    */
   cleanup(): void {
-    this.subscriptions.forEach((sub) => sub.remove());
+    this.subscriptions.forEach(sub => sub.remove());
     this.subscriptions = [];
     this.listeners.clear();
   }

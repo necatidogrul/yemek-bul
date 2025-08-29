@@ -21,7 +21,9 @@
     "test": "echo \"Tests not implemented yet\" && exit 1",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json}\"",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md}\"",
+    "format:fix": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md}\"",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -69,6 +71,7 @@
     "@types/react": "~19.0.10",
     "@types/uuid": "^10.0.0",
     "babel-plugin-module-resolver": "^5.0.2",
+    "prettier": "^3.6.2",
     "typescript": "~5.8.3"
   },
   "private": true

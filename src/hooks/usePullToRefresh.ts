@@ -28,7 +28,7 @@ export const usePullToRefresh = (options: PullToRefreshOptions = {}) => {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshText, setRefreshText] = useState(pullToRefreshText);
-  
+
   const haptics = useHaptics();
   const { announceForAccessibility } = useAccessibility();
 
@@ -51,21 +51,21 @@ export const usePullToRefresh = (options: PullToRefreshOptions = {}) => {
 
     try {
       await onRefresh();
-      
+
       // Başarı durumunda haptic feedback
       if (hapticFeedback) {
         await haptics.success();
       }
-      
+
       announceForAccessibility('Sayfa başarıyla yenilendi');
     } catch (error) {
       console.error('Refresh error:', error);
-      
+
       // Hata durumunda haptic feedback
       if (hapticFeedback) {
         await haptics.error();
       }
-      
+
       announceForAccessibility('Sayfa yenileme sırasında hata oluştu');
     } finally {
       setIsRefreshing(false);
@@ -85,23 +85,29 @@ export const usePullToRefresh = (options: PullToRefreshOptions = {}) => {
   /**
    * Refresh durumunu manuel olarak değiştir
    */
-  const setRefreshing = useCallback((refreshing: boolean) => {
-    setIsRefreshing(refreshing);
-    setRefreshText(refreshing ? refreshingText : pullToRefreshText);
-  }, [refreshingText, pullToRefreshText]);
+  const setRefreshing = useCallback(
+    (refreshing: boolean) => {
+      setIsRefreshing(refreshing);
+      setRefreshText(refreshing ? refreshingText : pullToRefreshText);
+    },
+    [refreshingText, pullToRefreshText]
+  );
 
   /**
    * Refresh metnini güncelle (pull durumuna göre)
    */
-  const updateRefreshText = useCallback((isPulling: boolean, canRefresh: boolean) => {
-    if (isRefreshing) {
-      setRefreshText(refreshingText);
-    } else if (isPulling && canRefresh) {
-      setRefreshText(releaseToRefreshText);
-    } else {
-      setRefreshText(pullToRefreshText);
-    }
-  }, [isRefreshing, refreshingText, releaseToRefreshText, pullToRefreshText]);
+  const updateRefreshText = useCallback(
+    (isPulling: boolean, canRefresh: boolean) => {
+      if (isRefreshing) {
+        setRefreshText(refreshingText);
+      } else if (isPulling && canRefresh) {
+        setRefreshText(releaseToRefreshText);
+      } else {
+        setRefreshText(pullToRefreshText);
+      }
+    },
+    [isRefreshing, refreshingText, releaseToRefreshText, pullToRefreshText]
+  );
 
   return {
     isRefreshing,

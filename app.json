@@ -52,10 +52,7 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": [
-      "expo-localization", 
-      "expo-font"
-    ],
+    "plugins": ["expo-localization", "expo-font"],
     "owner": "shado7",
     "extra": {
       "eas": {

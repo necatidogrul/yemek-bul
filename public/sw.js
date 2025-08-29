@@ -1,6 +1,6 @@
 /**
  * Service Worker - Yemek Bulucu PWA
- * 
+ *
  * Features:
  * - Offline caching
  * - Background sync
@@ -20,32 +20,32 @@ const STATIC_ASSETS = [
   '/static/css/main.css',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
-  '/offline.html'
+  '/offline.html',
 ];
 
 // Cache edilecek API route'ları
 const API_CACHE_PATTERNS = [
   /\/api\/recipes/,
   /\/api\/ingredients/,
-  /\/api\/search/
+  /\/api\/search/,
 ];
 
 // Install event - ilk kurulum
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
   console.log('🚀 Service Worker: Installing...');
-  
+
   event.waitUntil(
     Promise.all([
       // Static assets'leri cache'le
-      caches.open(CACHE_NAME).then((cache) => {
+      caches.open(CACHE_NAME).then(cache => {
         console.log('📦 Caching static assets');
         return cache.addAll(STATIC_ASSETS);
       }),
-      
+
       // Offline page'i hazırla
-      caches.open(OFFLINE_CACHE).then((cache) => {
+      caches.open(OFFLINE_CACHE).then(cache => {
         return cache.add('/offline.html');
-      })
+      }),
     ]).then(() => {
       console.log('✅ Service Worker: Installation complete');
       // Yeni SW'yi hemen aktifleştir
@@ -55,28 +55,29 @@ self.addEventListener('install', (event) => {
 });
 
 // Activate event - aktivasyon
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   console.log('🔄 Service Worker: Activating...');
-  
+
   event.waitUntil(
     Promise.all([
       // Eski cache'leri temizle
-      caches.keys().then((cacheNames) => {
+      caches.keys().then(cacheNames => {
         return Promise.all(
-          cacheNames.map((cacheName) => {
-            if (cacheName !== CACHE_NAME && 
-                cacheName !== OFFLINE_CACHE && 
-                cacheName !== RUNTIME_CACHE) {
+          cacheNames.map(cacheName => {
+            if (
+              cacheName !== CACHE_NAME &&
+              cacheName !== OFFLINE_CACHE &&
+              cacheName !== RUNTIME_CACHE
+            ) {
               console.log('🗑️ Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       }),
-      
+
       // Tüm client'ları kontrol et
-      self.clients.claim()
-      
+      self.clients.claim(),
     ]).then(() => {
       console.log('✅ Service Worker: Activation complete');
     })
@@ -84,7 +85,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event - network istekleri
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
@@ -106,54 +107,55 @@ self.addEventListener('fetch', (event) => {
  */
 async function handleFetchRequest(request) {
   const url = new URL(request.url);
-  
+
   try {
     // 1. HTML pages - Network First (cache fallback)
     if (url.pathname === '/' || url.pathname.endsWith('.html')) {
       return await networkFirstStrategy(request, CACHE_NAME);
     }
-    
+
     // 2. API calls - Cache First (network fallback)
     if (isAPIRequest(url.pathname)) {
       return await cacheFirstStrategy(request, RUNTIME_CACHE);
     }
-    
+
     // 3. Static assets - Cache First
     if (isStaticAsset(url.pathname)) {
       return await cacheFirstStrategy(request, CACHE_NAME);
     }
-    
+
     // 4. Images - Cache First (long term)
     if (isImageRequest(request)) {
-      return await cacheFirstStrategy(request, RUNTIME_CACHE, { maxAge: 30 * 24 * 60 * 60 * 1000 }); // 30 gün
+      return await cacheFirstStrategy(request, RUNTIME_CACHE, {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      }); // 30 gün
     }
-    
+
     // 5. Default - Network First
     return await networkFirstStrategy(request, RUNTIME_CACHE);
-    
   } catch (error) {
     console.error('❌ Fetch error:', error);
-    
+
     // Offline fallback
     if (url.pathname === '/' || url.pathname.endsWith('.html')) {
       const offlineCache = await caches.open(OFFLINE_CACHE);
       return await offlineCache.match('/offline.html');
     }
-    
+
     // API için offline response
     if (isAPIRequest(url.pathname)) {
       return new Response(
-        JSON.stringify({ 
-          error: 'Offline', 
-          message: 'Bu işlem için internet bağlantısı gerekli' 
+        JSON.stringify({
+          error: 'Offline',
+          message: 'Bu işlem için internet bağlantısı gerekli',
         }),
-        { 
+        {
           status: 503,
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 'Content-Type': 'application/json' },
         }
       );
     }
-    
+
     throw error;
   }
 }
@@ -164,31 +166,30 @@ async function handleFetchRequest(request) {
  */
 async function networkFirstStrategy(request, cacheName, options = {}) {
   const cache = await caches.open(cacheName);
-  
+
   try {
     // Network'ten fetch et
     const networkResponse = await fetch(request);
-    
+
     if (networkResponse.ok) {
       // Başarılı response'u cache'e kaydet
       const responseClone = networkResponse.clone();
       await cache.put(request, responseClone);
-      
+
       console.log('🌐 Network First - from network:', request.url);
       return networkResponse;
     }
-    
+
     throw new Error('Network response not ok');
-    
   } catch (error) {
     // Network başarısız, cache'den dene
     const cachedResponse = await cache.match(request);
-    
+
     if (cachedResponse) {
       console.log('📦 Network First - from cache:', request.url);
       return cachedResponse;
     }
-    
+
     throw error;
   }
 }
@@ -200,32 +201,31 @@ async function networkFirstStrategy(request, cacheName, options = {}) {
 async function cacheFirstStrategy(request, cacheName, options = {}) {
   const cache = await caches.open(cacheName);
   const cachedResponse = await cache.match(request);
-  
+
   if (cachedResponse) {
     console.log('📦 Cache First - from cache:', request.url);
-    
+
     // Background'da network'ten güncelle (stale-while-revalidate)
     if (!options.skipBackgroundUpdate) {
       updateCacheInBackground(request, cache);
     }
-    
+
     return cachedResponse;
   }
-  
+
   // Cache'de yok, network'ten al
   try {
     const networkResponse = await fetch(request);
-    
+
     if (networkResponse.ok) {
       const responseClone = networkResponse.clone();
       await cache.put(request, responseClone);
-      
+
       console.log('🌐 Cache First - from network:', request.url);
       return networkResponse;
     }
-    
+
     throw new Error('Network response not ok');
-    
   } catch (error) {
     console.error('❌ Cache First failed:', request.url, error);
     throw error;
@@ -238,15 +238,15 @@ async function cacheFirstStrategy(request, cacheName, options = {}) {
 async function updateCacheInBackground(request, cache) {
   try {
     const networkResponse = await fetch(request);
-    
+
     if (networkResponse.ok) {
       await cache.put(request, networkResponse.clone());
       console.log('🔄 Background cache update:', request.url);
-      
+
       // Client'a cache güncellendiğini bildir
       broadcastToClients({
         type: 'CACHE_UPDATED',
-        data: { url: request.url }
+        data: { url: request.url },
       });
     }
   } catch (error) {
@@ -262,17 +262,21 @@ function isAPIRequest(pathname) {
 }
 
 function isStaticAsset(pathname) {
-  return pathname.includes('/static/') || 
-         pathname.endsWith('.js') || 
-         pathname.endsWith('.css') ||
-         pathname.endsWith('.woff') ||
-         pathname.endsWith('.woff2');
+  return (
+    pathname.includes('/static/') ||
+    pathname.endsWith('.js') ||
+    pathname.endsWith('.css') ||
+    pathname.endsWith('.woff') ||
+    pathname.endsWith('.woff2')
+  );
 }
 
 function isImageRequest(request) {
-  return request.destination === 'image' ||
-         request.url.includes('/images/') ||
-         /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(request.url);
+  return (
+    request.destination === 'image' ||
+    request.url.includes('/images/') ||
+    /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(request.url)
+  );
 }
 
 /**
@@ -286,26 +290,26 @@ async function broadcastToClients(message) {
 }
 
 // Message event - client'tan mesaj al
-self.addEventListener('message', (event) => {
+self.addEventListener('message', event => {
   const { type, data } = event.data;
-  
+
   switch (type) {
     case 'SKIP_WAITING':
       self.skipWaiting();
       break;
-      
+
     case 'BACKGROUND_SYNC':
       handleBackgroundSync();
       break;
-      
+
     case 'REFRESH_STALE_CACHE':
       refreshStaleCache();
       break;
-      
+
     case 'CLEAR_CACHE':
       clearAllCaches();
       break;
-      
+
     default:
       console.log('📨 Unknown message type:', type);
   }
@@ -317,10 +321,10 @@ self.addEventListener('message', (event) => {
 async function handleBackgroundSync() {
   try {
     console.log('🔄 Background sync started');
-    
+
     // Offline queue'daki istekleri işle
     const offlineQueue = await getOfflineQueue();
-    
+
     for (const queueItem of offlineQueue) {
       try {
         await processQueueItem(queueItem);
@@ -329,14 +333,13 @@ async function handleBackgroundSync() {
         console.warn('⚠️ Queue item failed:', queueItem.id, error);
       }
     }
-    
+
     broadcastToClients({
       type: 'SYNC_COMPLETED',
-      data: { processed: offlineQueue.length }
+      data: { processed: offlineQueue.length },
     });
-    
+
     console.log('✅ Background sync completed');
-    
   } catch (error) {
     console.error('❌ Background sync failed:', error);
   }
@@ -348,15 +351,14 @@ async function handleBackgroundSync() {
 async function refreshStaleCache() {
   try {
     console.log('🔄 Refreshing stale cache...');
-    
+
     const cache = await caches.open(RUNTIME_CACHE);
     const requests = await cache.keys();
-    
+
     // Her cache entry'yi background'da güncelle
     requests.forEach(request => {
       updateCacheInBackground(request, cache);
     });
-    
   } catch (error) {
     console.warn('⚠️ Cache refresh failed:', error);
   }
@@ -392,18 +394,18 @@ async function removeFromOfflineQueue(id) {
 }
 
 // Background Sync event (experimental)
-self.addEventListener('sync', (event) => {
+self.addEventListener('sync', event => {
   if (event.tag === 'background-sync') {
     event.waitUntil(handleBackgroundSync());
   }
 });
 
 // Push event (notification)
-self.addEventListener('push', (event) => {
+self.addEventListener('push', event => {
   if (!event.data) return;
-  
+
   const data = event.data.json();
-  
+
   const options = {
     body: data.body,
     icon: '/icons/icon-192x192.png',
@@ -411,26 +413,22 @@ self.addEventListener('push', (event) => {
     data: data.data,
     actions: data.actions || [
       { action: 'open', title: 'Aç' },
-      { action: 'dismiss', title: 'Kapat' }
-    ]
+      { action: 'dismiss', title: 'Kapat' },
+    ],
   };
-  
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
+
+  event.waitUntil(self.registration.showNotification(data.title, options));
 });
 
 // Notification click event
-self.addEventListener('notificationclick', (event) => {
+self.addEventListener('notificationclick', event => {
   event.notification.close();
-  
+
   const { action, data } = event;
-  
+
   if (action === 'open' || !action) {
     // App'i aç
-    event.waitUntil(
-      clients.openWindow(data?.url || '/')
-    );
+    event.waitUntil(clients.openWindow(data?.url || '/'));
   }
 });
 

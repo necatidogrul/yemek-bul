@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   Image,
   ImageStyle,
@@ -9,12 +9,12 @@ import {
   ImageResizeMode,
   Animated,
   Platform,
-} from "react-native";
-import { useThemedStyles } from "../../hooks/useThemedStyles";
+} from 'react-native';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
 
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
 
-interface OptimizedImageProps extends Omit<ImageProps, "source"> {
+interface OptimizedImageProps extends Omit<ImageProps, 'source'> {
   /** Görsel URL'i */
   source: string | { uri: string } | number;
   /** Görsel boyutu */
@@ -33,9 +33,9 @@ interface OptimizedImageProps extends Omit<ImageProps, "source"> {
   /** Fade in animasyonu */
   fadeIn?: boolean;
   /** Cache policy */
-  cachePolicy?: "memory" | "disk" | "memory-disk";
+  cachePolicy?: 'memory' | 'disk' | 'memory-disk';
   /** Priority */
-  priority?: "low" | "normal" | "high";
+  priority?: 'low' | 'normal' | 'high';
   /** Accessibility label */
   accessibilityLabel?: string;
   /** Test ID */
@@ -57,13 +57,13 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   width = 100,
   height = 100,
   borderRadius = 0,
-  resizeMode = "cover",
+  resizeMode = 'cover',
   showSkeleton = true,
-  errorIcon = "image-outline",
+  errorIcon = 'image-outline',
   placeholderColor,
   fadeIn = true,
-  cachePolicy = "memory-disk",
-  priority = "normal",
+  cachePolicy = 'memory-disk',
+  priority = 'normal',
   accessibilityLabel,
   testID,
   onLoadStart,
@@ -79,7 +79,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
   // Image source'u normalize et
   const imageSource = useMemo(() => {
-    if (typeof source === "string") {
+    if (typeof source === 'string') {
       return { uri: source };
     }
     return source;
@@ -100,7 +100,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
     if (fadeIn) {
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: Platform.OS === "ios" ? 200 : 300,
+        duration: Platform.OS === 'ios' ? 200 : 300,
         useNativeDriver: true,
       }).start();
     }
@@ -125,7 +125,7 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
       height,
       borderRadius,
       backgroundColor: placeholderColor || colors.background.tertiary,
-      overflow: "hidden",
+      overflow: 'hidden',
     }),
     [width, height, borderRadius, placeholderColor, colors.background.tertiary]
   );
@@ -191,15 +191,15 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
           onLoadEnd={handleLoadEnd}
           onError={handleError}
           accessible={true}
-          accessibilityLabel={accessibilityLabel || "Görsel"}
-          accessibilityRole="image"
+          accessibilityLabel={accessibilityLabel || 'Görsel'}
+          accessibilityRole='image'
           testID={testID}
           // Performance optimizasyonları
           fadeDuration={0} // Kendi fade animasyonumuzu kullanıyoruz
           progressiveRenderingEnabled={true}
           // Android specific
-          {...(Platform.OS === "android" && {
-            resizeMethod: "resize",
+          {...(Platform.OS === 'android' && {
+            resizeMethod: 'resize',
           })}
         />
       </Animated.View>
@@ -209,11 +209,11 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
 
 const styles = StyleSheet.create({
   placeholder: {
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   errorPlaceholder: {
-    backgroundColor: "#f5f5f5",
+    backgroundColor: '#f5f5f5',
   },
 });
 

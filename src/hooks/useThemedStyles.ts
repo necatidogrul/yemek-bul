@@ -8,11 +8,11 @@ import { getColors } from '../theme/design-tokens';
  */
 export const useThemedStyles = () => {
   const { isDark } = useTheme();
-  
+
   const colors = useMemo(() => {
     return getColors(isDark);
   }, [isDark]);
-  
+
   return {
     colors,
     isDark,

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,17 +9,17 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // UI Components
-import { Text, Button, Card } from "../ui";
-import { useThemedStyles } from "../../hooks/useThemedStyles";
-import { spacing, borderRadius, shadows } from "../../theme/design-tokens";
+import { Text, Button, Card } from '../ui';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
+import { spacing, borderRadius, shadows } from '../../theme/design-tokens';
 
 // Types
-import { Recipe } from "../../types/Recipe";
+import { Recipe } from '../../types/Recipe';
 
 interface RecipeQAModalProps {
   visible: boolean;
@@ -32,43 +32,43 @@ interface RecipeQAModalProps {
 const QUICK_QUESTIONS = [
   {
     id: 1,
-    text: "Bu yemek kaç kişilik?",
-    icon: "people",
+    text: 'Bu yemek kaç kişilik?',
+    icon: 'people',
   },
   {
     id: 2,
-    text: "Malzemeleri değiştirebilir miyim?",
-    icon: "swap-horizontal",
+    text: 'Malzemeleri değiştirebilir miyim?',
+    icon: 'swap-horizontal',
   },
   {
     id: 3,
-    text: "Pişirme süresini kısaltabilir miyim?",
-    icon: "time",
+    text: 'Pişirme süresini kısaltabilir miyim?',
+    icon: 'time',
   },
   {
     id: 4,
-    text: "Bu tarif hangi diyete uygun?",
-    icon: "fitness",
+    text: 'Bu tarif hangi diyete uygun?',
+    icon: 'fitness',
   },
   {
     id: 5,
-    text: "Kalorisi ne kadar?",
-    icon: "speedometer",
+    text: 'Kalorisi ne kadar?',
+    icon: 'speedometer',
   },
   {
     id: 6,
-    text: "Nasıl daha lezzetli yaparım?",
-    icon: "star",
+    text: 'Nasıl daha lezzetli yaparım?',
+    icon: 'star',
   },
   {
     id: 7,
-    text: "Hangi yan yemeklerle servis edilir?",
-    icon: "restaurant",
+    text: 'Hangi yan yemeklerle servis edilir?',
+    icon: 'restaurant',
   },
   {
     id: 8,
-    text: "Bu yemeği saklama koşulları nedir?",
-    icon: "archive",
+    text: 'Bu yemeği saklama koşulları nedir?',
+    icon: 'archive',
   },
 ];
 
@@ -79,10 +79,10 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
   onAskQuestion,
 }) => {
   const { colors } = useThemedStyles();
-  const [customQuestion, setCustomQuestion] = useState("");
+  const [customQuestion, setCustomQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  const [currentQuestion, setCurrentQuestion] = useState("");
+  const [currentQuestion, setCurrentQuestion] = useState('');
   const [conversation, setConversation] = useState<
     Array<{
       question: string;
@@ -93,7 +93,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
 
   const handleAskQuestion = async (question: string) => {
     if (!question.trim()) {
-      Alert.alert("Hata", "Lütfen bir soru girin.");
+      Alert.alert('Hata', 'Lütfen bir soru girin.');
       return;
     }
 
@@ -102,11 +102,11 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
       setCurrentQuestion(question.trim());
 
       // Soruyu hemen ekle
-      setConversation((prev) => [
+      setConversation(prev => [
         ...prev,
         {
           question: question.trim(),
-          answer: "",
+          answer: '',
           timestamp: new Date(),
         },
       ]);
@@ -117,18 +117,18 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
       const answer = await onAskQuestion(question.trim());
 
       // Cevabı güncelle
-      setConversation((prev) =>
+      setConversation(prev =>
         prev.map((item, index) =>
           index === prev.length - 1 ? { ...item, answer } : item
         )
       );
 
-      setCustomQuestion("");
-      setCurrentQuestion("");
+      setCustomQuestion('');
+      setCurrentQuestion('');
     } catch (error) {
       // Hatalı soruyu kaldır
-      setConversation((prev) => prev.slice(0, -1));
-      Alert.alert("Hata", "Soru sorulurken bir hata oluştu.");
+      setConversation(prev => prev.slice(0, -1));
+      Alert.alert('Hata', 'Soru sorulurken bir hata oluştu.');
     } finally {
       setLoading(false);
       setIsTyping(false);
@@ -162,7 +162,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
         />
       </View>
       <Text
-        variant="bodySmall"
+        variant='bodySmall'
         style={{
           color: colors.text.primary,
           flex: 1,
@@ -184,7 +184,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
               { backgroundColor: colors.primary[500] },
             ]}
           >
-            <Text variant="bodySmall" style={{ color: "white" }}>
+            <Text variant='bodySmall' style={{ color: 'white' }}>
               {item.question}
             </Text>
           </View>
@@ -207,12 +207,12 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
                 ]}
               >
                 <Ionicons
-                  name="sparkles"
+                  name='sparkles'
                   size={12}
                   color={colors.success[600]}
                 />
               </View>
-              <Text variant="caption" style={{ color: colors.text.secondary }}>
+              <Text variant='caption' style={{ color: colors.text.secondary }}>
                 AI Aşçı
               </Text>
               {!item.answer && isTyping && (
@@ -239,15 +239,15 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
               )}
             </View>
             {item.answer ? (
-              <Text variant="bodySmall" style={{ color: colors.text.primary }}>
+              <Text variant='bodySmall' style={{ color: colors.text.primary }}>
                 {item.answer}
               </Text>
             ) : isTyping ? (
               <Text
-                variant="bodySmall"
+                variant='bodySmall'
                 style={{
                   color: colors.text.secondary,
-                  fontStyle: "italic",
+                  fontStyle: 'italic',
                 }}
               >
                 Cevap hazırlanıyor...
@@ -255,15 +255,15 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
             ) : null}
             {item.answer && (
               <Text
-                variant="caption"
+                variant='caption'
                 style={{
                   color: colors.text.tertiary,
                   marginTop: spacing[2],
                 }}
               >
-                {item.timestamp.toLocaleTimeString("tr-TR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
+                {item.timestamp.toLocaleTimeString('tr-TR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
                 })}
               </Text>
             )}
@@ -276,8 +276,8 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
+      animationType='slide'
+      presentationStyle='pageSheet'
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
@@ -285,7 +285,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
           styles.container,
           { backgroundColor: colors.background.primary },
         ]}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Header */}
         <View
@@ -293,11 +293,11 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
         >
           <View style={styles.headerContent}>
             <LinearGradient
-              colors={[colors.success[500] + "20", colors.success[500] + "10"]}
+              colors={[colors.success[500] + '20', colors.success[500] + '10']}
               style={styles.headerIcon}
             >
               <Ionicons
-                name="help-circle"
+                name='help-circle'
                 size={24}
                 color={colors.success[500]}
               />
@@ -305,13 +305,13 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
 
             <View style={styles.headerText}>
               <Text
-                variant="h6"
-                weight="bold"
+                variant='h6'
+                weight='bold'
                 style={{ color: colors.text.primary }}
               >
                 Tarif Hakkında Soru Sor
               </Text>
-              <Text variant="caption" style={{ color: colors.text.secondary }}>
+              <Text variant='caption' style={{ color: colors.text.secondary }}>
                 {recipe?.name}
               </Text>
             </View>
@@ -319,7 +319,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
 
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color={colors.text.secondary} />
+              <Ionicons name='close' size={24} color={colors.text.secondary} />
             </TouchableOpacity>
           </View>
         </View>
@@ -329,8 +329,8 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
           {conversation.length > 0 && (
             <>
               <Text
-                variant="h6"
-                weight="semibold"
+                variant='h6'
+                weight='semibold'
                 style={{
                   color: colors.text.primary,
                   marginBottom: spacing[3],
@@ -345,8 +345,8 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
 
           {/* Quick Questions */}
           <Text
-            variant="h6"
-            weight="semibold"
+            variant='h6'
+            weight='semibold'
             style={{
               color: colors.text.primary,
               marginBottom: spacing[3],
@@ -363,8 +363,8 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
 
           {/* Custom Question Input */}
           <Text
-            variant="h6"
-            weight="semibold"
+            variant='h6'
+            weight='semibold'
             style={{
               color: colors.text.primary,
               marginBottom: spacing[3],
@@ -373,7 +373,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
             Özel Soru
           </Text>
 
-          <Card variant="outlined" style={styles.customQuestionCard}>
+          <Card variant='outlined' style={styles.customQuestionCard}>
             <TextInput
               style={[
                 styles.textInput,
@@ -382,24 +382,24 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
                   backgroundColor: colors.surface.primary,
                 },
               ]}
-              placeholder="Tarif hakkında sormak istediğin soruyu yaz..."
+              placeholder='Tarif hakkında sormak istediğin soruyu yaz...'
               placeholderTextColor={colors.text.tertiary}
               value={customQuestion}
               onChangeText={setCustomQuestion}
               multiline
               numberOfLines={3}
-              textAlignVertical="top"
+              textAlignVertical='top'
             />
 
             <Button
-              variant="primary"
-              size="sm"
+              variant='primary'
+              size='sm'
               onPress={() => handleAskQuestion(customQuestion)}
               loading={loading}
               disabled={!customQuestion.trim() || loading}
               style={{ marginTop: spacing[3] }}
             >
-              {loading ? "Soru Soruluyor..." : "Soru Sor (3 Kredi)"}
+              {loading ? 'Soru Soruluyor...' : 'Soru Sor (3 Kredi)'}
             </Button>
           </Card>
 
@@ -415,32 +415,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[4],
     borderBottomWidth: 1,
   },
   headerContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
   headerIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: spacing[3],
   },
   headerText: {
     flex: 1,
   },
   headerActions: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing[2],
   },
   upgradeButton: {
@@ -452,9 +452,9 @@ const styles = StyleSheet.create({
     padding: spacing[2],
   },
   creditsInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing[2],
     gap: spacing[2],
   },
@@ -471,23 +471,23 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   questionBubble: {
-    alignSelf: "flex-end",
-    maxWidth: "80%",
+    alignSelf: 'flex-end',
+    maxWidth: '80%',
     padding: spacing[3],
     borderRadius: borderRadius.lg,
     borderBottomRightRadius: spacing[1],
   },
   answerBubble: {
-    alignSelf: "flex-start",
-    maxWidth: "85%",
+    alignSelf: 'flex-start',
+    maxWidth: '85%',
     padding: spacing[3],
     borderRadius: borderRadius.lg,
     borderBottomLeftRadius: spacing[1],
     borderWidth: 1,
   },
   aiHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: spacing[2],
     gap: spacing[2],
   },
@@ -495,15 +495,15 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   quickQuestionsGrid: {
     gap: spacing[2],
   },
   quickQuestionCard: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: spacing[3],
     borderRadius: borderRadius.lg,
     borderWidth: 1,
@@ -514,8 +514,8 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   customQuestionCard: {
     padding: spacing[4],
@@ -528,15 +528,15 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: "#E5E7EB", // colors.border.primary,
+    backgroundColor: '#E5E7EB', // colors.border.primary,
     marginVertical: spacing[6],
   },
   bottomSpacing: {
     height: spacing[8],
   },
   typingIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginLeft: spacing[2],
     gap: 2,
   },

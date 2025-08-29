@@ -16,7 +16,7 @@ const replacements = [];
 // Console replacement mappings
 const replacementMap = {
   'console.log': 'Logger.info',
-  'console.info': 'Logger.info', 
+  'console.info': 'Logger.info',
   'console.warn': 'Logger.warn',
   'console.error': 'Logger.error',
   'console.debug': 'Logger.debug',
@@ -25,7 +25,7 @@ const replacementMap = {
 // Special cases that should be kept (for now)
 const keepPatterns = [
   /console\.log.*DEV.*/, // Keep __DEV__ conditional logs temporarily
-  /console\.error.*catch.*/, // Keep error logs in catch blocks temporarily  
+  /console\.error.*catch.*/, // Keep error logs in catch blocks temporarily
 ];
 
 function shouldKeepConsoleLog(line) {
@@ -38,37 +38,42 @@ function processFile(filePath) {
     let newContent = content;
     let modified = false;
     const lines = content.split('\n');
-    
+
     // Check if Logger is already imported
     const hasLoggerImport = /import.*Logger.*from.*LoggerService/.test(content);
-    
+
     lines.forEach((line, index) => {
       const trimmedLine = line.trim();
-      
+
       // Skip if this console log should be kept
       if (shouldKeepConsoleLog(line)) {
         return;
       }
-      
+
       // Find console statements
-      Object.entries(replacementMap).forEach(([consoleMethod, loggerMethod]) => {
-        const consoleRegex = new RegExp(`\\b${consoleMethod.replace('.', '\\.')}\\s*\\(`, 'g');
-        
-        if (consoleRegex.test(line)) {
-          const replacement = line.replace(consoleRegex, `${loggerMethod}(`);
-          newContent = newContent.replace(line, replacement);
-          modified = true;
-          
-          replacements.push({
-            file: filePath,
-            lineNumber: index + 1,
-            original: trimmedLine,
-            replacement: replacement.trim(),
-          });
+      Object.entries(replacementMap).forEach(
+        ([consoleMethod, loggerMethod]) => {
+          const consoleRegex = new RegExp(
+            `\\b${consoleMethod.replace('.', '\\.')}\\s*\\(`,
+            'g'
+          );
+
+          if (consoleRegex.test(line)) {
+            const replacement = line.replace(consoleRegex, `${loggerMethod}(`);
+            newContent = newContent.replace(line, replacement);
+            modified = true;
+
+            replacements.push({
+              file: filePath,
+              lineNumber: index + 1,
+              original: trimmedLine,
+              replacement: replacement.trim(),
+            });
+          }
         }
-      });
+      );
     });
-    
+
     // Add Logger import if needed and modifications were made
     if (modified && !hasLoggerImport) {
       // Find the last import statement that is not multiline
@@ -79,29 +84,36 @@ function processFile(filePath) {
           lastImportIndex = i;
         }
         // Stop looking if we hit non-import content
-        if (!line.startsWith('import') && !line.startsWith('//') && !line.startsWith('/*') && line.length > 0 && !line.startsWith('*') && !line.endsWith('*/')) {
+        if (
+          !line.startsWith('import') &&
+          !line.startsWith('//') &&
+          !line.startsWith('/*') &&
+          line.length > 0 &&
+          !line.startsWith('*') &&
+          !line.endsWith('*/')
+        ) {
           break;
         }
       }
-      
+
       if (lastImportIndex >= 0) {
         // Calculate relative path depth
-        const depth = filePath.split(path.sep).length - srcDir.split(path.sep).length - 1;
+        const depth =
+          filePath.split(path.sep).length - srcDir.split(path.sep).length - 1;
         const relativePath = '../'.repeat(depth) + 'services/LoggerService';
         const correctImport = `import { Logger } from '${relativePath}';`;
-        
+
         lines.splice(lastImportIndex + 1, 0, correctImport);
         newContent = lines.join('\n');
       }
     }
-    
+
     // Write back the modified content
     if (modified) {
       fs.writeFileSync(filePath, newContent, 'utf8');
       filesProcessed.push(filePath);
       console.log(`✅ Processed: ${path.relative(srcDir, filePath)}`);
     }
-    
   } catch (error) {
     console.error(`❌ Error processing ${filePath}:`, error.message);
   }
@@ -109,14 +121,17 @@ function processFile(filePath) {
 
 function walkDirectory(dir) {
   const files = fs.readdirSync(dir);
-  
+
   files.forEach(file => {
     const filePath = path.join(dir, file);
     const stat = fs.statSync(filePath);
-    
+
     if (stat.isDirectory()) {
       walkDirectory(filePath);
-    } else if (stat.isFile() && (file.endsWith('.ts') || file.endsWith('.tsx'))) {
+    } else if (
+      stat.isFile() &&
+      (file.endsWith('.ts') || file.endsWith('.tsx'))
+    ) {
       processFile(filePath);
     }
   });
@@ -128,7 +143,9 @@ console.log('🔧 Starting console.log removal for production build...\n');
 // Check if LoggerService exists
 const loggerServicePath = path.join(srcDir, 'services', 'LoggerService.ts');
 if (!fs.existsSync(loggerServicePath)) {
-  console.error('❌ LoggerService.ts not found! Please ensure it exists before running this script.');
+  console.error(
+    '❌ LoggerService.ts not found! Please ensure it exists before running this script.'
+  );
   process.exit(1);
 }
 
@@ -154,10 +171,14 @@ if (replacements.length > 0) {
 const manualReviewNeeded = [];
 filesProcessed.forEach(file => {
   const content = fs.readFileSync(file, 'utf8');
-  const remainingConsoleLogs = content.split('\n').filter(line => 
-    /console\.(log|info|warn|error|debug)/.test(line) && !shouldKeepConsoleLog(line)
-  );
-  
+  const remainingConsoleLogs = content
+    .split('\n')
+    .filter(
+      line =>
+        /console\.(log|info|warn|error|debug)/.test(line) &&
+        !shouldKeepConsoleLog(line)
+    );
+
   if (remainingConsoleLogs.length > 0) {
     manualReviewNeeded.push({
       file,
@@ -170,7 +191,9 @@ if (manualReviewNeeded.length > 0) {
   console.log('\n⚠️  Manual Review Required:');
   manualReviewNeeded.forEach(item => {
     const relativePath = path.relative(srcDir, item.file);
-    console.log(`  ${relativePath}: ${item.remainingLogs} console logs remaining`);
+    console.log(
+      `  ${relativePath}: ${item.remainingLogs} console logs remaining`
+    );
   });
 }
 

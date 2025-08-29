@@ -1,5 +1,11 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { View, StyleSheet, ScrollView, Text as RNText, TouchableOpacity } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Text as RNText,
+  TouchableOpacity,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing, borderRadius, getColors } from '../../theme/design-tokens';
 
@@ -74,7 +80,11 @@ export class ErrorBoundary extends Component<Props, State> {
             <View style={styles.errorCard}>
               {/* Icon */}
               <View style={styles.iconContainer}>
-                <Ionicons name="alert-circle" size={64} color={getColors(false).error[500]} />
+                <Ionicons
+                  name='alert-circle'
+                  size={64}
+                  color={getColors(false).error[500]}
+                />
               </View>
 
               {/* Title */}
@@ -82,7 +92,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
               {/* Description */}
               <RNText style={styles.description}>
-                Uygulamamızda teknik bir sorun yaşandı. Bu durumu geliştirici ekibimize bildirdik.
+                Uygulamamızda teknik bir sorun yaşandı. Bu durumu geliştirici
+                ekibimize bildirdik.
               </RNText>
 
               {/* Error Details (Development Only) */}
@@ -92,7 +103,9 @@ export class ErrorBoundary extends Component<Props, State> {
                     Hata Detayları (Geliştirici Modu)
                   </RNText>
                   <View style={styles.errorContent}>
-                    <RNText style={styles.errorText}>{this.state.error.toString()}</RNText>
+                    <RNText style={styles.errorText}>
+                      {this.state.error.toString()}
+                    </RNText>
                     {this.state.errorInfo && (
                       <RNText style={styles.stackTrace}>
                         {this.state.errorInfo.componentStack}
@@ -109,7 +122,11 @@ export class ErrorBoundary extends Component<Props, State> {
                   onPress={this.handleRetry}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="refresh" size={20} color={colors.text.inverse} />
+                  <Ionicons
+                    name='refresh'
+                    size={20}
+                    color={colors.text.inverse}
+                  />
                   <RNText style={styles.buttonText}>Tekrar Dene</RNText>
                 </TouchableOpacity>
 
@@ -122,8 +139,10 @@ export class ErrorBoundary extends Component<Props, State> {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="home" size={20} color={colors.primary[500]} />
-                  <RNText style={styles.outlineButtonText}>Ana Sayfaya Dön</RNText>
+                  <Ionicons name='home' size={20} color={colors.primary[500]} />
+                  <RNText style={styles.outlineButtonText}>
+                    Ana Sayfaya Dön
+                  </RNText>
                 </TouchableOpacity>
               </View>
 
@@ -147,7 +166,7 @@ export class ErrorBoundary extends Component<Props, State> {
 export const withErrorBoundary = <P extends object>(
   Component: React.ComponentType<P>,
   fallback?: ReactNode,
-  onError?: (error: Error, errorInfo: ErrorInfo) => void,
+  onError?: (error: Error, errorInfo: ErrorInfo) => void
 ) => {
   const WrappedComponent = (props: P) => (
     <ErrorBoundary fallback={fallback} onError={onError}>

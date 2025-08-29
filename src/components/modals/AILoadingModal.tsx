@@ -65,7 +65,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
           duration: 2000,
           easing: Easing.linear,
           useNativeDriver: true,
-        }),
+        })
       );
 
       // Pulse animation
@@ -83,7 +83,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
-        ]),
+        ])
       );
 
       spinAnimation.start();
@@ -113,15 +113,17 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
   return (
     <Modal
       isVisible={visible}
-      animationIn="fadeIn"
-      animationOut="fadeOut"
+      animationIn='fadeIn'
+      animationOut='fadeOut'
       backdropOpacity={0.8}
-      backdropColor="#000"
+      backdropColor='#000'
       style={styles.modal}
       onBackdropPress={onClose}
       useNativeDriverForBackdrop
     >
-      <View style={[styles.container, { backgroundColor: colors.surface.primary }]}>
+      <View
+        style={[styles.container, { backgroundColor: colors.surface.primary }]}
+      >
         {/* Header */}
         <LinearGradient
           colors={[currentStage.color + '20', currentStage.color + '10']}
@@ -139,23 +141,37 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
               },
             ]}
           >
-            <Ionicons name={currentStage.icon as any} size={32} color={currentStage.color} />
+            <Ionicons
+              name={currentStage.icon as any}
+              size={32}
+              color={currentStage.color}
+            />
           </Animated.View>
         </LinearGradient>
 
         {/* Content */}
         <View style={styles.content}>
-          <Text variant="h4" weight="bold" align="center" style={styles.title}>
+          <Text variant='h4' weight='bold' align='center' style={styles.title}>
             {currentStage.title}
           </Text>
 
-          <Text variant="body" color="secondary" align="center" style={styles.subtitle}>
+          <Text
+            variant='body'
+            color='secondary'
+            align='center'
+            style={styles.subtitle}
+          >
             {currentStage.subtitle}
           </Text>
 
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
-            <View style={[styles.progressBg, { backgroundColor: colors.neutral[200] }]}>
+            <View
+              style={[
+                styles.progressBg,
+                { backgroundColor: colors.neutral[200] },
+              ]}
+            >
               <Animated.View
                 style={[
                   styles.progressFill,
@@ -169,7 +185,11 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
                 ]}
               />
             </View>
-            <Text variant="caption" color="secondary" style={styles.progressText}>
+            <Text
+              variant='caption'
+              color='secondary'
+              style={styles.progressText}
+            >
               {Math.round(progress)}% tamamlandı
             </Text>
           </View>
@@ -203,9 +223,10 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
 
           {/* Fun Facts */}
           <View style={styles.factContainer}>
-            <Ionicons name="bulb" size={16} color={colors.warning[500]} />
-            <Text variant="caption" color="secondary" style={styles.factText}>
-              AI şu anda binlerce tarif veritabanını tarayarak size özel öneriler hazırlıyor
+            <Ionicons name='bulb' size={16} color={colors.warning[500]} />
+            <Text variant='caption' color='secondary' style={styles.factText}>
+              AI şu anda binlerce tarif veritabanını tarayarak size özel
+              öneriler hazırlıyor
             </Text>
           </View>
         </View>

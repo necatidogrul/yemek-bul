@@ -3,7 +3,8 @@ import { RefreshControl, RefreshControlProps } from 'react-native';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { useAccessibility } from '../../hooks/useAccessibility';
 
-interface PullToRefreshProps extends Omit<RefreshControlProps, 'colors' | 'tintColor'> {
+interface PullToRefreshProps
+  extends Omit<RefreshControlProps, 'colors' | 'tintColor'> {
   /** Custom renk override'ı */
   customColor?: string;
   /** Accessibility etiketi */
@@ -33,7 +34,8 @@ export const PullToRefresh: React.FC<PullToRefreshProps> = ({
   // Platform-specific renkler
   const refreshColors = customColor ? [customColor] : [colors.primary[500]];
   const refreshTintColor = tintColor || customColor || colors.primary[500];
-  const backgroundProgressColor = progressBackgroundColor || colors.background.primary;
+  const backgroundProgressColor =
+    progressBackgroundColor || colors.background.primary;
   const refreshTitleColor = titleColor || colors.text.secondary;
 
   return (

@@ -1,6 +1,6 @@
 /**
  * Premium Guard Hook
- * 
+ *
  * Premium özellikleri için koruma sağlar
  */
 
@@ -22,7 +22,9 @@ interface PremiumGuardResult {
   isPremium: boolean;
 }
 
-export const usePremiumGuard = (options: PremiumGuardOptions): PremiumGuardResult => {
+export const usePremiumGuard = (
+  options: PremiumGuardOptions
+): PremiumGuardResult => {
   const { feature, title, onPremiumRequired } = options;
   const { hasFeatureAccess, isPremium, showPaywall } = usePremium();
   const { t } = useTranslation();
@@ -46,8 +48,9 @@ export const usePremiumGuard = (options: PremiumGuardOptions): PremiumGuardResul
 
     // Paywall göster
     const featureName = getFeatureDisplayName(feature);
-    const paywallTitle = title || t('premium.upgrade_for_feature', { feature: featureName });
-    
+    const paywallTitle =
+      title || t('premium.upgrade_for_feature', { feature: featureName });
+
     showPaywall(featureName, paywallTitle);
   }, [hasAccess, onPremiumRequired, showPaywall, title, feature, t]);
 

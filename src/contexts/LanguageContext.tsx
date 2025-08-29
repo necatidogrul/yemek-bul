@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { changeLanguage, getCurrentLanguage } from "../locales";
-import * as Localization from "expo-localization";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { changeLanguage, getCurrentLanguage } from '../locales';
+import * as Localization from 'expo-localization';
 
 interface LanguageContextType {
   currentLanguage: string;
@@ -14,17 +14,17 @@ const LanguageContext = createContext<LanguageContextType | undefined>(
   undefined
 );
 
-const LANGUAGE_STORAGE_KEY = "app_language";
+const LANGUAGE_STORAGE_KEY = 'app_language';
 
 const AVAILABLE_LANGUAGES = [
-  { code: "tr", name: "Turkish", nativeName: "Türkçe" },
-  { code: "en", name: "English", nativeName: "English" },
+  { code: 'tr', name: 'Turkish', nativeName: 'Türkçe' },
+  { code: 'en', name: 'English', nativeName: 'English' },
 ];
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [currentLanguage, setCurrentLanguage] = useState<string>("tr");
+  const [currentLanguage, setCurrentLanguage] = useState<string>('tr');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -38,40 +38,40 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
 
       if (
         savedLanguage &&
-        AVAILABLE_LANGUAGES.some((lang) => lang.code === savedLanguage)
+        AVAILABLE_LANGUAGES.some(lang => lang.code === savedLanguage)
       ) {
         await changeLanguage(savedLanguage);
         setCurrentLanguage(savedLanguage);
       } else {
         // Use device locale with country-based detection
         const locales = Localization.getLocales();
-        let defaultLanguage = "en"; // Default to English for international users
+        let defaultLanguage = 'en'; // Default to English for international users
 
         if (locales && locales.length > 0) {
           const deviceLocale = locales[0];
-          const languageCode = deviceLocale.languageCode || "en";
+          const languageCode = deviceLocale.languageCode || 'en';
           const countryCode = deviceLocale.regionCode || null;
 
-          console.log("Language Context - Device locale:", {
+          console.log('Language Context - Device locale:', {
             languageCode,
             countryCode,
           });
 
           // Turkey-specific detection
-          if (countryCode === "TR" || languageCode === "tr") {
-            defaultLanguage = "tr";
+          if (countryCode === 'TR' || languageCode === 'tr') {
+            defaultLanguage = 'tr';
             console.log(
-              "Language Context - Setting Turkish based on country/language"
+              'Language Context - Setting Turkish based on country/language'
             );
           } else if (
-            AVAILABLE_LANGUAGES.some((lang) => lang.code === languageCode)
+            AVAILABLE_LANGUAGES.some(lang => lang.code === languageCode)
           ) {
             defaultLanguage = languageCode;
             console.log(
               `Language Context - Using device language: ${languageCode}`
             );
           } else {
-            console.log("Language Context - Using English fallback");
+            console.log('Language Context - Using English fallback');
           }
         }
 
@@ -80,10 +80,10 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
         await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, defaultLanguage);
       }
     } catch (error) {
-      console.error("Failed to initialize language:", error);
+      console.error('Failed to initialize language:', error);
       // Fallback to English for better international compatibility
-      await changeLanguage("en");
-      setCurrentLanguage("en");
+      await changeLanguage('en');
+      setCurrentLanguage('en');
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +96,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
       setCurrentLanguage(language);
       await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language);
     } catch (error) {
-      console.error("Failed to change language:", error);
+      console.error('Failed to change language:', error);
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +119,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useLanguage = (): LanguageContextType => {
   const context = useContext(LanguageContext);
   if (!context) {
-    throw new Error("useLanguage must be used within a LanguageProvider");
+    throw new Error('useLanguage must be used within a LanguageProvider');
   }
   return context;
 };

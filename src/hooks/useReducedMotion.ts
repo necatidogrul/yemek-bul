@@ -1,5 +1,5 @@
-import { useAccessibility } from "./useAccessibility";
-import { Animated } from "react-native";
+import { useAccessibility } from './useAccessibility';
+import { Animated } from 'react-native';
 
 /**
  * Hook for creating animations that respect reduce motion preferences
@@ -12,7 +12,7 @@ export const useReducedMotion = () => {
    */
   const timing = (
     value: Animated.Value,
-    config: Omit<Animated.TimingAnimationConfig, "duration"> & {
+    config: Omit<Animated.TimingAnimationConfig, 'duration'> & {
       duration: number;
       reducedDuration?: number;
     }

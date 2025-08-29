@@ -1,8 +1,8 @@
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import * as Localization from "expo-localization";
-import { tr } from "./tr";
-import { en } from "./en";
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import * as Localization from 'expo-localization';
+import { tr } from './tr';
+import { en } from './en';
 
 // Define translation resources
 const resources = {
@@ -16,38 +16,38 @@ const getDeviceLocale = (): string => {
 
   if (locales && locales.length > 0) {
     const deviceLocale = locales[0];
-    const languageCode = deviceLocale.languageCode || "en";
+    const languageCode = deviceLocale.languageCode || 'en';
     const countryCode = deviceLocale.regionCode || null;
 
-    console.log("Device locale detected:", {
+    console.log('Device locale detected:', {
       languageCode,
       countryCode,
       region: deviceLocale.regionCode,
     });
 
     // Turkey-specific detection
-    if (countryCode === "TR" || languageCode === "tr") {
-      console.log("Turkish locale detected, setting language to TR");
-      return "tr";
+    if (countryCode === 'TR' || languageCode === 'tr') {
+      console.log('Turkish locale detected, setting language to TR');
+      return 'tr';
     }
 
     // If language is supported, use it
-    if (["tr", "en"].includes(languageCode)) {
+    if (['tr', 'en'].includes(languageCode)) {
       console.log(`Supported language detected: ${languageCode}`);
       return languageCode;
     }
   }
 
   // Fallback to English for international users
-  console.log("Falling back to English locale");
-  return "en";
+  console.log('Falling back to English locale');
+  return 'en';
 };
 
 // Initialize i18n
 i18n.use(initReactI18next).init({
   resources,
   lng: getDeviceLocale(),
-  fallbackLng: "en", // Default to English for international users
+  fallbackLng: 'en', // Default to English for international users
 
   interpolation: {
     escapeValue: false, // React already escapes values
@@ -57,8 +57,8 @@ i18n.use(initReactI18next).init({
   debug: __DEV__,
 
   // Namespace options
-  defaultNS: "translation",
-  ns: ["translation"],
+  defaultNS: 'translation',
+  ns: ['translation'],
 
   // React options
   react: {
@@ -67,8 +67,8 @@ i18n.use(initReactI18next).init({
 
   // Detection options
   detection: {
-    order: ["localStorage", "navigator"],
-    caches: ["localStorage"],
+    order: ['localStorage', 'navigator'],
+    caches: ['localStorage'],
   },
 });
 

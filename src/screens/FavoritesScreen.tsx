@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -10,44 +10,44 @@ import {
   StatusBar,
   TextInput,
   Animated,
-} from "react-native";
-import { Logger } from "../services/LoggerService";
-import { StackNavigationProp } from "@react-navigation/stack";
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { FavoritesStackParamList } from "../../App";
-import { Recipe } from "../types/Recipe";
-import { FavoritesService } from "../services/FavoritesService";
+} from 'react-native';
+import { Logger } from '../services/LoggerService';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { FavoritesStackParamList } from '../../App';
+import { Recipe } from '../types/Recipe';
+import { FavoritesService } from '../services/FavoritesService';
 
 // UI Components
-import { Button, Card, Text } from "../components/ui";
-import { RecipeCard } from "../components/ui/RecipeCard";
-import { PullToRefresh } from "../components/ui/PullToRefresh";
-import { usePullToRefresh } from "../hooks/usePullToRefresh";
-import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
-import { useTheme } from "../contexts/ThemeContext";
-import { spacing, borderRadius, elevation } from "../contexts/ThemeContext";
+import { Button, Card, Text } from '../components/ui';
+import { RecipeCard } from '../components/ui/RecipeCard';
+import { PullToRefresh } from '../components/ui/PullToRefresh';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { useOptimizedFlatList } from '../hooks/useOptimizedFlatList';
+import { useTheme } from '../contexts/ThemeContext';
+import { spacing, borderRadius, elevation } from '../contexts/ThemeContext';
 
-import { useToast } from "../contexts/ToastContext";
-import { useHaptics } from "../hooks/useHaptics";
+import { useToast } from '../contexts/ToastContext';
+import { useHaptics } from '../hooks/useHaptics';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 type FavoritesScreenProps = {
-  navigation: StackNavigationProp<FavoritesStackParamList, "FavoritesMain">;
+  navigation: StackNavigationProp<FavoritesStackParamList, 'FavoritesMain'>;
 };
 
-type ViewMode = "list" | "grid";
-type SortOption = "recent" | "name" | "cookingTime";
-type FilterOption = "all" | "easy" | "medium" | "hard";
+type ViewMode = 'list' | 'grid';
+type SortOption = 'recent' | 'name' | 'cookingTime';
+type FilterOption = 'all' | 'easy' | 'medium' | 'hard';
 
 const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const [favorites, setFavorites] = useState<Recipe[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("recent");
-  const [filterBy, setFilterBy] = useState<FilterOption>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [showFilters, setShowFilters] = useState(false);
 
   const { colors } = useTheme();
@@ -64,34 +64,34 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     // Apply search filter
     if (searchQuery.trim()) {
       result = result.filter(
-        (recipe) =>
+        recipe =>
           recipe.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          recipe.ingredients?.some((ingredient) =>
+          recipe.ingredients?.some(ingredient =>
             ingredient.toLowerCase().includes(searchQuery.toLowerCase())
           )
       );
     }
 
     // Apply difficulty filter
-    if (filterBy !== "all") {
+    if (filterBy !== 'all') {
       const difficultyMap = {
-        easy: ["Kolay", "Easy"],
-        medium: ["Orta", "Medium"],
-        hard: ["Zor", "Hard"],
+        easy: ['Kolay', 'Easy'],
+        medium: ['Orta', 'Medium'],
+        hard: ['Zor', 'Hard'],
       };
-      result = result.filter((recipe) =>
-        difficultyMap[filterBy].includes(recipe.difficulty || "")
+      result = result.filter(recipe =>
+        difficultyMap[filterBy].includes(recipe.difficulty || '')
       );
     }
 
     // Apply sorting
     result.sort((a, b) => {
       switch (sortBy) {
-        case "name":
+        case 'name':
           return a.name.localeCompare(b.name);
-        case "cookingTime":
+        case 'cookingTime':
           return (a.cookingTime || 30) - (b.cookingTime || 30);
-        case "recent":
+        case 'recent':
         default:
           return (
             new Date(b.createdAt || 0).getTime() -
@@ -109,8 +109,8 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 
   const { optimizedProps, onEndReached } = useOptimizedFlatList<Recipe>({
     enableGetItemLayout: true,
-    itemHeight: viewMode === "grid" ? 180 : 120,
-    keyExtractor: (item) => item.id || `recipe-${Date.now()}-${Math.random()}`,
+    itemHeight: viewMode === 'grid' ? 180 : 120,
+    keyExtractor: item => item.id || `recipe-${Date.now()}-${Math.random()}`,
   });
 
   async function loadFavorites() {
@@ -119,7 +119,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       const favRecipes = await FavoritesService.getFavoriteRecipes();
 
       // Validate recipes have valid IDs
-      const invalidRecipes = favRecipes.filter((recipe) => !recipe.id);
+      const invalidRecipes = favRecipes.filter(recipe => !recipe.id);
       if (invalidRecipes.length > 0) {
         Logger.warn(
           `Found ${invalidRecipes.length} recipes without IDs, they should be auto-fixed`
@@ -129,8 +129,8 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       setFavorites(favRecipes);
       Logger.info(`Loaded ${favRecipes.length} favorite recipes`);
     } catch (error) {
-      Logger.error("Failed to load favorites:", error);
-      showError("Favoriler yüklenemedi");
+      Logger.error('Failed to load favorites:', error);
+      showError('Favoriler yüklenemedi');
       setFavorites([]); // Set empty array as fallback
     } finally {
       setIsLoading(false);
@@ -138,7 +138,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   }
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
+    const unsubscribe = navigation.addListener('focus', () => {
       loadFavorites();
     });
 
@@ -150,12 +150,12 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     // Check if recipe has valid id
     if (!recipe.id) {
       showError(
-        "Bu tarif bozuk görünüyor. Lütfen uygulamayı yeniden başlatın."
+        'Bu tarif bozuk görünüyor. Lütfen uygulamayı yeniden başlatın.'
       );
       return;
     }
 
-    navigation.navigate("RecipeDetail", {
+    navigation.navigate('RecipeDetail', {
       recipeId: recipe.id,
       recipeName: recipe.name,
     });
@@ -174,9 +174,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   };
 
   const clearFilters = () => {
-    setSearchQuery("");
-    setSortBy("recent");
-    setFilterBy("all");
+    setSearchQuery('');
+    setSortBy('recent');
+    setFilterBy('all');
     haptics.selection();
   };
 
@@ -192,7 +192,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <Ionicons name="restaurant" size={32} color="white" />
+        <Ionicons name='restaurant' size={32} color='white' />
 
         {/* Difficulty Badge */}
         {item.difficulty && (
@@ -201,54 +201,54 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
               styles.difficultyBadge,
               {
                 backgroundColor:
-                  item.difficulty === "kolay"
+                  item.difficulty === 'kolay'
                     ? colors.semantic.success
-                    : item.difficulty === "orta"
-                    ? colors.semantic.warning
-                    : colors.semantic.error,
+                    : item.difficulty === 'orta'
+                      ? colors.semantic.warning
+                      : colors.semantic.error,
               },
             ]}
           >
             <Ionicons
               name={
-                item.difficulty === "kolay"
-                  ? "checkmark"
-                  : item.difficulty === "orta"
-                  ? "pause"
-                  : "alert"
+                item.difficulty === 'kolay'
+                  ? 'checkmark'
+                  : item.difficulty === 'orta'
+                    ? 'pause'
+                    : 'alert'
               }
               size={10}
-              color="white"
+              color='white'
             />
           </View>
         )}
       </LinearGradient>
 
       <View style={styles.gridItemContent}>
-        <Text variant="labelLarge" weight="600" numberOfLines={2}>
+        <Text variant='labelLarge' weight='600' numberOfLines={2}>
           {item.name}
         </Text>
 
         <View style={styles.gridItemStats}>
           <View style={styles.gridItemStat}>
             <Ionicons
-              name="time-outline"
+              name='time-outline'
               size={12}
               color={colors.text.secondary}
             />
-            <Text variant="labelSmall" color="secondary">
-              {item.cookingTime || "30"}dk
+            <Text variant='labelSmall' color='secondary'>
+              {item.cookingTime || '30'}dk
             </Text>
           </View>
 
           <View style={styles.gridItemStat}>
             <Ionicons
-              name="people-outline"
+              name='people-outline'
               size={12}
               color={colors.text.secondary}
             />
-            <Text variant="labelSmall" color="secondary">
-              {item.servings || "4"}
+            <Text variant='labelSmall' color='secondary'>
+              {item.servings || '4'}
             </Text>
           </View>
         </View>
@@ -256,12 +256,12 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
         <TouchableOpacity
           style={[
             styles.favoriteIcon,
-            { backgroundColor: colors.semantic.error + "20" },
+            { backgroundColor: colors.semantic.error + '20' },
           ]}
           onPress={async () => {
             if (!item.id) {
               showError(
-                "Bu tarif bozuk görünüyor. Favorileri temizlemeyi deneyin."
+                'Bu tarif bozuk görünüyor. Favorileri temizlemeyi deneyin.'
               );
               return;
             }
@@ -269,14 +269,14 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             const success = await FavoritesService.removeFromFavorites(item.id);
             if (success) {
               haptics.notificationSuccess();
-              showSuccess("Tarif favorilerden çıkarıldı");
+              showSuccess('Tarif favorilerden çıkarıldı');
               loadFavorites(); // Refresh list
             } else {
-              showError("Tarif çıkarılırken hata oluştu");
+              showError('Tarif çıkarılırken hata oluştu');
             }
           }}
         >
-          <Ionicons name="heart" size={14} color={colors.semantic.error} />
+          <Ionicons name='heart' size={14} color={colors.semantic.error} />
         </TouchableOpacity>
       </View>
     </TouchableOpacity>
@@ -285,7 +285,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const renderListItem = ({ item }: { item: Recipe }) => (
     <RecipeCard
       recipe={item}
-      variant="compact"
+      variant='compact'
       onPress={() => handleRecipePress(item)}
     />
   );
@@ -296,46 +296,46 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
         colors={[colors.primary[100], colors.primary[200]]}
         style={styles.emptyIcon}
       >
-        <Ionicons name="heart-outline" size={60} color={colors.primary[500]} />
+        <Ionicons name='heart-outline' size={60} color={colors.primary[500]} />
       </LinearGradient>
 
       <Text
-        variant="headlineSmall"
-        weight="600"
-        align="center"
+        variant='headlineSmall'
+        weight='600'
+        align='center'
         style={{ marginVertical: spacing.lg }}
       >
-        {searchQuery || filterBy !== "all"
-          ? "Sonuç Bulunamadı"
-          : "Henüz Favori Yok"}
+        {searchQuery || filterBy !== 'all'
+          ? 'Sonuç Bulunamadı'
+          : 'Henüz Favori Yok'}
       </Text>
 
       <Text
-        variant="bodyMedium"
-        color="secondary"
-        align="center"
+        variant='bodyMedium'
+        color='secondary'
+        align='center'
         style={{ marginBottom: spacing.xl }}
       >
-        {searchQuery || filterBy !== "all"
-          ? "Arama kriterlerinize uygun favori tarif bulunamadı"
-          : "Beğendiğin tarifleri favorilere ekleyerek burada görebilirsin"}
+        {searchQuery || filterBy !== 'all'
+          ? 'Arama kriterlerinize uygun favori tarif bulunamadı'
+          : 'Beğendiğin tarifleri favorilere ekleyerek burada görebilirsin'}
       </Text>
 
-      {!searchQuery && filterBy === "all" && (
+      {!searchQuery && filterBy === 'all' && (
         <Button
-          variant="primary"
-          onPress={() => navigation.getParent()?.navigate("HomeTab" as any)}
-          leftIcon={<Ionicons name="search" size={20} color="white" />}
+          variant='primary'
+          onPress={() => navigation.getParent()?.navigate('HomeTab' as any)}
+          leftIcon={<Ionicons name='search' size={20} color='white' />}
         >
           Tarifler Keşfet
         </Button>
       )}
 
-      {(searchQuery || filterBy !== "all") && (
+      {(searchQuery || filterBy !== 'all') && (
         <Button
-          variant="outline"
+          variant='outline'
           onPress={clearFilters}
-          leftIcon={<Ionicons name="refresh" size={20} />}
+          leftIcon={<Ionicons name='refresh' size={20} />}
         >
           Filtreleri Temizle
         </Button>
@@ -358,32 +358,32 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       ]}
     >
       <View style={styles.filterRow}>
-        <Text variant="labelMedium" weight="600">
+        <Text variant='labelMedium' weight='600'>
           Sıralama:
         </Text>
         <View style={styles.filterOptions}>
           {[
-            { key: "recent", label: "En Yeni" },
-            { key: "name", label: "İsim" },
-            { key: "cookingTime", label: "Süre" },
-          ].map((option) => (
+            { key: 'recent', label: 'En Yeni' },
+            { key: 'name', label: 'İsim' },
+            { key: 'cookingTime', label: 'Süre' },
+          ].map(option => (
             <TouchableOpacity
               key={option.key}
               style={[
                 styles.filterOption,
                 {
                   backgroundColor:
-                    sortBy === option.key ? colors.primary[500] : "transparent",
+                    sortBy === option.key ? colors.primary[500] : 'transparent',
                   borderColor: colors.primary[500],
                 },
               ]}
               onPress={() => setSortBy(option.key as SortOption)}
             >
               <Text
-                variant="labelSmall"
-                weight="500"
+                variant='labelSmall'
+                weight='500'
                 style={{
-                  color: sortBy === option.key ? "white" : colors.primary[500],
+                  color: sortBy === option.key ? 'white' : colors.primary[500],
                 }}
               >
                 {option.label}
@@ -394,16 +394,16 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.filterRow}>
-        <Text variant="labelMedium" weight="600">
+        <Text variant='labelMedium' weight='600'>
           Zorluk:
         </Text>
         <View style={styles.filterOptions}>
           {[
-            { key: "all", label: "Tümü" },
-            { key: "easy", label: "Kolay" },
-            { key: "medium", label: "Orta" },
-            { key: "hard", label: "Zor" },
-          ].map((option) => (
+            { key: 'all', label: 'Tümü' },
+            { key: 'easy', label: 'Kolay' },
+            { key: 'medium', label: 'Orta' },
+            { key: 'hard', label: 'Zor' },
+          ].map(option => (
             <TouchableOpacity
               key={option.key}
               style={[
@@ -412,18 +412,18 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                   backgroundColor:
                     filterBy === option.key
                       ? colors.secondary[500]
-                      : "transparent",
+                      : 'transparent',
                   borderColor: colors.secondary[500],
                 },
               ]}
               onPress={() => setFilterBy(option.key as FilterOption)}
             >
               <Text
-                variant="labelSmall"
-                weight="500"
+                variant='labelSmall'
+                weight='500'
                 style={{
                   color:
-                    filterBy === option.key ? "white" : colors.secondary[500],
+                    filterBy === option.key ? 'white' : colors.secondary[500],
                 }}
               >
                 {option.label}
@@ -440,8 +440,8 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
         ]}
         onPress={clearFilters}
       >
-        <Ionicons name="refresh" size={16} color={colors.text.secondary} />
-        <Text variant="labelMedium" color="secondary">
+        <Ionicons name='refresh' size={16} color={colors.text.secondary} />
+        <Text variant='labelMedium' color='secondary'>
           Temizle
         </Text>
       </TouchableOpacity>
@@ -452,16 +452,16 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background }]}
     >
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar barStyle='dark-content' backgroundColor={colors.background} />
 
       {/* Header */}
       <View style={[styles.header, { backgroundColor: colors.background }]}>
         <View style={styles.headerTop}>
           <View style={styles.headerLeft}>
-            <Text variant="displaySmall" weight="700">
+            <Text variant='displaySmall' weight='700'>
               Favorilerim
             </Text>
-            <Text variant="bodyMedium" color="secondary">
+            <Text variant='bodyMedium' color='secondary'>
               {filteredFavorites.length} tarif
             </Text>
           </View>
@@ -472,18 +472,18 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                 styles.headerButton,
                 {
                   backgroundColor:
-                    viewMode === "grid" ? colors.primary[500] : colors.surface,
+                    viewMode === 'grid' ? colors.primary[500] : colors.surface,
                 },
               ]}
               onPress={() => {
-                setViewMode("grid");
+                setViewMode('grid');
                 haptics.selection();
               }}
             >
               <Ionicons
-                name="grid"
+                name='grid'
                 size={20}
-                color={viewMode === "grid" ? "white" : colors.text.primary}
+                color={viewMode === 'grid' ? 'white' : colors.text.primary}
               />
             </TouchableOpacity>
 
@@ -492,18 +492,18 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                 styles.headerButton,
                 {
                   backgroundColor:
-                    viewMode === "list" ? colors.primary[500] : colors.surface,
+                    viewMode === 'list' ? colors.primary[500] : colors.surface,
                 },
               ]}
               onPress={() => {
-                setViewMode("list");
+                setViewMode('list');
                 haptics.selection();
               }}
             >
               <Ionicons
-                name="list"
+                name='list'
                 size={20}
-                color={viewMode === "list" ? "white" : colors.text.primary}
+                color={viewMode === 'list' ? 'white' : colors.text.primary}
               />
             </TouchableOpacity>
           </View>
@@ -514,18 +514,18 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           <View
             style={[styles.searchInput, { backgroundColor: colors.surface }]}
           >
-            <Ionicons name="search" size={20} color={colors.text.secondary} />
+            <Ionicons name='search' size={20} color={colors.text.secondary} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Favorilerde ara..."
+              placeholder='Favorilerde ara...'
               placeholderTextColor={colors.text.secondary}
               style={[styles.searchText, { color: colors.text.primary }]}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
                 <Ionicons
-                  name="close-circle"
+                  name='close-circle'
                   size={20}
                   color={colors.text.secondary}
                 />
@@ -545,9 +545,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             onPress={toggleFilters}
           >
             <Ionicons
-              name="options"
+              name='options'
               size={20}
-              color={showFilters ? "white" : colors.text.primary}
+              color={showFilters ? 'white' : colors.text.primary}
             />
           </TouchableOpacity>
         </View>
@@ -559,10 +559,10 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       {/* Content */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary[500]} />
+          <ActivityIndicator size='large' color={colors.primary[500]} />
           <Text
-            variant="bodyMedium"
-            color="secondary"
+            variant='bodyMedium'
+            color='secondary'
             style={{ marginTop: spacing.md }}
           >
             Favoriler yükleniyor...
@@ -571,8 +571,8 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       ) : (
         <FlatList
           data={filteredFavorites}
-          renderItem={viewMode === "grid" ? renderGridItem : renderListItem}
-          numColumns={viewMode === "grid" ? 2 : 1}
+          renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
+          numColumns={viewMode === 'grid' ? 2 : 1}
           key={viewMode} // Force re-render when switching modes
           contentContainerStyle={[
             styles.listContainer,
@@ -581,7 +581,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           ]}
           bounces={true}
           nestedScrollEnabled={true}
-          columnWrapperStyle={viewMode === "grid" ? styles.gridRow : undefined}
+          columnWrapperStyle={viewMode === 'grid' ? styles.gridRow : undefined}
           showsVerticalScrollIndicator={false}
           refreshing={isRefreshing}
           onRefresh={handleRefresh}
@@ -590,7 +590,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           {...optimizedProps}
           ListEmptyComponent={renderEmpty}
           ItemSeparatorComponent={() =>
-            viewMode === "list" ? <View style={{ height: spacing.sm }} /> : null
+            viewMode === 'list' ? <View style={{ height: spacing.sm }} /> : null
           }
         />
       )}
@@ -611,37 +611,37 @@ const styles = StyleSheet.create({
     ...elevation.low,
   },
   headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: spacing.lg,
   },
   headerLeft: {
     flex: 1,
   },
   headerRight: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.xs,
   },
   headerButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     ...elevation.low,
   },
 
   // Search
   searchContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
   searchInput: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.medium,
@@ -656,8 +656,8 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     ...elevation.low,
   },
 
@@ -666,15 +666,15 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.large,
     padding: spacing.md,
     gap: spacing.md,
-    overflow: "hidden",
+    overflow: 'hidden',
     ...elevation.medium,
   },
   filterRow: {
     gap: spacing.sm,
   },
   filterOptions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.xs,
   },
   filterOption: {
@@ -684,9 +684,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   clearFiltersButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.medium,
     borderWidth: 1,
@@ -696,8 +696,8 @@ const styles = StyleSheet.create({
   // Content
   loadingContainer: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.xl,
   },
   listContainer: {
@@ -705,10 +705,10 @@ const styles = StyleSheet.create({
   },
   emptyListContainer: {
     flex: 1,
-    justifyContent: "center",
+    justifyContent: 'center',
   },
   gridRow: {
-    justifyContent: "space-between",
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.xs,
   },
 
@@ -716,18 +716,18 @@ const styles = StyleSheet.create({
   gridItem: {
     width: (screenWidth - spacing.md * 3) / 2,
     borderRadius: borderRadius.large,
-    overflow: "hidden",
+    overflow: 'hidden',
     marginBottom: spacing.md,
     ...elevation.low,
   },
   gridItemImage: {
     height: 120,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
   },
   premiumBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: spacing.xs,
     left: spacing.xs,
     paddingHorizontal: spacing.xs,
@@ -735,43 +735,43 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.small,
   },
   difficultyBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: spacing.xs,
     right: spacing.xs,
     width: 20,
     height: 20,
     borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   gridItemContent: {
     padding: spacing.md,
-    position: "relative",
+    position: 'relative',
   },
   gridItemStats: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: spacing.xs,
   },
   gridItemStat: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.tiny,
   },
   favoriteIcon: {
-    position: "absolute",
+    position: 'absolute',
     top: spacing.xs,
     right: spacing.xs,
     width: 28,
     height: 28,
     borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Empty State
   emptyContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.xxxl,
   },
@@ -779,8 +779,8 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

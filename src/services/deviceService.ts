@@ -1,12 +1,12 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Platform } from "react-native";
-import * as Application from "expo-application";
-import { v4 as uuidv4 } from "uuid";
-import { Logger } from "./LoggerService";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import * as Application from 'expo-application';
+import { v4 as uuidv4 } from 'uuid';
+import { Logger } from './LoggerService';
 
 export class DeviceService {
-  private static DEVICE_ID_KEY = "device_id";
-  private static SESSION_ID_KEY = "session_id";
+  private static DEVICE_ID_KEY = 'device_id';
+  private static SESSION_ID_KEY = 'session_id';
 
   /**
    * Unique device ID al veya oluştur
@@ -18,10 +18,10 @@ export class DeviceService {
 
       if (!deviceId) {
         // Platform-specific device ID oluştur
-        if (Platform.OS === "ios") {
+        if (Platform.OS === 'ios') {
           // iOS için Application ID kullan
           deviceId = Application.androidId || `ios_${uuidv4()}`;
-        } else if (Platform.OS === "android") {
+        } else if (Platform.OS === 'android') {
           // Android için Application ID kullan
           deviceId = Application.androidId || `android_${uuidv4()}`;
         } else {
@@ -38,7 +38,7 @@ export class DeviceService {
 
       return deviceId;
     } catch (error) {
-      Logger.error("Failed to get device ID:", error);
+      Logger.error('Failed to get device ID:', error);
       // Fallback UUID
       return `fallback_${uuidv4()}`;
     }
@@ -64,7 +64,7 @@ export class DeviceService {
 
       return sessionId;
     } catch (error) {
-      Logger.error("Failed to get session ID:", error);
+      Logger.error('Failed to get session ID:', error);
       return `session_${Date.now()}_${uuidv4()}`;
     }
   }
@@ -78,11 +78,10 @@ export class DeviceService {
       version: Platform.Version,
       isDevice: Platform.isPad || Platform.isTV,
       brand: Platform.select({
-        ios: "iOS",
-        android: "Android",
-        default: "Unknown",
+        ios: 'iOS',
+        android: 'Android',
+        default: 'Unknown',
       }),
     };
   }
 }
-

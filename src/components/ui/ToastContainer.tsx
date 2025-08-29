@@ -15,7 +15,7 @@ export const ToastContainer: React.FC = () => {
   const bottomToasts = toasts.filter(toast => toast.position === 'bottom');
 
   return (
-    <View style={styles.container} pointerEvents="box-none">
+    <View style={styles.container} pointerEvents='box-none'>
       {/* Top toasts */}
       {topToasts.map((toast, index) => (
         <Toast

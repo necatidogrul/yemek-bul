@@ -45,7 +45,7 @@ export class UnsplashService {
         `${this.API_URL}/search/photos?query=${encodeURIComponent(searchTerm)}&page=1&per_page=1&orientation=landscape`,
         {
           headers: {
-            'Authorization': `Client-ID ${this.ACCESS_KEY}`,
+            Authorization: `Client-ID ${this.ACCESS_KEY}`,
           },
         }
       );
@@ -55,7 +55,7 @@ export class UnsplashService {
       }
 
       const data: UnsplashSearchResponse = await response.json();
-      
+
       if (data.results && data.results.length > 0) {
         const image = data.results[0];
         console.log('✅ Unsplash: Fotoğraf bulundu:', image.urls.regular);
@@ -65,7 +65,6 @@ export class UnsplashService {
       console.log('❌ Unsplash: Fotoğraf bulunamadı:', searchTerm);
       // Fallback image when no results
       return this.getFallbackFoodImage(searchTerm);
-
     } catch (error) {
       console.error('❌ Unsplash API Error:', error);
       // Fallback image on error
@@ -76,7 +75,9 @@ export class UnsplashService {
   /**
    * Yemek kategorisine göre rastgele fotoğraf
    */
-  static async getRandomFoodImage(category: string = 'food'): Promise<string | null> {
+  static async getRandomFoodImage(
+    category: string = 'food'
+  ): Promise<string | null> {
     try {
       if (!this.ACCESS_KEY) {
         console.warn('⚠️ Unsplash API key bulunamadı');
@@ -87,7 +88,7 @@ export class UnsplashService {
         `${this.API_URL}/photos/random?query=${encodeURIComponent(category)}&orientation=landscape`,
         {
           headers: {
-            'Authorization': `Client-ID ${this.ACCESS_KEY}`,
+            Authorization: `Client-ID ${this.ACCESS_KEY}`,
           },
         }
       );
@@ -98,7 +99,6 @@ export class UnsplashService {
 
       const image: UnsplashImage = await response.json();
       return image.urls.regular;
-
     } catch (error) {
       console.error('❌ Unsplash Random API Error:', error);
       return null;
@@ -108,7 +108,10 @@ export class UnsplashService {
   /**
    * Birden fazla fotoğraf seçeneği getir
    */
-  static async searchMultipleFoodImages(searchTerm: string, count: number = 3): Promise<string[]> {
+  static async searchMultipleFoodImages(
+    searchTerm: string,
+    count: number = 3
+  ): Promise<string[]> {
     try {
       if (!this.ACCESS_KEY) {
         console.warn('⚠️ Unsplash API key bulunamadı');
@@ -119,7 +122,7 @@ export class UnsplashService {
         `${this.API_URL}/search/photos?query=${encodeURIComponent(searchTerm)}&page=1&per_page=${count}&orientation=landscape`,
         {
           headers: {
-            'Authorization': `Client-ID ${this.ACCESS_KEY}`,
+            Authorization: `Client-ID ${this.ACCESS_KEY}`,
           },
         }
       );
@@ -130,7 +133,6 @@ export class UnsplashService {
 
       const data: UnsplashSearchResponse = await response.json();
       return data.results.map(image => image.urls.regular);
-
     } catch (error) {
       console.error('❌ Unsplash Multiple API Error:', error);
       return [];
@@ -149,15 +151,15 @@ export class UnsplashService {
       'https://images.unsplash.com/photo-1563379091339-03246963d960?w=400&h=300&fit=crop', // Pasta
       'https://images.unsplash.com/photo-1572441713132-1a7e4c5b3bdc?w=400&h=300&fit=crop', // Salad
     ];
-    
+
     // Arama terimine göre hash oluştur ve tutarlı bir resim seç
     let hash = 0;
     for (let i = 0; i < searchTerm.length; i++) {
       const char = searchTerm.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
-    
+
     const index = Math.abs(hash) % fallbackImages.length;
     return fallbackImages[index];
   }
@@ -173,7 +175,7 @@ export class UnsplashService {
 
       const response = await fetch(`${this.API_URL}/photos/random`, {
         headers: {
-          'Authorization': `Client-ID ${this.ACCESS_KEY}`,
+          Authorization: `Client-ID ${this.ACCESS_KEY}`,
         },
       });
 

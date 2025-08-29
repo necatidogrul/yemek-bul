@@ -4,7 +4,11 @@
 
 ## 1. Özet
 
-Bu proje, kullanıcıların evde bulunan malzemeleri belirterek bu malzemelerle yapabilecekleri yemek tariflerini keşfetmelerini sağlayan bir mobil uygulamadır. Uygulama, "Elimdekilerle ne yapabilirim?" sorusuna anında yanıt verirken, aynı zamanda küçük eklemelerle yapılabilecek alternatif yemekler sunarak repertuvarı genişletmeyi hedefler. Temel amaç, günlük yemek yapma karar sürecini basitleştirmek, gıda israfını azaltmak ve mutfakta yaratıcılığı teşvik etmektir.
+Bu proje, kullanıcıların evde bulunan malzemeleri belirterek bu malzemelerle yapabilecekleri yemek
+tariflerini keşfetmelerini sağlayan bir mobil uygulamadır. Uygulama, "Elimdekilerle ne yapabilirim?"
+sorusuna anında yanıt verirken, aynı zamanda küçük eklemelerle yapılabilecek alternatif yemekler
+sunarak repertuvarı genişletmeyi hedefler. Temel amaç, günlük yemek yapma karar sürecini
+basitleştirmek, gıda israfını azaltmak ve mutfakta yaratıcılığı teşvik etmektir.
 
 ---
 
@@ -12,7 +16,8 @@ Bu proje, kullanıcıların evde bulunan malzemeleri belirterek bu malzemelerle 
 
 - **Karar Yorgunluğu:** Her gün "Bugün ne pişirsem?" sorusuna cevap aramanın yarattığı zihinsel yük.
 - **Malzeme Kısıtlılığı:** Evdeki mevcut malzemelerle ne yapılabileceğinin bilinmemesi.
-- **Tekrarlayan Menüler:** Sürekli aynı yemeklerin yapılması ve yeni tarif deneme cesaretinin olmaması.
+- **Tekrarlayan Menüler:** Sürekli aynı yemeklerin yapılması ve yeni tarif deneme cesaretinin
+  olmaması.
 - **Gıda İsrafı:** Evdeki malzemelerin bozulmadan, zamanında kullanılmaması.
 
 ---
@@ -30,13 +35,17 @@ Bu proje, kullanıcıların evde bulunan malzemeleri belirterek bu malzemelerle 
 ### Aşama 1: MVP (Minimum Uygulanabilir Ürün) ✅ TAMAMLANDI
 
 - **Özellik 1: Malzeme Girişi** ✅
-  - **Manuel Giriş:** Kullanıcıların evdeki malzemeleri yazarak veya listeden seçerek ekleyebileceği bir arayüz.
+  - **Manuel Giriş:** Kullanıcıların evdeki malzemeleri yazarak veya listeden seçerek ekleyebileceği
+    bir arayüz.
   - **Sesli Giriş:** Kullanıcının mikrofon tuşuna basarak malzemeleri sisteme dikte edebilmesi.
 - **Özellik 2: Akıllı Tarif Önerme Motoru** ✅
-  - **Tam Eşleşme ("Bunları Yapabilirsin"):** Sadece kullanıcının girdiği malzemelerle yapılabilecek yemek tariflerini listeleyen bir bölüm.
-  - **Yakın Eşleşme ("Şunu Alırsan Bunları da Yapabilirsin"):** Mevcut malzemelere ek olarak 1 veya 2 temel malzeme eklenerek yapılabilecek yemekleri öneren bir bölüm.
+  - **Tam Eşleşme ("Bunları Yapabilirsin"):** Sadece kullanıcının girdiği malzemelerle yapılabilecek
+    yemek tariflerini listeleyen bir bölüm.
+  - **Yakın Eşleşme ("Şunu Alırsan Bunları da Yapabilirsin"):** Mevcut malzemelere ek olarak 1 veya
+    2 temel malzeme eklenerek yapılabilecek yemekleri öneren bir bölüm.
 - **Özellik 3: Tarif Görüntüleme** ✅
-  - Seçilen yemeğin malzemelerini ve adım adım hazırlanış talimatlarını gösteren basit ve okunaklı bir ekran.
+  - Seçilen yemeğin malzemelerini ve adım adım hazırlanış talimatlarını gösteren basit ve okunaklı
+    bir ekran.
 
 ### Aşama 2: Geliştirmeler (Harika Olur) 🔄 HAZIR
 

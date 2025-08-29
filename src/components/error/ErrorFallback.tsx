@@ -29,40 +29,47 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
 
   return (
     <View style={[styles.container, compact && styles.compactContainer]}>
-      <Card variant="default" size={compact ? "md" : "lg"}>
+      <Card variant='default' size={compact ? 'md' : 'lg'}>
         <View style={styles.content}>
-          <View style={[
-            styles.iconContainer,
-            { backgroundColor: colors.error[100] }
-          ]}>
+          <View
+            style={[
+              styles.iconContainer,
+              { backgroundColor: colors.error[100] },
+            ]}
+          >
             <Ionicons
-              name="alert-circle"
+              name='alert-circle'
               size={compact ? 32 : 48}
               color={colors.error[500]}
             />
           </View>
 
           <Text
-            variant={compact ? "bodyLarge" : "h4"}
-            weight="bold"
-            align="center"
+            variant={compact ? 'bodyLarge' : 'h4'}
+            weight='bold'
+            align='center'
             style={styles.title}
           >
             {title}
           </Text>
 
           <Text
-            variant={compact ? "bodySmall" : "body"}
-            color="secondary"
-            align="center"
+            variant={compact ? 'bodySmall' : 'body'}
+            color='secondary'
+            align='center'
             style={styles.message}
           >
             {message}
           </Text>
 
           {__DEV__ && error && (
-            <View style={[styles.errorDetails, { backgroundColor: colors.error[50] }]}>
-              <Text variant="caption" style={{ color: colors.error[700] }}>
+            <View
+              style={[
+                styles.errorDetails,
+                { backgroundColor: colors.error[50] },
+              ]}
+            >
+              <Text variant='caption' style={{ color: colors.error[700] }}>
                 {error.toString()}
               </Text>
             </View>
@@ -70,10 +77,10 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
 
           {showRetry && resetError && (
             <Button
-              variant="primary"
-              size={compact ? "md" : "lg"}
+              variant='primary'
+              size={compact ? 'md' : 'lg'}
               onPress={resetError}
-              leftIcon={<Ionicons name="refresh" size={16} />}
+              leftIcon={<Ionicons name='refresh' size={16} />}
               style={styles.retryButton}
             >
               Tekrar Dene
@@ -86,36 +93,44 @@ export const ErrorFallback: React.FC<ErrorFallbackProps> = ({
 };
 
 // Specific error fallbacks for different scenarios
-export const NetworkErrorFallback: React.FC<{ resetError?: () => void }> = ({ resetError }) => (
+export const NetworkErrorFallback: React.FC<{ resetError?: () => void }> = ({
+  resetError,
+}) => (
   <ErrorFallback
-    title="Bağlantı Hatası"
-    message="İnternet bağlantınızı kontrol edin ve tekrar deneyin."
+    title='Bağlantı Hatası'
+    message='İnternet bağlantınızı kontrol edin ve tekrar deneyin.'
     resetError={resetError}
   />
 );
 
-export const LoadingErrorFallback: React.FC<{ resetError?: () => void }> = ({ resetError }) => (
+export const LoadingErrorFallback: React.FC<{ resetError?: () => void }> = ({
+  resetError,
+}) => (
   <ErrorFallback
-    title="Yükleme Hatası"
-    message="Veriler yüklenirken bir hata oluştu."
-    resetError={resetError}
-    compact
-  />
-);
-
-export const FormErrorFallback: React.FC<{ resetError?: () => void }> = ({ resetError }) => (
-  <ErrorFallback
-    title="Form Hatası"
-    message="Form gönderilirken bir hata oluştu. Lütfen tekrar deneyin."
+    title='Yükleme Hatası'
+    message='Veriler yüklenirken bir hata oluştu.'
     resetError={resetError}
     compact
   />
 );
 
-export const PaymentErrorFallback: React.FC<{ resetError?: () => void }> = ({ resetError }) => (
+export const FormErrorFallback: React.FC<{ resetError?: () => void }> = ({
+  resetError,
+}) => (
   <ErrorFallback
-    title="Ödeme Hatası"
-    message="Ödeme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin."
+    title='Form Hatası'
+    message='Form gönderilirken bir hata oluştu. Lütfen tekrar deneyin.'
+    resetError={resetError}
+    compact
+  />
+);
+
+export const PaymentErrorFallback: React.FC<{ resetError?: () => void }> = ({
+  resetError,
+}) => (
+  <ErrorFallback
+    title='Ödeme Hatası'
+    message='Ödeme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.'
     resetError={resetError}
   />
 );

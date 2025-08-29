@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AccessibilityManager, AccessibilityState } from '../services/AccessibilityService';
+import {
+  AccessibilityManager,
+  AccessibilityState,
+} from '../services/AccessibilityService';
 
 export interface AccessibilityHelpers {
   announceForAccessibility: (message: string) => void;
@@ -14,15 +17,15 @@ export interface AccessibilityHelpers {
 /**
  * Custom hook for accessibility features
  */
-export const useAccessibility = (): AccessibilityState & AccessibilityHelpers => {
-  const [accessibilityState, setAccessibilityState] = useState<AccessibilityState>(
-    AccessibilityManager.getState()
-  );
+export const useAccessibility = (): AccessibilityState &
+  AccessibilityHelpers => {
+  const [accessibilityState, setAccessibilityState] =
+    useState<AccessibilityState>(AccessibilityManager.getState());
 
   useEffect(() => {
     // Subscribe to accessibility state changes
     const unsubscribe = AccessibilityManager.addListener(setAccessibilityState);
-    
+
     return unsubscribe;
   }, []);
 
@@ -39,9 +42,12 @@ export const useAccessibility = (): AccessibilityState & AccessibilityHelpers =>
     return AccessibilityManager.generateAccessibilityHint(action, context);
   }, []);
 
-  const getAnimationDuration = useCallback((normal: number, reduced: number = 0) => {
-    return AccessibilityManager.getAnimationDuration(normal, reduced);
-  }, []);
+  const getAnimationDuration = useCallback(
+    (normal: number, reduced: number = 0) => {
+      return AccessibilityManager.getAnimationDuration(normal, reduced);
+    },
+    []
+  );
 
   const shouldReduceMotion = useCallback(() => {
     return AccessibilityManager.shouldReduceMotion();

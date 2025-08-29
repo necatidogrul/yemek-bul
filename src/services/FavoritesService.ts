@@ -1,8 +1,8 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Device from "expo-device";
-import { Recipe } from "../types/Recipe";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Device from 'expo-device';
+import { Recipe } from '../types/Recipe';
 
-const FAVORITES_KEY = "user_favorites";
+const FAVORITES_KEY = 'user_favorites';
 const FREE_FAVORITES_LIMIT = 3; // Ücretsiz kullanıcılar için limit
 
 export class FavoritesService {
@@ -16,27 +16,27 @@ export class FavoritesService {
 
     try {
       // Try to get stored device ID first
-      let deviceId = await AsyncStorage.getItem("device_id");
+      let deviceId = await AsyncStorage.getItem('device_id');
 
       if (!deviceId) {
         // Generate new device ID using device info
-        const deviceName = Device.deviceName || "unknown";
-        const modelName = Device.modelName || "unknown";
+        const deviceName = Device.deviceName || 'unknown';
+        const modelName = Device.modelName || 'unknown';
         const timestamp = Date.now();
 
         deviceId = `${deviceName}_${modelName}_${timestamp}`.replace(
           /[^a-zA-Z0-9_]/g,
-          "_"
+          '_'
         );
 
         // Store for future use
-        await AsyncStorage.setItem("device_id", deviceId);
+        await AsyncStorage.setItem('device_id', deviceId);
       }
 
       this.deviceId = deviceId;
       return deviceId;
     } catch (error) {
-      console.error("Error getting device ID:", error);
+      console.error('Error getting device ID:', error);
       // Fallback to timestamp-based ID
       const fallbackId = `device_${Date.now()}`;
       this.deviceId = fallbackId;
@@ -54,7 +54,7 @@ export class FavoritesService {
       const favorites = JSON.parse(favoritesJson);
       return Array.isArray(favorites) ? favorites : [];
     } catch (error) {
-      console.error("Error reading favorites from storage:", error);
+      console.error('Error reading favorites from storage:', error);
       return [];
     }
   }
@@ -68,7 +68,7 @@ export class FavoritesService {
       await AsyncStorage.setItem(FAVORITES_KEY, favoritesJson);
       return true;
     } catch (error) {
-      console.error("Error saving favorites to storage:", error);
+      console.error('Error saving favorites to storage:', error);
       return false;
     }
   }
@@ -81,8 +81,8 @@ export class FavoritesService {
     try {
       return { canAdd: true };
     } catch (error) {
-      console.error("Error checking favorite limit:", error);
-      return { canAdd: false, message: "Bir hata oluştu." };
+      console.error('Error checking favorite limit:', error);
+      return { canAdd: false, message: 'Bir hata oluştu.' };
     }
   }
 
@@ -94,7 +94,7 @@ export class FavoritesService {
       const favorites = await this.getFavoritesFromStorage();
 
       // Check if already exists
-      const existingIndex = favorites.findIndex((fav) => fav.id === recipe.id);
+      const existingIndex = favorites.findIndex(fav => fav.id === recipe.id);
       if (existingIndex >= 0) {
         // Update existing favorite
         favorites[existingIndex] = { ...recipe, isFavorite: true };
@@ -102,8 +102,8 @@ export class FavoritesService {
         return {
           success,
           message: success
-            ? "Tarif favorilerinizde güncellendi."
-            : "Güncellenirken hata oluştu.",
+            ? 'Tarif favorilerinizde güncellendi.'
+            : 'Güncellenirken hata oluştu.',
         };
       }
 
@@ -120,12 +120,12 @@ export class FavoritesService {
       return {
         success,
         message: success
-          ? "Tarif favorilerinize eklendi!"
-          : "Eklenirken hata oluştu.",
+          ? 'Tarif favorilerinize eklendi!'
+          : 'Eklenirken hata oluştu.',
       };
     } catch (error) {
-      console.error("Error in addToFavorites:", error);
-      return { success: false, message: "Bir hata oluştu." };
+      console.error('Error in addToFavorites:', error);
+      return { success: false, message: 'Bir hata oluştu.' };
     }
   }
 
@@ -133,10 +133,10 @@ export class FavoritesService {
   static async removeFromFavorites(recipeId: string): Promise<boolean> {
     try {
       const favorites = await this.getFavoritesFromStorage();
-      const filteredFavorites = favorites.filter((fav) => fav.id !== recipeId);
+      const filteredFavorites = favorites.filter(fav => fav.id !== recipeId);
       return await this.saveFavoritesToStorage(filteredFavorites);
     } catch (error) {
-      console.error("Error in removeFromFavorites:", error);
+      console.error('Error in removeFromFavorites:', error);
       return false;
     }
   }
@@ -154,8 +154,8 @@ export class FavoritesService {
           success,
           isAdded: false,
           message: success
-            ? "Tarif favorilerden çıkarıldı."
-            : "Çıkarılırken hata oluştu.",
+            ? 'Tarif favorilerden çıkarıldı.'
+            : 'Çıkarılırken hata oluştu.',
         };
       } else {
         const result = await this.addToFavorites(recipe);
@@ -166,8 +166,8 @@ export class FavoritesService {
         };
       }
     } catch (error) {
-      console.error("Error in toggleFavorite:", error);
-      return { success: false, message: "Bir hata oluştu." };
+      console.error('Error in toggleFavorite:', error);
+      return { success: false, message: 'Bir hata oluştu.' };
     }
   }
 
@@ -175,9 +175,9 @@ export class FavoritesService {
   static async isFavorite(recipeId: string): Promise<boolean> {
     try {
       const favorites = await this.getFavoritesFromStorage();
-      return favorites.some((fav) => fav.id === recipeId);
+      return favorites.some(fav => fav.id === recipeId);
     } catch (error) {
-      console.error("Error in isFavorite:", error);
+      console.error('Error in isFavorite:', error);
       return false;
     }
   }
@@ -189,8 +189,8 @@ export class FavoritesService {
 
       // Filter out recipes without valid IDs and fix malformed recipes
       const validFavorites = favorites
-        .filter((recipe) => recipe && typeof recipe === "object")
-        .map((recipe) => {
+        .filter(recipe => recipe && typeof recipe === 'object')
+        .map(recipe => {
           // If recipe doesn't have an id, generate one
           if (!recipe.id) {
             recipe.id = `recipe-${Date.now()}-${Math.random()
@@ -200,7 +200,7 @@ export class FavoritesService {
 
           // Ensure required fields exist
           if (!recipe.name) {
-            recipe.name = "İsimsiz Tarif";
+            recipe.name = 'İsimsiz Tarif';
           }
 
           if (!recipe.ingredients || !Array.isArray(recipe.ingredients)) {
@@ -208,7 +208,7 @@ export class FavoritesService {
           }
 
           if (!recipe.instructions || !Array.isArray(recipe.instructions)) {
-            recipe.instructions = ["Tarif adımları mevcut değil"];
+            recipe.instructions = ['Tarif adımları mevcut değil'];
           }
 
           return { ...recipe, isFavorite: true };
@@ -224,7 +224,7 @@ export class FavoritesService {
 
       return validFavorites;
     } catch (error) {
-      console.error("Error in getFavoriteRecipes:", error);
+      console.error('Error in getFavoriteRecipes:', error);
       return [];
     }
   }
@@ -235,7 +235,7 @@ export class FavoritesService {
       const favorites = await this.getFavoritesFromStorage();
       return favorites.length;
     } catch (error) {
-      console.error("Error in getFavoriteCount:", error);
+      console.error('Error in getFavoriteCount:', error);
       return 0;
     }
   }
@@ -250,7 +250,7 @@ export class FavoritesService {
       const currentCount = await this.getFavoriteCount();
       return Math.max(0, FREE_FAVORITES_LIMIT - currentCount);
     } catch (error) {
-      console.error("Error getting remaining slots:", error);
+      console.error('Error getting remaining slots:', error);
       return 0;
     }
   }
@@ -259,7 +259,7 @@ export class FavoritesService {
   static async updateFavoriteRecipe(recipe: Recipe): Promise<boolean> {
     try {
       const favorites = await this.getFavoritesFromStorage();
-      const existingIndex = favorites.findIndex((fav) => fav.id === recipe.id);
+      const existingIndex = favorites.findIndex(fav => fav.id === recipe.id);
 
       if (existingIndex >= 0) {
         favorites[existingIndex] = { ...recipe, isFavorite: true };
@@ -268,7 +268,7 @@ export class FavoritesService {
 
       return false; // Recipe not found in favorites
     } catch (error) {
-      console.error("Error in updateFavoriteRecipe:", error);
+      console.error('Error in updateFavoriteRecipe:', error);
       return false;
     }
   }
@@ -279,7 +279,7 @@ export class FavoritesService {
       await AsyncStorage.removeItem(FAVORITES_KEY);
       return true;
     } catch (error) {
-      console.error("Error in clearAllFavorites:", error);
+      console.error('Error in clearAllFavorites:', error);
       return false;
     }
   }
@@ -290,7 +290,7 @@ export class FavoritesService {
       const favorites = await this.getFavoritesFromStorage();
       return JSON.stringify(favorites, null, 2);
     } catch (error) {
-      console.error("Error in exportFavorites:", error);
+      console.error('Error in exportFavorites:', error);
       return null;
     }
   }
@@ -304,7 +304,7 @@ export class FavoritesService {
       }
       return false;
     } catch (error) {
-      console.error("Error in importFavorites:", error);
+      console.error('Error in importFavorites:', error);
       return false;
     }
   }

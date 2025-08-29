@@ -35,7 +35,9 @@ export class UserPreferencesService {
   static async getUserPreferences(): Promise<UserPreferences> {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
-      const onboardingCompleted = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED);
+      const onboardingCompleted = await AsyncStorage.getItem(
+        STORAGE_KEYS.ONBOARDING_COMPLETED
+      );
 
       if (stored) {
         try {
@@ -46,7 +48,10 @@ export class UserPreferencesService {
             onboardingCompleted: onboardingCompleted === 'true',
           };
         } catch (parseError) {
-          console.warn('Invalid user preferences stored, using defaults:', parseError);
+          console.warn(
+            'Invalid user preferences stored, using defaults:',
+            parseError
+          );
           return {
             ...DEFAULT_PREFERENCES,
             onboardingCompleted: onboardingCompleted === 'true',
@@ -62,7 +67,9 @@ export class UserPreferencesService {
       console.error('Error getting user preferences:', error);
       // Even if there's an error, check onboarding status separately
       try {
-        const onboardingCompleted = await AsyncStorage.getItem(STORAGE_KEYS.ONBOARDING_COMPLETED);
+        const onboardingCompleted = await AsyncStorage.getItem(
+          STORAGE_KEYS.ONBOARDING_COMPLETED
+        );
         return {
           ...DEFAULT_PREFERENCES,
           onboardingCompleted: onboardingCompleted === 'true',
@@ -77,17 +84,22 @@ export class UserPreferencesService {
   /**
    * Save user preferences to storage
    */
-  static async saveUserPreferences(preferences: Partial<UserPreferences>): Promise<void> {
+  static async saveUserPreferences(
+    preferences: Partial<UserPreferences>
+  ): Promise<void> {
     try {
       const current = await this.getUserPreferences();
       const updated = { ...current, ...preferences };
 
-      await AsyncStorage.setItem(STORAGE_KEYS.USER_PREFERENCES, JSON.stringify(updated));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.USER_PREFERENCES,
+        JSON.stringify(updated)
+      );
 
       if (preferences.onboardingCompleted !== undefined) {
         await AsyncStorage.setItem(
           STORAGE_KEYS.ONBOARDING_COMPLETED,
-          preferences.onboardingCompleted.toString(),
+          preferences.onboardingCompleted.toString()
         );
       }
     } catch (error) {
@@ -101,7 +113,9 @@ export class UserPreferencesService {
    */
   static async hasCompletedFirstTimeTour(): Promise<boolean> {
     try {
-      const completed = await AsyncStorage.getItem(STORAGE_KEYS.FIRST_TIME_TOUR);
+      const completed = await AsyncStorage.getItem(
+        STORAGE_KEYS.FIRST_TIME_TOUR
+      );
       return completed === 'true';
     } catch (error) {
       console.error('Error checking first time tour status:', error);

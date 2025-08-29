@@ -31,7 +31,9 @@ interface OptimizedFlatListOptions<T> {
 /**
  * FlatList performance optimizasyonları için hook
  */
-export const useOptimizedFlatList = <T = any>(options: OptimizedFlatListOptions<T> = {}) => {
+export const useOptimizedFlatList = <T = any>(
+  options: OptimizedFlatListOptions<T> = {}
+) => {
   const {
     itemHeight,
     estimatedItemSize = 100,
@@ -41,7 +43,8 @@ export const useOptimizedFlatList = <T = any>(options: OptimizedFlatListOptions<
     windowSize = Platform.OS === 'ios' ? 10 : 8,
     updateCellsBatchingPeriod = Platform.OS === 'ios' ? 100 : 150,
     removeClippedSubviews = Platform.OS === 'android',
-    keyExtractor = (item: any, index: number) => item?.id?.toString() || index.toString(),
+    keyExtractor = (item: any, index: number) =>
+      item?.id?.toString() || index.toString(),
     viewabilityConfig = {
       itemVisiblePercentThreshold: 50,
       minimumViewTime: 100,
@@ -56,7 +59,7 @@ export const useOptimizedFlatList = <T = any>(options: OptimizedFlatListOptions<
    */
   const getItemLayout = useMemo(() => {
     if (!enableGetItemLayout || !itemHeight) return undefined;
-    
+
     return (data: ArrayLike<T> | null | undefined, index: number) => ({
       length: itemHeight,
       offset: itemHeight * index,
@@ -67,29 +70,38 @@ export const useOptimizedFlatList = <T = any>(options: OptimizedFlatListOptions<
   /**
    * Render item wrapper - memoization için
    */
-  const createRenderItem = useCallback(<ItemT = T>(
-    renderItem: ListRenderItem<ItemT>
-  ): ListRenderItem<ItemT> => {
-    return ({ item, index, separators }) => {
-      // Render item with performance optimizations
-      return renderItem({ item, index, separators });
-    };
-  }, []);
+  const createRenderItem = useCallback(
+    <ItemT = T>(renderItem: ListRenderItem<ItemT>): ListRenderItem<ItemT> => {
+      return ({ item, index, separators }) => {
+        // Render item with performance optimizations
+        return renderItem({ item, index, separators });
+      };
+    },
+    []
+  );
 
   /**
    * Viewability değişiklik handler
    */
-  const onViewableItemsChanged = useCallback(({ viewableItems, changed }: {
-    viewableItems: ViewToken[];
-    changed: ViewToken[];
-  }) => {
-    viewableItemsRef.current = viewableItems;
-    
-    // Debug için (production'da kaldırılabilir)
-    if (__DEV__) {
-      console.log(`Viewable items: ${viewableItems.length}, Changed: ${changed.length}`);
-    }
-  }, []);
+  const onViewableItemsChanged = useCallback(
+    ({
+      viewableItems,
+      changed,
+    }: {
+      viewableItems: ViewToken[];
+      changed: ViewToken[];
+    }) => {
+      viewableItemsRef.current = viewableItems;
+
+      // Debug için (production'da kaldırılabilir)
+      if (__DEV__) {
+        console.log(
+          `Viewable items: ${viewableItems.length}, Changed: ${changed.length}`
+        );
+      }
+    },
+    []
+  );
 
   /**
    * Cell unmount sırasında cleanup
@@ -111,50 +123,53 @@ export const useOptimizedFlatList = <T = any>(options: OptimizedFlatListOptions<
   /**
    * Optimized FlatList props
    */
-  const optimizedProps = useMemo(() => ({
-    // Performance props
-    initialNumToRender,
-    maxToRenderPerBatch,
-    windowSize,
-    updateCellsBatchingPeriod,
-    removeClippedSubviews,
-    scrollEventThrottle,
-    
-    // Item layout
-    getItemLayout,
-    keyExtractor,
-    
-    // Viewability
-    viewabilityConfig,
-    onViewableItemsChanged,
-    
-    // Other optimizations
-    disableVirtualization: false,
-    legacyImplementation: false,
-    
-    // Platform specific
-    ...(Platform.OS === 'android' && {
-      // Android specific optimizations
-      persistentScrollbar: false,
+  const optimizedProps = useMemo(
+    () => ({
+      // Performance props
+      initialNumToRender,
+      maxToRenderPerBatch,
+      windowSize,
+      updateCellsBatchingPeriod,
+      removeClippedSubviews,
+      scrollEventThrottle,
+
+      // Item layout
+      getItemLayout,
+      keyExtractor,
+
+      // Viewability
+      viewabilityConfig,
+      onViewableItemsChanged,
+
+      // Other optimizations
+      disableVirtualization: false,
+      legacyImplementation: false,
+
+      // Platform specific
+      ...(Platform.OS === 'android' && {
+        // Android specific optimizations
+        persistentScrollbar: false,
+      }),
+
+      ...(Platform.OS === 'ios' && {
+        // iOS specific optimizations
+        automaticallyAdjustContentInsets: false,
+        contentInsetAdjustmentBehavior: 'never' as const,
+      }),
     }),
-    
-    ...(Platform.OS === 'ios' && {
-      // iOS specific optimizations
-      automaticallyAdjustContentInsets: false,
-      contentInsetAdjustmentBehavior: 'never' as const,
-    }),
-  }), [
-    initialNumToRender,
-    maxToRenderPerBatch,
-    windowSize,
-    updateCellsBatchingPeriod,
-    removeClippedSubviews,
-    scrollEventThrottle,
-    getItemLayout,
-    keyExtractor,
-    viewabilityConfig,
-    onViewableItemsChanged,
-  ]);
+    [
+      initialNumToRender,
+      maxToRenderPerBatch,
+      windowSize,
+      updateCellsBatchingPeriod,
+      removeClippedSubviews,
+      scrollEventThrottle,
+      getItemLayout,
+      keyExtractor,
+      viewabilityConfig,
+      onViewableItemsChanged,
+    ]
+  );
 
   /**
    * Current viewable items
@@ -166,11 +181,14 @@ export const useOptimizedFlatList = <T = any>(options: OptimizedFlatListOptions<
   /**
    * Item görünür mü kontrol et
    */
-  const isItemVisible = useCallback((itemId: string) => {
-    return viewableItemsRef.current.some(viewable => 
-      keyExtractor(viewable.item, viewable.index || 0) === itemId
-    );
-  }, [keyExtractor]);
+  const isItemVisible = useCallback(
+    (itemId: string) => {
+      return viewableItemsRef.current.some(
+        viewable => keyExtractor(viewable.item, viewable.index || 0) === itemId
+      );
+    },
+    [keyExtractor]
+  );
 
   return {
     optimizedProps,
@@ -178,7 +196,7 @@ export const useOptimizedFlatList = <T = any>(options: OptimizedFlatListOptions<
     getCurrentViewableItems,
     isItemVisible,
     onEndReached,
-    
+
     // Helper functions
     estimatedItemSize,
     scrollEventThrottle,
