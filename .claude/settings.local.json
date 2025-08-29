@@ -41,7 +41,11 @@
       "Bash(set SUPABASE_ACCESS_TOKEN=sbp_a75632640cd185876740d644d52963053fbb57a9)",
       "Bash(npm run env:test:*)",
       "Bash(npm run:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "mcp__supabase__execute_sql",
+      "mcp__supabase__apply_migration",
+      "mcp__supabase__get_project_url",
+      "mcp__supabase__get_anon_key"
     ],
     "deny": []
   },

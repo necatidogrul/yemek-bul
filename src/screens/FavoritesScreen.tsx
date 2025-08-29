@@ -18,7 +18,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { FavoritesStackParamList } from "../../App";
 import { Recipe } from "../types/Recipe";
 import { FavoritesService } from "../services/FavoritesService";
-import { useCreditContext } from "../contexts/CreditContext";
 
 // UI Components
 import { Button, Card, Text } from "../components/ui";
@@ -28,9 +27,7 @@ import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
 import { useTheme } from "../contexts/ThemeContext";
 import { spacing, borderRadius, elevation } from "../contexts/ThemeContext";
-import PaywallModal from "../components/premium/PaywallModal";
-import { usePremiumGuard } from "../hooks/usePremiumGuard";
-import { usePremium } from "../contexts/PremiumContext";
+
 import { useToast } from "../contexts/ToastContext";
 import { useHaptics } from "../hooks/useHaptics";
 
@@ -54,19 +51,8 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const [showFilters, setShowFilters] = useState(false);
 
   const { colors } = useTheme();
-  const { userCredits, canAfford } = useCreditContext();
-  const { isPremium } = usePremium();
   const { showSuccess, showError, showWarning } = useToast();
   const haptics = useHaptics();
-
-  const {
-    showPaywall,
-    currentFeature,
-    paywallTitle,
-    paywallDescription,
-    checkPremiumFeature,
-    hidePaywall,
-  } = usePremiumGuard();
 
   // Animation for filter panel
   const filterAnimation = useState(new Animated.Value(0))[0];
@@ -131,13 +117,15 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     try {
       setIsLoading(true);
       const favRecipes = await FavoritesService.getFavoriteRecipes();
-      
+
       // Validate recipes have valid IDs
-      const invalidRecipes = favRecipes.filter(recipe => !recipe.id);
+      const invalidRecipes = favRecipes.filter((recipe) => !recipe.id);
       if (invalidRecipes.length > 0) {
-        Logger.warn(`Found ${invalidRecipes.length} recipes without IDs, they should be auto-fixed`);
+        Logger.warn(
+          `Found ${invalidRecipes.length} recipes without IDs, they should be auto-fixed`
+        );
       }
-      
+
       setFavorites(favRecipes);
       Logger.info(`Loaded ${favRecipes.length} favorite recipes`);
     } catch (error) {
@@ -161,14 +149,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const handleRecipePress = (recipe: Recipe) => {
     // Check if recipe has valid id
     if (!recipe.id) {
-      showError("Bu tarif bozuk görünüyor. Lütfen uygulamayı yeniden başlatın.");
-      return;
-    }
-
-    // Premium users can view favorites freely
-    // Free users need credit only for AI-generated recipe details
-    if (!isPremium && recipe.aiGenerated && !canAfford("favorite_view")) {
-      showWarning("AI tarif detaylarını görüntülemek için kredi gerekli");
+      showError(
+        "Bu tarif bozuk görünüyor. Lütfen uygulamayı yeniden başlatın."
+      );
       return;
     }
 
@@ -210,8 +193,6 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
         end={{ x: 1, y: 1 }}
       >
         <Ionicons name="restaurant" size={32} color="white" />
-
-        {/* Premium Badge - removed (not in Recipe type) */}
 
         {/* Difficulty Badge */}
         {item.difficulty && (
@@ -279,10 +260,12 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           ]}
           onPress={async () => {
             if (!item.id) {
-              showError("Bu tarif bozuk görünüyor. Favorileri temizlemeyi deneyin.");
+              showError(
+                "Bu tarif bozuk görünüyor. Favorileri temizlemeyi deneyin."
+              );
               return;
             }
-            
+
             const success = await FavoritesService.removeFromFavorites(item.id);
             if (success) {
               haptics.notificationSuccess();
@@ -611,14 +594,6 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           }
         />
       )}
-
-      <PaywallModal
-        visible={showPaywall}
-        onClose={hidePaywall}
-        feature={(currentFeature || "general") as any}
-        title={paywallTitle}
-        description={paywallDescription}
-      />
     </SafeAreaView>
   );
 };

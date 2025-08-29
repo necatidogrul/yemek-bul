@@ -15,7 +15,7 @@ export type EmptyStateType =
   | 'offline'
   | 'error'
   | 'no-suggestions'
-  | 'premium-required';
+
 
 interface EmptyStateAction {
   label: string;
@@ -86,12 +86,7 @@ const EMPTY_STATE_CONFIG: Record<
     description: 'Şu anda size özel öneri oluşturamadık. Daha sonra tekrar deneyin.',
     color: 'secondary',
   },
-  'premium-required': {
-    icon: 'diamond-outline',
-    title: 'Premium Özellik',
-    description: 'Bu özelliği kullanmak için premium üyeliğe geçmelisiniz.',
-    color: 'warning',
-  },
+
 };
 
 export const EmptyState: React.FC<EmptyStateProps> = ({

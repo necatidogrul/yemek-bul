@@ -13,7 +13,7 @@ import RecipeDetailScreen from "../../screens/RecipeDetailScreen";
 import RecipeResultsScreen from "../../screens/RecipeResultsScreen";
 import FavoritesScreen from "../../screens/FavoritesScreen";
 import AllRecipesScreen from "../../screens/AllRecipesScreen";
-import PremiumScreen from "../../screens/PremiumScreen";
+
 import HistoryScreen from "../../screens/HistoryScreen";
 
 import SettingsScreen from "../../screens/SettingsScreen";
@@ -34,14 +34,12 @@ export type HomeStackParamList = {
   };
   AllRecipes: undefined;
   History: undefined;
-  Premium: undefined;
   Settings: undefined;
 };
 
 export type FavoritesStackParamList = {
   FavoritesMain: undefined;
   RecipeDetail: { recipeId: string; recipeName: string };
-  Premium: undefined;
 };
 
 export type HistoryStackParamList = {
@@ -52,7 +50,6 @@ export type HistoryStackParamList = {
     fromHistory?: boolean;
   };
   RecipeDetail: { recipeId: string; recipeName: string };
-  Premium: undefined;
 };
 
 export type SettingsStackParamList = {
@@ -114,8 +111,6 @@ const ModernHeader = ({ title, colors }: { title: string; colors: any }) => {
                 ? "library"
                 : title.includes("Favori")
                 ? "heart"
-                : title.includes("Premium")
-                ? "diamond"
                 : "apps"
             }
             size={20}
@@ -205,15 +200,7 @@ export function HomeStackScreen() {
           headerShown: false,
         }}
       />
-      <HomeStack.Screen
-        name="Premium"
-        component={PremiumScreen}
-        options={{
-          headerShown: true,
-          header: () => <ModernHeader title="Premium" colors={colors} />,
-          presentation: "modal",
-        }}
-      />
+
       <HomeStack.Screen
         name="Settings"
         component={SettingsScreen}
@@ -277,15 +264,6 @@ export function HistoryStackScreen() {
         component={RecipeDetailScreen}
         options={{
           headerShown: false,
-        }}
-      />
-      <HistoryStack.Screen
-        name="Premium"
-        component={PremiumScreen}
-        options={{
-          headerShown: true,
-          header: () => <ModernHeader title="Premium" colors={colors} />,
-          presentation: "modal",
         }}
       />
     </HistoryStack.Navigator>
@@ -361,15 +339,6 @@ export function FavoritesStackScreen() {
         component={RecipeDetailScreen}
         options={{
           headerShown: false,
-        }}
-      />
-      <FavoritesStack.Screen
-        name="Premium"
-        component={PremiumScreen}
-        options={{
-          headerShown: true,
-          header: () => <ModernHeader title="Premium" colors={colors} />,
-          presentation: "modal",
         }}
       />
     </FavoritesStack.Navigator>

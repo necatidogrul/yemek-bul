@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yemekbulucuai.app",
-      "buildNumber": "1",
+      "buildNumber": "18",
       "requireFullScreen": false,
       "infoPlist": {
         "NSCameraUsageDescription": "Malzemelerin fotoğrafını çekmek için kamera erişimi gerekiyor.",
@@ -52,7 +52,10 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-localization", "expo-font"],
+    "plugins": [
+      "expo-localization", 
+      "expo-font"
+    ],
     "owner": "shado7",
     "extra": {
       "eas": {

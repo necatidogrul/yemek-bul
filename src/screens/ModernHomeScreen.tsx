@@ -25,20 +25,16 @@ import { RecipeService } from "../services/recipeService";
 import { SpeechService } from "../services/speechService";
 import { HistoryService } from "../services/historyService";
 import { UserPreferencesService } from "../services/UserPreferencesService";
+import { UsageLimitService } from "../services/UsageLimitService";
 import { getCurrentLanguage } from "../locales";
 
 // Components
 import { Text } from "../components/ui";
-import { CreditDisplay } from "../components/ui/CreditDisplay";
-import { CreditUpgradeModal } from "../components/modals/CreditUpgradeModal";
 import { AILoadingModal } from "../components/modals/AILoadingModal";
 import { useThemedStyles } from "../hooks/useThemedStyles";
 import { useToast } from "../contexts/ToastContext";
 import { useHaptics } from "../hooks/useHaptics";
-import { usePremiumGuard } from "../hooks/usePremiumGuard";
-import { useCreditContext } from "../contexts/CreditContext";
-import { CREDIT_COSTS } from "../types/Credit";
-import { RevenueCatService } from "../services/RevenueCatService";
+import { usePremium } from "../contexts/PremiumContext";
 
 // Theme
 import { spacing, borderRadius, shadows } from "../theme/design-tokens";
@@ -115,16 +111,13 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [inputText, setInputText] = useState("");
   const [showAIModal, setShowAIModal] = useState(false);
-  const [showCreditModal, setShowCreditModal] = useState(false);
-  const [creditModalTrigger, setCreditModalTrigger] = useState<
-    "ai_limit" | "general"
-  >("general");
   const [aiStage, setAiStage] = useState<AIStage>({
     stage: "analyzing",
     progress: 0,
   });
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [remainingRequests, setRemainingRequests] = useState<number>(2);
   // Removed dropdown - always show advanced mode
   const showAdvancedMode = true;
 
@@ -132,44 +125,12 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   const { colors } = useThemedStyles();
   const { showSuccess, showError, showWarning } = useToast();
   const haptics = useHaptics();
-  const { checkSearchLimit } = usePremiumGuard();
-  const { userCredits, canAfford, deductCredits, addCredits } =
-    useCreditContext();
+  const { isPremium, showPaywall } = usePremium();
 
   // Animations
   const searchScale = new RNAnimated.Value(1);
   const inputScale = new RNAnimated.Value(1);
   const headerOpacity = new RNAnimated.Value(1);
-
-  // RevenueCat integration
-  const handleCreditPurchase = async (packageId: string) => {
-    try {
-      const result = await RevenueCatService.purchaseCredits(packageId);
-      if (result.success) {
-        showSuccess(`${packageId} paketi başarıyla satın alındı!`);
-        // Credits will be automatically updated via the context
-      } else {
-        showError(result.error || "Bilinmeyen hata oluştu");
-      }
-    } catch (error) {
-      Logger.error("[ModernHomeScreen] Credit purchase failed:", error);
-      showError("Satın alma işlemi başarısız oldu");
-    }
-  };
-
-  const handlePremiumUpgrade = async (tierId: string, yearly = false) => {
-    try {
-      const result = await RevenueCatService.purchasePremium(tierId);
-      if (result.success) {
-        showSuccess("Premium aboneliğiniz başarıyla etkinleştirildi!");
-      } else {
-        showError(result.error || "Bilinmeyen hata oluştu");
-      }
-    } catch (error) {
-      Logger.error("[ModernHomeScreen] Premium upgrade failed:", error);
-      showError("Abonelik işlemi başarısız oldu");
-    }
-  };
 
   // Animation helpers
   const animateScale = (animatedValue: RNAnimated.Value, toValue: number) => {
@@ -178,6 +139,17 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       useNativeDriver: true,
     }).start();
   };
+
+  // Load remaining requests on mount
+  React.useEffect(() => {
+    const loadRemainingRequests = async () => {
+      if (!isPremium) {
+        const remaining = await UsageLimitService.getRemainingRequests();
+        setRemainingRequests(remaining);
+      }
+    };
+    loadRemainingRequests();
+  }, [isPremium]);
 
   // Handle prefilled ingredients from history
   React.useEffect(() => {
@@ -242,32 +214,20 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   const generateAIRecipesWithSmartDefaults = async (
     suggestion: (typeof SMART_SUGGESTIONS)[0]
   ) => {
-    // Check if user can afford AI recipe generation
-    if (!canAfford("recipe_generation")) {
-      setCreditModalTrigger("ai_limit");
-      setShowCreditModal(true);
-      return;
+    // Check usage limit for non-premium users
+    if (!isPremium) {
+      const canMakeRequest = await UsageLimitService.canMakeRequest();
+      if (!canMakeRequest) {
+        showPaywall();
+        return;
+      }
     }
-
-    const canSearch = await checkSearchLimit();
-    if (!canSearch) return;
 
     // Start animations
     animateScale(searchScale, 0.95);
     setTimeout(() => {
       animateScale(searchScale, 1);
     }, 150);
-
-    // Deduct credits BEFORE making API call
-    const creditDeducted = await deductCredits(
-      "recipe_generation",
-      `AI tarif üretimi - ${suggestion.name}`
-    );
-
-    if (!creditDeducted) {
-      showError("Kredi düşürülemedi", "Lütfen tekrar deneyin");
-      return;
-    }
 
     setShowAIModal(true);
     haptics.voiceStart();
@@ -291,7 +251,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
       const aiResponse = await OpenAIService.generateRecipes({
         ingredients: suggestion.defaultIngredients,
-        language: getCurrentLanguage() as 'tr' | 'en',
+        language: getCurrentLanguage() as "tr" | "en",
         mealTime: suggestion.mealTime,
         userProfile: {
           dietaryRestrictions: userPreferences.dietaryRestrictions || [],
@@ -324,6 +284,13 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       setShowAIModal(false);
 
       if (aiResponse.recipes && aiResponse.recipes.length > 0) {
+        // Use request for non-premium users and update remaining count
+        if (!isPremium) {
+          await UsageLimitService.useRequest();
+          const remaining = await UsageLimitService.getRemainingRequests();
+          setRemainingRequests(remaining);
+        }
+
         haptics.success();
         showSuccess(
           "Tarifler Hazır!",
@@ -341,17 +308,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
     } catch (error: any) {
       setShowAIModal(false);
 
-      // Refund credits on API failure
-      try {
-        await addCredits(1, "AI tarif üretimi başarısız - kredi iade");
-      } catch (refundError) {
-        Logger.error("Failed to refund credits:", refundError);
-      }
-
-      showError(
-        "AI Hatası",
-        "Tarif üretilirken bir hata oluştu (Kredi iade edildi)"
-      );
+      showError("AI Hatası", "Tarif üretilirken bir hata oluştu");
       haptics.error();
     }
   };
@@ -369,32 +326,20 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       return;
     }
 
-    // Check if user can afford AI recipe generation
-    if (!canAfford("recipe_generation")) {
-      setCreditModalTrigger("ai_limit");
-      setShowCreditModal(true);
-      return;
+    // Check usage limit for non-premium users
+    if (!isPremium) {
+      const canMakeRequest = await UsageLimitService.canMakeRequest();
+      if (!canMakeRequest) {
+        showPaywall();
+        return;
+      }
     }
-
-    const canSearch = await checkSearchLimit();
-    if (!canSearch) return;
 
     // Start animations
     animateScale(searchScale, 0.95);
     setTimeout(() => {
       animateScale(searchScale, 1);
     }, 150);
-
-    // Deduct credits BEFORE making API call
-    const creditDeducted = await deductCredits(
-      "recipe_generation",
-      `AI tarif üretimi - ${ingredients.join(", ")}`
-    );
-
-    if (!creditDeducted) {
-      showError("Kredi düşürülemedi", "Lütfen tekrar deneyin");
-      return;
-    }
 
     setShowAIModal(true);
     haptics.voiceStart();
@@ -418,7 +363,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
       const aiResponse = await OpenAIService.generateRecipes({
         ingredients: useIngredients,
-        language: getCurrentLanguage() as 'tr' | 'en',
+        language: getCurrentLanguage() as "tr" | "en",
         mealTime: useMealTime as "breakfast" | "lunch" | "dinner" | "snack",
         userProfile: {
           dietaryRestrictions: userPreferences.dietaryRestrictions || [],
@@ -456,7 +401,12 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       setShowAIModal(false);
 
       if (aiResponse.recipes && aiResponse.recipes.length > 0) {
-        // Credits already deducted above - just show success
+        // Use request for non-premium users and update remaining count
+        if (!isPremium) {
+          await UsageLimitService.useRequest();
+          const remaining = await UsageLimitService.getRemainingRequests();
+          setRemainingRequests(remaining);
+        }
 
         haptics.success();
         showSuccess(
@@ -511,14 +461,6 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       console.error("AI Generation Error:", error);
       setShowAIModal(false);
 
-      // Refund credits on API failure
-      try {
-        await addCredits(1, "AI tarif üretimi başarısız - kredi iade");
-        Logger.info("Credits refunded due to AI generation failure");
-      } catch (refundError) {
-        Logger.error("Failed to refund credits:", refundError);
-      }
-
       let errorMessage = "Tarif üretilirken bir hata oluştu";
       if (error.message?.includes("API key")) {
         errorMessage = "OpenAI API anahtarı bulunamadı";
@@ -526,7 +468,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
         errorMessage = "API kotası doldu. Lütfen daha sonra tekrar deneyin";
       }
 
-      showError("AI Hatası", errorMessage + " (Kredi iade edildi)");
+      showError("AI Hatası", errorMessage);
       haptics.error();
 
       // Save error to history
@@ -578,13 +520,27 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
               Yemek Bulucu
             </Text>
           </View>
-          <CreditDisplay
-            compact={true}
-            onPress={() => {
-              setCreditModalTrigger("general");
-              setShowCreditModal(true);
-            }}
-          />
+
+          {/* Credit Counter */}
+          {!isPremium && (
+            <TouchableOpacity
+              style={[
+                styles.creditCounter,
+                { backgroundColor: colors.primary[100] },
+              ]}
+              onPress={() => showPaywall()}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="diamond" size={16} color={colors.primary[600]} />
+              <Text
+                variant="labelMedium"
+                weight="600"
+                style={{ color: colors.primary[600] }}
+              >
+                {remainingRequests}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -853,16 +809,6 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
         stage={aiStage.stage}
         progress={aiStage.progress}
       />
-
-      {/* Credit Upgrade Modal */}
-      <CreditUpgradeModal
-        visible={showCreditModal}
-        onClose={() => setShowCreditModal(false)}
-        onPurchaseCredits={handleCreditPurchase}
-        onUpgradePremium={handlePremiumUpgrade}
-        trigger={creditModalTrigger}
-        userId={userCredits?.userId || "temp_user"}
-      />
     </SafeAreaView>
   );
 };
@@ -899,6 +845,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: spacing[3],
+  },
+  creditCounter: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.full,
+    gap: spacing[1],
+    ...shadows.sm,
   },
 
   // Main Content

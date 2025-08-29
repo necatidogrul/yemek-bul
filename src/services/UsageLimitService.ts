@@ -1,241 +1,170 @@
+/**
+ * Usage Limit Service
+ * 
+ * Free kullanıcılar için günlük istek limiti yönetimi
+ */
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { debugLog } from '../config/environment';
 
-export interface UsageLimit {
-  dailyRecipeViews: number;
-  dailySearches: number;
-  lastResetDate: string;
-  totalUsageToday: number;
+export interface DailyUsage {
+  date: string; // YYYY-MM-DD format
+  requestsUsed: number;
+  maxRequests: number;
 }
-
-export interface UsageConfig {
-  FREE_DAILY_RECIPE_LIMIT: number;
-  FREE_DAILY_SEARCH_LIMIT: number;
-  PREMIUM_DAILY_RECIPE_LIMIT: number;
-  PREMIUM_DAILY_SEARCH_LIMIT: number;
-}
-
-const USAGE_CONFIG: UsageConfig = {
-  FREE_DAILY_RECIPE_LIMIT: 10,
-  FREE_DAILY_SEARCH_LIMIT: 15,
-  PREMIUM_DAILY_RECIPE_LIMIT: -1, // Unlimited
-  PREMIUM_DAILY_SEARCH_LIMIT: -1, // Unlimited
-};
-
-const STORAGE_KEYS = {
-  USAGE_LIMIT: 'usage_limit_data',
-} as const;
 
 export class UsageLimitService {
+  private static readonly STORAGE_KEY = 'daily_usage';
+  private static readonly FREE_DAILY_LIMIT = 2;
+  
   /**
-   * Get current usage data
+   * Bugünün tarihini YYYY-MM-DD formatında al
    */
-  static async getCurrentUsage(): Promise<UsageLimit> {
+  private static getTodayDateString(): string {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  }
+
+  /**
+   * Günlük kullanım bilgisini al
+   */
+  static async getDailyUsage(): Promise<DailyUsage> {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEYS.USAGE_LIMIT);
-      const today = new Date().toDateString();
+      const todayDate = this.getTodayDateString();
+      const storedUsage = await AsyncStorage.getItem(this.STORAGE_KEY);
       
-      if (stored) {
-        try {
-          const usage: UsageLimit = JSON.parse(stored);
-          
-          // Reset if it's a new day
-          if (usage.lastResetDate !== today) {
-            return this.resetDailyUsage();
-          }
-          
-          return usage;
-        } catch (error) {
-          console.warn('Invalid usage data stored, resetting:', error);
-          return this.resetDailyUsage();
+      if (storedUsage) {
+        const usage: DailyUsage = JSON.parse(storedUsage);
+        
+        // Eğer tarih bugün değilse, yeni gün başlat
+        if (usage.date !== todayDate) {
+          const newUsage: DailyUsage = {
+            date: todayDate,
+            requestsUsed: 0,
+            maxRequests: this.FREE_DAILY_LIMIT,
+          };
+          await this.saveDailyUsage(newUsage);
+          return newUsage;
         }
+        
+        return usage;
       }
       
-      // Initialize for first time
-      return this.resetDailyUsage();
-    } catch (error) {
-      console.error('Error getting usage data:', error);
-      return this.resetDailyUsage();
-    }
-  }
-
-  /**
-   * Reset daily usage counters
-   */
-  static async resetDailyUsage(): Promise<UsageLimit> {
-    const today = new Date().toDateString();
-    const initialUsage: UsageLimit = {
-      dailyRecipeViews: 0,
-      dailySearches: 0,
-      lastResetDate: today,
-      totalUsageToday: 0,
-    };
-    
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.USAGE_LIMIT, JSON.stringify(initialUsage));
-      return initialUsage;
-    } catch (error) {
-      console.error('Error resetting usage data:', error);
-      return initialUsage;
-    }
-  }
-
-  /**
-   * Increment recipe view count
-   */
-  static async incrementRecipeView(): Promise<UsageLimit> {
-    try {
-      const currentUsage = await this.getCurrentUsage();
-      const updatedUsage: UsageLimit = {
-        ...currentUsage,
-        dailyRecipeViews: currentUsage.dailyRecipeViews + 1,
-        totalUsageToday: currentUsage.totalUsageToday + 1,
+      // İlk kez kullanım
+      const newUsage: DailyUsage = {
+        date: todayDate,
+        requestsUsed: 0,
+        maxRequests: this.FREE_DAILY_LIMIT,
       };
       
-      await AsyncStorage.setItem(STORAGE_KEYS.USAGE_LIMIT, JSON.stringify(updatedUsage));
-      return updatedUsage;
-    } catch (error) {
-      console.error('Error incrementing recipe view:', error);
-      return await this.getCurrentUsage();
-    }
-  }
-
-  /**
-   * Increment search count
-   */
-  static async incrementSearch(): Promise<UsageLimit> {
-    try {
-      const currentUsage = await this.getCurrentUsage();
-      const updatedUsage: UsageLimit = {
-        ...currentUsage,
-        dailySearches: currentUsage.dailySearches + 1,
-        totalUsageToday: currentUsage.totalUsageToday + 1,
-      };
+      await this.saveDailyUsage(newUsage);
+      return newUsage;
       
-      await AsyncStorage.setItem(STORAGE_KEYS.USAGE_LIMIT, JSON.stringify(updatedUsage));
-      return updatedUsage;
     } catch (error) {
-      console.error('Error incrementing search:', error);
-      return await this.getCurrentUsage();
-    }
-  }
-
-  /**
-   * Check if user can view more recipes (free users)
-   */
-  static async canViewRecipe(isPremium: boolean = false): Promise<{
-    canView: boolean;
-    remainingViews: number;
-    limitReached: boolean;
-  }> {
-    if (isPremium) {
+      console.error('Error getting daily usage:', error);
+      
+      // Hata durumunda varsayılan döndür
       return {
-        canView: true,
-        remainingViews: -1, // Unlimited
-        limitReached: false,
+        date: this.getTodayDateString(),
+        requestsUsed: 0,
+        maxRequests: this.FREE_DAILY_LIMIT,
       };
     }
-
-    const usage = await this.getCurrentUsage();
-    const limit = USAGE_CONFIG.FREE_DAILY_RECIPE_LIMIT;
-    const remainingViews = Math.max(0, limit - usage.dailyRecipeViews);
-    const canView = usage.dailyRecipeViews < limit;
-
-    return {
-      canView,
-      remainingViews,
-      limitReached: !canView,
-    };
   }
 
   /**
-   * Check if user can perform more searches (free users)
+   * Günlük kullanımı kaydet
    */
-  static async canPerformSearch(isPremium: boolean = false): Promise<{
-    canSearch: boolean;
-    remainingSearches: number;
-    limitReached: boolean;
-  }> {
-    if (isPremium) {
-      return {
-        canSearch: true,
-        remainingSearches: -1, // Unlimited
-        limitReached: false,
-      };
+  private static async saveDailyUsage(usage: DailyUsage): Promise<void> {
+    try {
+      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(usage));
+      debugLog('💾 Daily usage saved:', usage);
+    } catch (error) {
+      console.error('Error saving daily usage:', error);
     }
-
-    const usage = await this.getCurrentUsage();
-    const limit = USAGE_CONFIG.FREE_DAILY_SEARCH_LIMIT;
-    const remainingSearches = Math.max(0, limit - usage.dailySearches);
-    const canSearch = usage.dailySearches < limit;
-
-    return {
-      canSearch,
-      remainingSearches,
-      limitReached: !canSearch,
-    };
   }
 
   /**
-   * Get usage statistics for display
+   * Kullanıcının daha fazla istek yapıp yapamayacağını kontrol et
    */
-  static async getUsageStats(isPremium: boolean = false): Promise<{
-    recipeViewsUsed: number;
-    recipeViewsLimit: number;
-    searchesUsed: number;
-    searchesLimit: number;
-    isUnlimited: boolean;
-  }> {
-    const usage = await this.getCurrentUsage();
+  static async canMakeRequest(): Promise<boolean> {
+    const usage = await this.getDailyUsage();
+    return usage.requestsUsed < usage.maxRequests;
+  }
+
+  /**
+   * Bir istek kullan (request sayısını artır)
+   */
+  static async useRequest(): Promise<DailyUsage> {
+    const usage = await this.getDailyUsage();
     
-    return {
-      recipeViewsUsed: usage.dailyRecipeViews,
-      recipeViewsLimit: isPremium ? -1 : USAGE_CONFIG.FREE_DAILY_RECIPE_LIMIT,
-      searchesUsed: usage.dailySearches,
-      searchesLimit: isPremium ? -1 : USAGE_CONFIG.FREE_DAILY_SEARCH_LIMIT,
-      isUnlimited: isPremium,
-    };
+    if (usage.requestsUsed < usage.maxRequests) {
+      usage.requestsUsed++;
+      await this.saveDailyUsage(usage);
+    }
+    
+    return usage;
   }
 
   /**
-   * Get time until next reset (for display)
+   * Kalan istek sayısını al
    */
-  static getTimeUntilReset(): string {
-    const now = new Date();
-    const tomorrow = new Date(now);
+  static async getRemainingRequests(): Promise<number> {
+    const usage = await this.getDailyUsage();
+    return Math.max(0, usage.maxRequests - usage.requestsUsed);
+  }
+
+  /**
+   * Limit durumunu kontrol et
+   */
+  static async checkLimitStatus(): Promise<{
+    canMakeRequest: boolean;
+    remainingRequests: number;
+    isLimitReached: boolean;
+    resetsAt: Date;
+  }> {
+    const usage = await this.getDailyUsage();
+    const canMakeRequest = usage.requestsUsed < usage.maxRequests;
+    const remainingRequests = Math.max(0, usage.maxRequests - usage.requestsUsed);
+    const isLimitReached = usage.requestsUsed >= usage.maxRequests;
+    
+    // Yarın saat 00:00'da reset olur
+    const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(0, 0, 0, 0);
     
-    const msUntilReset = tomorrow.getTime() - now.getTime();
-    const hoursUntilReset = Math.floor(msUntilReset / (1000 * 60 * 60));
-    const minutesUntilReset = Math.floor((msUntilReset % (1000 * 60 * 60)) / (1000 * 60));
-    
-    return `${hoursUntilReset}sa ${minutesUntilReset}dk`;
+    return {
+      canMakeRequest,
+      remainingRequests,
+      isLimitReached,
+      resetsAt: tomorrow,
+    };
   }
 
   /**
-   * Check if user should see premium suggestion
+   * Debug: Kullanımı sıfırla (test için)
    */
-  static async shouldShowPremiumSuggestion(): Promise<boolean> {
-    const usage = await this.getCurrentUsage();
-    
-    // Show after 7 recipe views or 10 searches
-    return (
-      usage.dailyRecipeViews >= 7 || 
-      usage.dailySearches >= 10 ||
-      usage.totalUsageToday >= 15
-    );
-  }
-
-  /**
-   * Reset all usage data (for testing)
-   */
-  static async resetAllUsage(): Promise<void> {
+  static async resetDailyUsage(): Promise<void> {
     try {
-      await AsyncStorage.removeItem(STORAGE_KEYS.USAGE_LIMIT);
+      const newUsage: DailyUsage = {
+        date: this.getTodayDateString(),
+        requestsUsed: 0,
+        maxRequests: this.FREE_DAILY_LIMIT,
+      };
+      await this.saveDailyUsage(newUsage);
+      debugLog('🔄 Daily usage reset');
     } catch (error) {
-      console.error('Error resetting all usage:', error);
+      console.error('Error resetting daily usage:', error);
     }
   }
-}
 
-export default UsageLimitService;
+  /**
+   * Premium kullanıcı için limitsiz erişim
+   */
+  static async setUnlimitedAccess(): Promise<void> {
+    const usage = await this.getDailyUsage();
+    usage.maxRequests = 999; // Unlimited
+    await this.saveDailyUsage(usage);
+    debugLog('⭐ Unlimited access granted');
+  }
+}

@@ -14,6 +14,11 @@ export const getCurrentEnvironment = (): Environment => {
     return "testing";
   }
 
+  // Check NODE_ENV first (more reliable for builds)
+  if (process.env.NODE_ENV === "development") {
+    return "development";
+  }
+
   // Check if in development
   if (__DEV__) {
     return "development";
@@ -28,21 +33,18 @@ export const ENV = getCurrentEnvironment();
 export const CONFIG = {
   development: {
     // Development ortamı - tam test özgürlüğü
-    initialCredits: 100,
     enableDebugLogs: true,
     mockServices: true,
     allowDebugMenu: true,
   },
   testing: {
     // Test ortamı - production koşulları simülasyonu
-    initialCredits: 1,
     enableDebugLogs: false,
     mockServices: false,
     allowDebugMenu: false,
   },
   production: {
     // Production ortamı - gerçek App Store
-    initialCredits: 1,
     enableDebugLogs: false,
     mockServices: false,
     allowDebugMenu: false,
@@ -64,8 +66,6 @@ export const debugLog = (message: string, ...args: any[]) => {
   }
 };
 
-// Credit system helpers
-export const getInitialCredits = () => CURRENT_CONFIG.initialCredits;
 export const shouldUseMockServices = () => CURRENT_CONFIG.mockServices;
 
 console.log(`🌍 Environment: ${ENV}`);

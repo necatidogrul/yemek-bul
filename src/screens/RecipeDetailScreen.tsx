@@ -19,19 +19,16 @@ import { Recipe } from "../types/Recipe";
 import { SpeechService } from "../services/speechService";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useCreditContext } from "../contexts/CreditContext";
 
 // UI Components
 import { Button, Text } from "../components/ui";
 import { useTheme, spacing, colors } from "../contexts/ThemeContext";
 import { borderRadius, shadows } from "../theme/design-tokens";
 import { FavoriteButton } from "../components/ui/FavoriteButton";
-import PaywallModal from "../components/premium/PaywallModal";
-import { CreditUpgradeModal } from "../components/modals/CreditUpgradeModal";
 import { RecipeQAModal } from "../components/modals/RecipeQAModal";
-import { usePremium } from "../contexts/PremiumContext";
 import { useToast } from "../contexts/ToastContext";
 import { useHaptics } from "../hooks/useHaptics";
+import { usePremiumGuard } from "../hooks/usePremiumGuard";
 
 // Services
 import { OpenAIService } from "../services/openaiService";
@@ -65,21 +62,21 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showQAModal, setShowQAModal] = useState(false);
-  const [showCreditUpgrade, setShowCreditUpgrade] = useState(false);
-  const [showCreditModal, setShowCreditModal] = useState(false);
-  const [creditModalTrigger, setCreditModalTrigger] = useState<
-    "ai_limit" | "general"
-  >("general");
+
   const [activeTab, setActiveTab] = useState<
     "ingredients" | "instructions" | "nutrition"
   >("ingredients");
   const [servingSize, setServingSize] = useState(recipe?.servings || 4);
 
   const { colors, spacing } = useTheme();
-  const { userCredits, canAfford, deductCredits } = useCreditContext();
-  usePremium();
   const { showSuccess, showError } = useToast();
   const haptics = useHaptics();
+  
+  // Premium export özelliği için guard
+  const exportGuard = usePremiumGuard({ 
+    feature: 'exportRecipes',
+    title: 'Tarifleri PDF olarak dışa aktar'
+  });
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const headerOpacity = scrollY.interpolate({
@@ -140,6 +137,17 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     }
   };
 
+  // Premium export özelliği
+  const handleExportToPDF = () => {
+    if (!exportGuard.hasAccess) {
+      exportGuard.requirePremium();
+      return;
+    }
+
+    // TODO: PDF export implementasyonu
+    showSuccess("PDF export özelliği yakında eklenecek!");
+  };
+
   const startCooking = () => {
     setCurrentStep(0);
     haptics.notificationSuccess();
@@ -176,22 +184,11 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   };
 
   const handleQAOpen = () => {
-    if (!canAfford("recipe_qa")) {
-      setShowCreditUpgrade(true);
-      return;
-    }
     setShowQAModal(true);
   };
 
   const handleAskQuestion = async (question: string): Promise<string> => {
     try {
-      if (!canAfford("recipe_qa")) {
-        throw new Error("Yetersiz kredi");
-      }
-
-      // Krediyi düşür
-      await deductCredits("recipe_qa");
-
       // OpenAI'a soru sor
       const answer = await OpenAIService.askRecipeQuestion(recipe, question);
 
@@ -564,16 +561,34 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           {recipe?.name || "Tarif"}
         </Text>
 
-        <TouchableOpacity
-          style={[styles.headerButton, { backgroundColor: colors.surface }]}
-          onPress={shareRecipe}
-        >
-          <Ionicons
-            name="share-outline"
-            size={24}
-            color={colors.text.primary}
-          />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={[styles.headerButton, { backgroundColor: colors.surface }]}
+            onPress={handleExportToPDF}
+          >
+            <Ionicons
+              name="download-outline"
+              size={24}
+              color={exportGuard.hasAccess ? colors.text.primary : colors.text.secondary}
+            />
+            {!exportGuard.hasAccess && (
+              <View style={styles.premiumBadge}>
+                <Ionicons name="star" size={12} color="#FFD700" />
+              </View>
+            )}
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.headerButton, { backgroundColor: colors.surface }]}
+            onPress={shareRecipe}
+          >
+            <Ionicons
+              name="share-outline"
+              size={24}
+              color={colors.text.primary}
+            />
+          </TouchableOpacity>
+        </View>
       </Animated.View>
 
       <Animated.ScrollView
@@ -823,48 +838,12 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
       </Animated.ScrollView>
 
       {/* Modals */}
-      <PaywallModal visible={false} onClose={() => {}} feature="general" />
-
-      {showCreditUpgrade && (
-        <CreditUpgradeModal
-          visible={showCreditUpgrade}
-          onClose={() => setShowCreditUpgrade(false)}
-          onPurchaseCredits={() => Promise.resolve()}
-          onUpgradePremium={() => Promise.resolve()}
-          trigger="general"
-          userId="user123"
-        />
-      )}
-
       {showQAModal && (
         <RecipeQAModal
           visible={showQAModal}
           onClose={() => setShowQAModal(false)}
           recipe={recipe}
           onAskQuestion={handleAskQuestion}
-          onUpgradeRequired={() => {
-            setCreditModalTrigger("ai_limit");
-            setShowCreditModal(true);
-          }}
-          canUseQA={canAfford("recipe_qa")}
-          creditsRemaining={userCredits?.remainingCredits}
-        />
-      )}
-
-      {showCreditModal && (
-        <CreditUpgradeModal
-          visible={showCreditModal}
-          onClose={() => setShowCreditModal(false)}
-          trigger={creditModalTrigger}
-          userId={userCredits?.userId || "anonymous"}
-          onPurchaseCredits={async (packageId: string) => {
-            // Credit purchase logic would go here
-            console.log("Purchasing credits:", packageId);
-          }}
-          onUpgradePremium={async (tierId: string, yearly?: boolean) => {
-            // Premium upgrade logic would go here
-            console.log("Upgrading to premium:", tierId, yearly);
-          }}
         />
       )}
     </SafeAreaView>
@@ -897,13 +876,31 @@ const styles = StyleSheet.create({
     zIndex: 100,
     ...shadows.md,
   },
+  headerButtons: {
+    flexDirection: "row",
+    gap: 8,
+  },
   headerButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
     alignItems: "center",
+    position: "relative",
     justifyContent: "center",
     ...shadows.sm,
+  },
+  premiumBadge: {
+    position: "absolute",
+    top: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#1A1A1A",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
 
   // Hero Image
@@ -913,8 +910,8 @@ const styles = StyleSheet.create({
   },
   imageGradient: {
     flex: 1,
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     alignItems: "center",
     justifyContent: "center",
   },

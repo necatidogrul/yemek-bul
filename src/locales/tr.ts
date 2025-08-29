@@ -29,7 +29,6 @@ export const tr = {
     home: "Ana Sayfa",
     favorites: "Favoriler",
     history: "Geçmiş",
-    premium: "Premium",
     settings: "Ayarlar",
     profile: "Profil",
     allRecipes: "Tüm Tarifler",
@@ -105,7 +104,7 @@ export const tr = {
         description: "Malzemelerinle akıllı eşleştirme",
       },
       voiceCommands: {
-        title: "Sesli Komutlar", 
+        title: "Sesli Komutlar",
         description: "Elleriniz meşgulken sesle arama",
       },
       personalFavorites: {
@@ -156,7 +155,6 @@ export const tr = {
     discoverRecipes: "500+ tarif keşfet",
     favorites: "Favoriler",
     likedRecipes: "Beğendiğin tarifler",
-    credits: "{count} kredi",
   },
 
   // Recipe
@@ -196,75 +194,6 @@ export const tr = {
     rating: "Puan",
   },
 
-  // Credits & Premium
-  credits: {
-    remaining: "Kalan Kredi",
-    insufficient: "Yetersiz kredi. Lütfen kredi satın alın.",
-    insufficientShort: "Yetersiz Kredi",
-    insufficientDescription: "Daha fazla kredi satın alın",
-    deductionFailed: "Kredi düşme işlemi başarısız oldu",
-    purchase: "Kredi Satın Al",
-    free: "Ücretsiz",
-    premium: "Premium",
-    upgrade: "Yükselt",
-    features: {
-      aiRecipe: "AI Tarif Üretimi",
-      favorites: "Favoriler",
-      qa: "Tarif Soru-Cevap",
-      history: "Geçmiş Erişimi",
-    },
-    costs: {
-      aiRecipe: "1 kredi",
-      favorites: "1 kredi",
-      qa: "3 kredi",
-      history: "2 kredi",
-    },
-  },
-
-  // Premium/Paywall
-  premium: {
-    title: "Premium'a Geçin",
-    subtitle: "Tüm özelliklerin keyfini çıkarın",
-    features: {
-      unlimitedRecipes: {
-        title: "Sınırsız Tarif Görüntüleme",
-        description: "İstediğiniz kadar tarif keşfedin",
-      },
-      favorites: {
-        title: "Favoriler & Koleksiyonlar",
-        description: "Sevdiğiniz tarifleri kaydedin",
-      },
-      aiAssistant: {
-        title: "AI Yemek Asistanı",
-        description: "Kişisel tarif önerileri alın",
-      },
-      advancedFilters: {
-        title: "Gelişmiş Filtreler",
-        description: "Diyet ve alerji bazlı arama",
-      },
-      menuPlanner: {
-        title: "Menü Planlayıcı",
-        description: "Haftalık menülerinizi planlayın",
-      },
-      adFree: {
-        title: "Reklamsız Deneyim",
-        description: "Hiç reklam görmeden kullanın",
-      },
-    },
-    pricing: {
-      monthly: "Aylık",
-      yearly: "Yıllık",
-      free7Days: "İlk 7 gün ücretsiz!",
-      cancelAnytime: "İstediğin zaman iptal et",
-    },
-    cta: {
-      start: "Premium'a Başla",
-      continue: "Premium Devam Et",
-      processing: "İşlem yapılıyor...",
-      later: "Şimdi Değil",
-    },
-  },
-
   // Errors & Messages
   errors: {
     general: "Bir hata oluştu",
@@ -276,7 +205,7 @@ export const tr = {
     purchase: "Satın alma başarısız",
     minIngredients: "Lütfen en az bir malzeme ekleyin",
     noRecipesFound: "Bu malzemelerle tarif bulunamadı",
-    // Onboarding specific  
+    // Onboarding specific
     notificationPermissionDenied: "Bildirim izni alınamadı",
   },
 
@@ -299,7 +228,6 @@ export const tr = {
     unsavedChanges: "Kaydedilmemiş değişiklikler var",
     deleteConfirm: "Silmek istediğinizden emin misiniz?",
     internetRequired: "Bu özellik internet bağlantısı gerektirir",
-    premiumRequired: "Bu özellik premium üyelik gerektirir",
   },
 
   // Categories
@@ -373,7 +301,7 @@ export const tr = {
   ingredients: {
     // Popular ingredients with emojis
     tomato: "🍅 Domates",
-    onion: "🧅 Soğan", 
+    onion: "🧅 Soğan",
     carrot: "🥕 Havuç",
     cucumber: "🥒 Salatalık",
     garlic: "🧄 Sarımsak",
@@ -382,7 +310,7 @@ export const tr = {
     lettuce: "🥬 Marul",
     lemon: "🍋 Limon",
     cheese: "🧀 Peynir",
-    
+
     // Quick ingredients
     chicken: "Tavuk",
     meat: "Et",
@@ -476,10 +404,10 @@ export const tr = {
     noFavoritesDescription: "Beğendiğin tarifleri favorilere ekle",
     loadingError: "Favoriler yüklenemedi",
     searchNoResults: "Sonuç Bulunamadı",
-    searchNoResultsDescription: "Arama kriterlerinize uygun favori tarif bulunamadı",
+    searchNoResultsDescription:
+      "Arama kriterlerinize uygun favori tarif bulunamadı",
     removedFromFavorites: "Tarif favorilerden çıkarıldı",
     removeError: "Tarif çıkarılırken hata oluştu",
-    creditRequired: "AI tarif detaylarını görüntülemek için kredi gerekli",
   },
 
   // History Screen
@@ -499,29 +427,6 @@ export const tr = {
 
   // Modal Components
   modals: {
-    // Credit Upgrade Modal
-    creditUpgrade: {
-      aiLimitTitle: "🤖 AI Tarif Hakkın Bitti!",
-      aiLimitSubtitle: "Daha fazla AI tarif için kredi al",
-      aiLimitDescription: "Yapay zeka ile özel tarifler oluşturmaya devam et",
-      
-      searchLimitTitle: "🔍 Günlük Arama Sınırı!",
-      searchLimitSubtitle: "Daha fazla arama yapmak için",
-      searchLimitDescription: "Bugün 5 arama hakkını kullandın",
-      
-      recipeLimitTitle: "👀 Tarif Görüntüleme Sınırı!",
-      recipeLimitSubtitle: "Daha fazla tarif görmek için",
-      recipeLimitDescription: "Bugün 5 tarif görüntüleme hakkını kullandın",
-      
-      favoritesBlockedTitle: "❤️ Favoriler Premium Özellik!",
-      favoritesBlockedSubtitle: "Tarifleri kaydetmek için",
-      favoritesBlockedDescription: "Favori tariflerini saklamak için premium gerekli",
-      
-      generalTitle: "🚀 Daha Fazla Özellik!",
-      generalSubtitle: "Yemek Bulucu'nun tüm gücünü keşfet",
-      generalDescription: "Premium özelliklere erişim sağla",
-    },
-
     // Recipe Q&A Modal
     recipeQA: {
       title: "Tarif Hakkında Sor",
@@ -536,7 +441,6 @@ export const tr = {
         substitutes: "Hangi malzemeleri değiştirebilirim?",
       },
       askButton: "Sor",
-      creditsRequired: "3 kredi gerekli",
     },
 
     // Error Boundary Modal
@@ -556,6 +460,58 @@ export const tr = {
       notNow: "Şimdi Değil",
       later: "Sonra",
     },
+  },
+
+  // Premium
+  premium: {
+    upgrade_to_premium: "Premium'a Geç",
+    upgrade_for_feature: "{{feature}} özelliği için Premium'a geçin",
+    feature_unlock: "{{feature}} özelliğini açmak için Premium'a geçin",
+    start_free_trial: "7 Gün Ücretsiz Dene",
+    monthly_subscription: "Aylık Abonelik",
+    choose_plan: "Planınızı Seçin",
+    purchasing: "Satın alınıyor...",
+    restoring: "Geri yükleniyor...",
+    restore_purchases: "Satın Almaları Geri Yükle",
+    loading_offers: "Teklifler yükleniyor...",
+
+    // Features
+    features: {
+      unlimited_recipes: "Sınırsız Tarif",
+      unlimited_recipes_desc: "Binlerce tarife erişim",
+      advanced_filters: "Gelişmiş Filtreler",
+      advanced_filters_desc: "Detaylı arama ve filtreleme",
+      export_recipes: "Tarif Dışa Aktarma", 
+      export_recipes_desc: "Tariflerinizi PDF olarak kaydedin",
+      priority_support: "Öncelikli Destek",
+      priority_support_desc: "7/24 öncelikli müşteri desteği",
+      no_ads: "Reklamsız Deneyim",
+      no_ads_desc: "Hiç reklam görmeden kullanın"
+    },
+
+    // Period
+    period: {
+      month: "ay",
+      year: "yıl"
+    },
+
+    // Messages
+    success: {
+      purchase_completed: "Premium abonelik başarıyla aktivé edildi!",
+      restore_completed: "Satın almalar başarıyla geri yüklendi!"
+    },
+    errors: {
+      load_offerings: "Teklifler yüklenirken hata oluştu",
+      no_package_selected: "Lütfen bir paket seçin",
+      purchase_failed: "Satın alma işlemi başarısız oldu",
+      restore_failed: "Geri yükleme işlemi başarısız oldu"
+    },
+    info: {
+      no_purchases_found: "Geri yüklenecek satın alma bulunamadı"
+    },
+    
+    // Legal
+    terms_agreement: "Devam ederek Kullanım Koşulları ve Gizlilik Politikası'nı kabul ediyorsunuz"
   },
 
   // Additional onboarding content moved to main onboarding object above

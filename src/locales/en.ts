@@ -29,7 +29,6 @@ export const en = {
     home: "Home",
     favorites: "Favorites",
     history: "History",
-    premium: "Premium",
     settings: "Settings",
     profile: "Profile",
     allRecipes: "All Recipes",
@@ -115,14 +114,15 @@ export const en = {
     },
     sections: {
       favoriteCuisines: "Favorite Cuisines",
-      cookingExperience: "Cooking Experience", 
+      cookingExperience: "Cooking Experience",
       dailySuggestions: "Daily Suggestions",
       specialOffers: "Special Offers",
       ready: "Everything Ready!",
     },
     descriptions: {
       dailySuggestions: "Specially selected recipes for you every morning",
-      specialOffers: "Be the first to know about new features and opportunities",
+      specialOffers:
+        "Be the first to know about new features and opportunities",
       readyDescription: "Let your AI-powered kitchen adventure begin",
     },
     levels: {
@@ -156,7 +156,6 @@ export const en = {
     discoverRecipes: "Discover 500+ recipes",
     favorites: "Favorites",
     likedRecipes: "Your favorite recipes",
-    credits: "{count} credits",
   },
 
   // Recipe
@@ -196,75 +195,6 @@ export const en = {
     rating: "Rating",
   },
 
-  // Credits & Premium
-  credits: {
-    remaining: "Remaining Credits",
-    insufficient: "Insufficient credits. Please purchase credits.",
-    insufficientShort: "Insufficient Credits",
-    insufficientDescription: "Buy more credits",
-    deductionFailed: "Credit deduction failed",
-    purchase: "Purchase Credits",
-    free: "Free",
-    premium: "Premium",
-    upgrade: "Upgrade",
-    features: {
-      aiRecipe: "AI Recipe Generation",
-      favorites: "Favorites",
-      qa: "Recipe Q&A",
-      history: "History Access",
-    },
-    costs: {
-      aiRecipe: "1 credit",
-      favorites: "1 credit",
-      qa: "3 credits",
-      history: "2 credits",
-    },
-  },
-
-  // Premium/Paywall
-  premium: {
-    title: "Upgrade to Premium",
-    subtitle: "Enjoy all features",
-    features: {
-      unlimitedRecipes: {
-        title: "Unlimited Recipe Views",
-        description: "Discover as many recipes as you want",
-      },
-      favorites: {
-        title: "Favorites & Collections",
-        description: "Save your favorite recipes",
-      },
-      aiAssistant: {
-        title: "AI Cooking Assistant",
-        description: "Get personalized recipe suggestions",
-      },
-      advancedFilters: {
-        title: "Advanced Filters",
-        description: "Search by diet and allergy preferences",
-      },
-      menuPlanner: {
-        title: "Menu Planner",
-        description: "Plan your weekly menus",
-      },
-      adFree: {
-        title: "Ad-Free Experience",
-        description: "Use without any ads",
-      },
-    },
-    pricing: {
-      monthly: "Monthly",
-      yearly: "Yearly",
-      free7Days: "First 7 days free!",
-      cancelAnytime: "Cancel anytime",
-    },
-    cta: {
-      start: "Start Premium",
-      continue: "Continue Premium",
-      processing: "Processing...",
-      later: "Not Now",
-    },
-  },
-
   // Errors & Messages
   errors: {
     general: "An error occurred",
@@ -299,7 +229,6 @@ export const en = {
     unsavedChanges: "You have unsaved changes",
     deleteConfirm: "Are you sure you want to delete?",
     internetRequired: "This feature requires internet connection",
-    premiumRequired: "This feature requires premium membership",
   },
 
   // Categories
@@ -382,7 +311,7 @@ export const en = {
     lettuce: "🥬 Lettuce",
     lemon: "🍋 Lemon",
     cheese: "🧀 Cheese",
-    
+
     // Quick ingredients
     chicken: "Chicken",
     meat: "Meat",
@@ -476,10 +405,10 @@ export const en = {
     noFavoritesDescription: "Add recipes you like to favorites",
     loadingError: "Failed to load favorites",
     searchNoResults: "No Results Found",
-    searchNoResultsDescription: "No favorite recipes found matching your search criteria",
+    searchNoResultsDescription:
+      "No favorite recipes found matching your search criteria",
     removedFromFavorites: "Recipe removed from favorites",
     removeError: "Error occurred while removing recipe",
-    creditRequired: "Credits required to view AI recipe details",
   },
 
   // History Screen
@@ -499,29 +428,6 @@ export const en = {
 
   // Modal Components
   modals: {
-    // Credit Upgrade Modal
-    creditUpgrade: {
-      aiLimitTitle: "🤖 AI Recipe Limit Reached!",
-      aiLimitSubtitle: "Get more credits for AI recipes",
-      aiLimitDescription: "Continue creating custom recipes with AI",
-      
-      searchLimitTitle: "🔍 Daily Search Limit!",
-      searchLimitSubtitle: "Get more searches",
-      searchLimitDescription: "You've used your 5 daily searches",
-      
-      recipeLimitTitle: "👀 Recipe View Limit!",
-      recipeLimitSubtitle: "View more recipes",
-      recipeLimitDescription: "You've used your 5 daily recipe views",
-      
-      favoritesBlockedTitle: "❤️ Favorites is Premium!",
-      favoritesBlockedSubtitle: "Save recipes",
-      favoritesBlockedDescription: "Premium required to save favorite recipes",
-      
-      generalTitle: "🚀 More Features!",
-      generalSubtitle: "Discover Recipe Finder's full power",
-      generalDescription: "Get access to premium features",
-    },
-
     // Recipe Q&A Modal
     recipeQA: {
       title: "Ask About Recipe",
@@ -536,7 +442,6 @@ export const en = {
         substitutes: "What ingredients can I substitute?",
       },
       askButton: "Ask",
-      creditsRequired: "3 credits required",
     },
 
     // Error Boundary Modal

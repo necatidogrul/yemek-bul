@@ -1,79 +1,98 @@
-# 🎯 Yemek Bulucu - AI Recipe App
+# CLAUDE.md
 
-## 📱 Kredi Sistemi 
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-### 🌍 Environment Sistemi
-Artık 3 farklı ortamda test edebilirsiniz:
+## Project Overview
 
-```bash
-# Development: 100 kredi, admin panel açık
-npm run env:dev
-npx expo start --clear
+Yemek Bulucu - AI-powered recipe discovery app that suggests recipes based on available ingredients. Built with React Native/Expo, uses OpenAI for recipe generation and Supabase for backend services.
 
-# Testing: Production benzeri, 1 kredi, admin panel KAPALI
-npm run env:test  
-npx expo start --clear
+## Development Commands
 
-# Production: Tam güvenlik, 1 kredi, admin panel YOK
-npm run env:prod
-npx expo start --clear
-```
+### Environment Management
+- `npm run env:dev` - Development environment
+- `npm run env:test` - Testing environment  
+- `npm run env:prod` - Production environment
 
-### 🔒 Güvenlik Özellikleri
-- **Admin Panel**: Sadece development ortamında çalışır
-- **Production Guard**: Test/prod ortamında admin özellikleri tamamen devre dışı
-- **Environment Detection**: Otomatik ortam algılama
-- **App Store Safe**: Production build'de hiçbir gizli özellik yok
+### Development
+- `npm start` or `expo start` - Start development server
+- `npm run android` - Run on Android
+- `npm run ios` - Run on iOS  
+- `npm run web` - Run on web
 
-### 🧪 Test Scenarios
-1. **Development Test**: `npm run env:dev` → Admin panel ile kredi ekle
-2. **Production Test**: `npm run env:test` → Gerçek kullanıcı deneyimi
-3. **Store Submission**: `npm run env:prod` → App Store için hazır
+### Code Quality
+- `npm run lint` - Run ESLint
+- `npm run lint:fix` - Fix ESLint issues
+- `npm run format` - Format with Prettier
+- `npm run typecheck` - TypeScript type checking
 
-### Komutlar
-```bash
-# Environment değiştirme
-npm run env:dev   # Development ortamı
-npm run env:test  # Test ortamı (production benzeri)  
-npm run env:prod  # Production ortamı
+### Building & Deployment
+- `npm run build:production` - Build for production (all platforms)
+- `npm run build:ios` - Build iOS production
+- `npm run build:android` - Build Android production
+- `npm run submit:ios` - Submit to App Store
+- `npm run submit:android` - Submit to Google Play
 
-# Projeyi çalıştır
-npx expo start --clear
+## Architecture
 
-# iOS build
-npx expo run:ios
+### Core Structure
+- **Context Providers**: Theme, Toast, Tour, Language, Haptic contexts wrap the app
+- **Navigation**: Bottom tab navigation with themed navigators
+- **Onboarding**: First-run experience with user preference collection
+- **Environment Config**: Development/testing/production environment switching
 
-# Supabase migration
-# SQL Editor'da migrations/create_credit_tables.sql çalıştır
-```
+### Key Services
+- **OpenAIService**: AI recipe generation with intelligent prompting and image search
+- **RevenueCatService**: Subscription/premium features management
+- **FavoritesService**: Recipe bookmarking with AsyncStorage
+- **UserPreferencesService**: User settings and onboarding state
+- **Supabase**: Backend services (database, edge functions)
 
-### Debug Logları
-Environment'a göre loglar:
-- **Development**: Tüm loglar açık
-- **Testing/Production**: Sadece error logları
+### AI Recipe Generation Flow
+1. User inputs ingredients
+2. OpenAIService builds contextual prompt based on user preferences and history
+3. Uses adaptive strategy (conservative/balanced/adventurous) based on user experience
+4. Fetches recipe images via Google Custom Search API or Unsplash fallback
+5. Returns structured Recipe objects with metadata
 
-### Supabase Tables
-- `user_credits`: Kullanıcı kredi durumu
-- `credit_transactions`: Kredi hareketleri
+### Theming System
+- Light/dark theme support
+- Consistent design tokens in `src/theme/design-tokens.ts`
+- Themed components with `useThemedStyles` hook
 
-### Kredi Maliyetleri
-- AI Recipe Generation: 1 kredi
-- Favorite View: 1 kredi
-- Recipe Q&A: 3 kredi
-- History Access: 2 kredi
+### Localization
+- i18next for internationalization
+- Turkish and English support
+- Language switching via LanguageContext
 
-## 🎮 Test Rehberi
+### State Management
+- Context-based state management (no Redux)
+- AsyncStorage for persistence
+- Individual services handle their own state
 
-### Development Test (npm run env:dev)
-1. Expo Go'da aç
-2. Header'da 100 kredi görülecek
-3. AI tarif üret → kredi düşecek
-4. Admin panel → Kredi butonuna 7x dokun
-5. Hızlı kredi ekleme butonları çalışır
+## Key Configuration
 
-### Production Test (npm run env:test)
-1. Expo Go'da aç  
-2. Header'da 1 kredi görülecek
-3. AI tarif üret → kredi düşecek, 0 olunca paywall
-4. Admin panel → 7x dokunma ÇALIŞMAZ
-5. Gerçek kullanıcı deneyimi
+### Environment Variables
+- `EXPO_PUBLIC_ENVIRONMENT`: development/testing/production
+- `EXPO_PUBLIC_OPENAI_API_KEY`: Direct OpenAI API (development only)
+- `EXPO_PUBLIC_SUPABASE_URL`: Supabase project URL
+- `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+
+### Build Profiles (eas.json)
+- Development: Development client build
+- Preview: Internal distribution
+- Production: App Store/Google Play builds
+
+### Module Resolution
+Babel alias configured: `@` -> `./src`
+
+## Testing Notes
+- Tests not yet implemented (test script exists but returns placeholder)
+- Development mode forces onboarding reset for testing
+- Environment switching available via npm scripts
+
+## Important Files
+- `App.tsx` - Main app entry point with provider hierarchy
+- `src/config/environment.ts` - Environment detection and configuration
+- `src/services/openaiService.ts` - Core AI recipe generation logic
+- `src/components/navigation/ThemedNavigators.tsx` - Navigation structure
+- `package.json` - Available scripts and dependencies

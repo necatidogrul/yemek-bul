@@ -1,834 +1,322 @@
+/**
+ * RevenueCat Service
+ *
+ * Premium subscription ve in-app purchase yönetimi
+ */
+
 import Purchases, {
-  PurchasesPackage,
   CustomerInfo,
   PurchasesOffering,
-  PURCHASES_ERROR_CODE,
-  PurchasesError,
+  PurchasesPackage,
+  LOG_LEVEL,
 } from "react-native-purchases";
-import { Logger } from "../services/LoggerService";
 import { Platform } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { REVENUECAT_CONFIG } from "../config/revenuecat.config";
-import { MockRevenueCatService } from "./MockRevenueCatService";
-import { shouldUseMockServices, debugLog, ENV } from "../config/environment";
+import Constants from "expo-constants";
+import {
+  REVENUECAT_CONFIG,
+  PREMIUM_FEATURES,
+  PremiumFeature,
+} from "../config/revenueCat";
+import { debugLog, isProduction } from "../config/environment";
 
-// Import configuration
-const {
-  API_KEYS: REVENUECAT_API_KEYS,
-  PRODUCTS: PRODUCT_IDS,
-  ENTITLEMENTS: ENTITLEMENT_IDS,
-  DEVELOPMENT,
-} = REVENUECAT_CONFIG;
-
-// Storage keys
-const STORAGE_KEYS = {
-  PREMIUM_STATUS: "premium_status",
-  LAST_CHECK: "premium_last_check",
-  USER_ID: "revenuecat_user_id",
-} as const;
-
-export interface SubscriptionInfo {
+export interface PremiumStatus {
   isPremium: boolean;
   isActive: boolean;
-  willRenew: boolean;
-  originalPurchaseDate?: Date;
   expirationDate?: Date;
-  productIdentifier?: string;
-  isSandbox: boolean;
+  originalPurchaseDate?: Date;
+  productId?: string;
+  willRenew?: boolean;
 }
 
-export interface OfferingInfo {
-  identifier: string;
-  serverDescription: string;
-  packages: PurchasePackageInfo[];
-}
-
-export interface PurchasePackageInfo {
-  identifier: string;
-  packageType: string;
-  product: {
-    identifier: string;
-    description: string;
-    title: string;
-    price: number;
-    priceString: string;
-    currencyCode: string;
-  };
+export interface PurchaseResult {
+  success: boolean;
+  customerInfo?: CustomerInfo;
+  error?: string;
+  userCancelled?: boolean;
 }
 
 export class RevenueCatService {
   private static isInitialized = false;
-  private static currentUserId: string | null = null;
-  private static isMockMode = shouldUseMockServices();
-
-  // Mock mode helper methods
-  static enableMockMode(): void {
-    this.isMockMode = true;
-    console.log("🧪 Mock mode enabled");
-  }
-
-  static disableMockMode(): void {
-    this.isMockMode = false;
-    console.log("✅ Mock mode disabled");
-  }
-
-  static isMockModeEnabled(): boolean {
-    return this.isMockMode;
-  }
+  private static currentCustomerInfo: CustomerInfo | null = null;
 
   /**
-   * Initialize RevenueCat SDK
+   * RevenueCat SDK'sını başlat
    */
-  static async initialize(): Promise<boolean> {
-    if (this.isInitialized) {
-      return true;
-    }
-
-    // Use mock service if in mock mode
-    if (this.isMockMode) {
-      const result = await MockRevenueCatService.initialize();
-      this.isInitialized = result;
-      return result;
-    }
-
+  static async initialize(): Promise<void> {
     try {
-      // Set log level based on environment
-      await Purchases.setLogLevel(
-        DEVELOPMENT.ENABLE_DEBUG_LOGS
-          ? Purchases.LOG_LEVEL.DEBUG
-          : Purchases.LOG_LEVEL.ERROR
-      );
-
-      // Configure RevenueCat - sadece iOS için
-      if (Platform.OS !== "ios") {
-        console.log("⚠️ RevenueCat sadece iOS için konfigüre edildi");
-        this.isMockMode = true;
-        return this.initialize(); // Android'de mock mode'a geç
+      if (this.isInitialized) {
+        debugLog("RevenueCat already initialized");
+        return;
       }
 
-      let apiKey = REVENUECAT_API_KEYS.ios;
-
-      // Development için temporary key kullan (gerçek key'ler yoksa)
+      // Development ve Expo Go kontrolü - sadece Expo Go'da mock kullan
       if (
-        apiKey.includes("PUT_YOUR_") &&
-        DEVELOPMENT.TEMP_API_KEY &&
-        !DEVELOPMENT.TEMP_API_KEY.includes("PUT_YOUR_")
+        __DEV__ &&
+        (global as any).__DEV__ &&
+        Constants.appOwnership === "expo"
       ) {
-        apiKey = DEVELOPMENT.TEMP_API_KEY;
-        console.log("⚠️ Using temporary RevenueCat API key for development");
+        debugLog("🔧 Expo Go mode: Using mock RevenueCat services");
+        this.isInitialized = true;
+        this.currentCustomerInfo = null; // Mock data
+        return;
       }
 
-      if (apiKey.includes("PUT_YOUR_")) {
-        if (ENV === "development") {
-          debugLog(
-            "RevenueCat API key not configured. Enabling mock mode. Check REVENUECAT_SETUP.md for instructions."
-          );
-          this.isMockMode = true;
-          return this.initialize(); // Re-initialize in mock mode
-        } else {
-          throw new Error(
-            "RevenueCat API key not configured. Please add your API key."
-          );
-        }
+      // Debug logging sadece development'ta
+      if (!isProduction()) {
+        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
       }
 
+      // Platform-specific API key
+      const apiKey =
+        Platform.OS === "ios"
+          ? REVENUECAT_CONFIG.apiKeys.apple
+          : REVENUECAT_CONFIG.apiKeys.google;
+
+      if (!apiKey) {
+        throw new Error(`RevenueCat API key not found for ${Platform.OS}`);
+      }
+
+      // SDK'yı yapılandır
       await Purchases.configure({ apiKey });
 
+      debugLog("✅ RevenueCat initialized successfully");
       this.isInitialized = true;
-      console.log("✅ RevenueCat initialized successfully");
 
-      return true;
+      // Mevcut customer info'yu al
+      await this.refreshCustomerInfo();
     } catch (error) {
-      console.error("❌ RevenueCat initialization error:", error);
-      if (ENV === "development") {
-        debugLog("Falling back to mock mode for development");
-        this.isMockMode = true;
-        return this.initialize(); // Re-initialize in mock mode
+      console.error("❌ RevenueCat initialization failed:", error);
+      // Development'ta hata olsa bile devam et
+      if (__DEV__) {
+        this.isInitialized = true;
+        this.currentCustomerInfo = null;
+        return;
       }
-      return false;
+      throw error;
     }
   }
 
   /**
-   * Set user ID for RevenueCat
+   * Kullanıcı bilgilerini güncelle
    */
-  static async identifyUser(userId: string): Promise<boolean> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.identifyUser(userId);
-    }
-
+  static async refreshCustomerInfo(): Promise<CustomerInfo | null> {
     try {
-      if (this.currentUserId === userId) {
-        return true; // Already identified
+      // Development mock
+      if (__DEV__ && (global as any).__DEV__) {
+        debugLog("🔧 Development: Using mock customer info");
+        return null;
       }
-
-      const { customerInfo } = await Purchases.logIn(userId);
-      this.currentUserId = userId;
-
-      await AsyncStorage.setItem(STORAGE_KEYS.USER_ID, userId);
-
-      Logger.info("✅ User identified successfully");
-      Logger.info(
-        `Premium status: ${
-          customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM] !==
-          undefined
-        }`
-      );
-
-      return true;
-    } catch (error) {
-      console.error("❌ User identification error:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Anonymous login (for users who don't want to register)
-   */
-  static async loginAnonymously(): Promise<boolean> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.loginAnonymously();
-    }
-
-    try {
-      const existingUserId = await AsyncStorage.getItem(STORAGE_KEYS.USER_ID);
-
-      if (existingUserId) {
-        return await this.identifyUser(existingUserId);
-      }
-
-      // Generate anonymous user ID
-      const anonymousId = `anonymous_${Date.now()}_${Math.random()
-        .toString(36)
-        .substring(2, 11)}`;
-      return await this.identifyUser(anonymousId);
-    } catch (error) {
-      console.error("❌ Anonymous login error:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Get detailed subscription information
-   */
-  static async getSubscriptionInfo(): Promise<SubscriptionInfo> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.getSubscriptionInfo();
-    }
-
-    try {
-      const customerInfo: CustomerInfo = await Purchases.getCustomerInfo();
-      const premiumEntitlement =
-        customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM];
-
-      if (premiumEntitlement) {
-        const subscriptionInfo: SubscriptionInfo = {
-          isPremium: true,
-          isActive: true,
-          willRenew: premiumEntitlement.willRenew,
-          originalPurchaseDate: premiumEntitlement.originalPurchaseDate
-            ? new Date(premiumEntitlement.originalPurchaseDate)
-            : undefined,
-          expirationDate: premiumEntitlement.expirationDate
-            ? new Date(premiumEntitlement.expirationDate)
-            : undefined,
-          productIdentifier: premiumEntitlement.productIdentifier,
-          isSandbox: premiumEntitlement.isSandbox,
-        };
-
-        // Cache premium status
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.PREMIUM_STATUS,
-          JSON.stringify(subscriptionInfo)
-        );
-        await AsyncStorage.setItem(
-          STORAGE_KEYS.LAST_CHECK,
-          Date.now().toString()
-        );
-
-        return subscriptionInfo;
-      }
-
-      const freeInfo: SubscriptionInfo = {
-        isPremium: false,
-        isActive: false,
-        willRenew: false,
-        isSandbox: false,
-      };
-
-      // Cache free status
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.PREMIUM_STATUS,
-        JSON.stringify(freeInfo)
-      );
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.LAST_CHECK,
-        Date.now().toString()
-      );
-
-      return freeInfo;
-    } catch (error) {
-      console.error("❌ Subscription status check error:", error);
-
-      // Return cached status if available
-      try {
-        const cached = await AsyncStorage.getItem(STORAGE_KEYS.PREMIUM_STATUS);
-        if (cached) {
-          try {
-            return JSON.parse(cached);
-          } catch (parseError) {
-            console.warn("Invalid premium status cache, clearing:", parseError);
-            await AsyncStorage.removeItem(STORAGE_KEYS.PREMIUM_STATUS);
-          }
-        }
-      } catch (cacheError) {
-        console.error("Cache read error:", cacheError);
-      }
-
-      return {
-        isPremium: false,
-        isActive: false,
-        willRenew: false,
-        isSandbox: false,
-      };
-    }
-  }
-
-  /**
-   * Quick premium status check (uses cache if recent)
-   */
-  static async isPremiumUser(): Promise<boolean> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.isPremiumUser();
-    }
-
-    try {
-      const lastCheck = await AsyncStorage.getItem(STORAGE_KEYS.LAST_CHECK);
-      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-
-      // Use cache if check was recent (within 5 minutes)
-      if (lastCheck && parseInt(lastCheck) > fiveMinutesAgo) {
-        const cached = await AsyncStorage.getItem(STORAGE_KEYS.PREMIUM_STATUS);
-        if (cached) {
-          try {
-            const info: SubscriptionInfo = JSON.parse(cached);
-            return info.isPremium;
-          } catch (parseError) {
-            console.warn("Invalid cached subscription info:", parseError);
-          }
-        }
-      }
-
-      // Fresh check
-      const info = await this.getSubscriptionInfo();
-      return info.isPremium;
-    } catch (error) {
-      console.error("❌ Premium check error:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Get available subscription offerings
-   */
-  static async getOfferings(): Promise<OfferingInfo[]> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.getOfferings();
-    }
-
-    try {
-      const offerings = await Purchases.getOfferings();
-      const result: OfferingInfo[] = [];
-
-      if (offerings.current) {
-        const packages: PurchasePackageInfo[] = [];
-
-        // Process available packages
-        Object.values(offerings.current.availablePackages).forEach(
-          (pkg: PurchasesPackage) => {
-            packages.push({
-              identifier: pkg.identifier,
-              packageType: pkg.packageType,
-              product: {
-                identifier: pkg.product.identifier,
-                description: pkg.product.description,
-                title: pkg.product.title,
-                price: pkg.product.price,
-                priceString: pkg.product.priceString,
-                currencyCode: pkg.product.currencyCode,
-              },
-            });
-          }
-        );
-
-        result.push({
-          identifier: offerings.current.identifier,
-          serverDescription: offerings.current.serverDescription,
-          packages,
-        });
-      }
-
-      return result;
-    } catch (error) {
-      console.error("❌ Get offerings error:", error);
-      return [];
-    }
-  }
-
-  /**
-   * Purchase premium subscription
-   */
-  static async purchasePremium(packageIdentifier?: string): Promise<{
-    success: boolean;
-    customerInfo?: CustomerInfo;
-    error?: string;
-  }> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.purchasePremium(packageIdentifier);
-    }
-
-    try {
-      const offerings = await Purchases.getOfferings();
-
-      if (
-        !offerings.current ||
-        offerings.current.availablePackages.length === 0
-      ) {
-        return {
-          success: false,
-          error: "Hiçbir abonelik paketi bulunamadı",
-        };
-      }
-
-      // Find the package to purchase
-      let packageToPurchase: PurchasesPackage | null = null;
-
-      if (packageIdentifier) {
-        // Find specific package
-        packageToPurchase =
-          offerings.current.availablePackages.find(
-            (pkg) => pkg.identifier === packageIdentifier
-          ) || null;
-      } else {
-        // Default to monthly package
-        packageToPurchase =
-          offerings.current.monthly ||
-          offerings.current.availablePackages[0] ||
-          null;
-      }
-
-      if (!packageToPurchase) {
-        return {
-          success: false,
-          error: "Abonelik paketi bulunamadı",
-        };
-      }
-
-      console.log(`🛒 Purchasing package: ${packageToPurchase.identifier}`);
-      const { customerInfo } = await Purchases.purchasePackage(
-        packageToPurchase
-      );
-
-      // Check if purchase was successful
-      const isPremium =
-        customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM] !== undefined;
-
-      if (isPremium) {
-        Logger.info("✅ Purchase successful! User is now premium.");
-
-        // Update cached status
-        await this.getSubscriptionInfo();
-      } else {
-        console.log("❌ Purchase completed but premium not activated.");
-      }
-
-      return {
-        success: isPremium,
-        customerInfo,
-      };
-    } catch (error: any) {
-      console.error("❌ Purchase error:", error);
-
-      // Handle specific error cases
-      if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
-        return {
-          success: false,
-          error: "Satın alma iptal edildi",
-        };
-      } else if (error.code === "PURCHASE_IN_PROGRESS_ERROR") {
-        return {
-          success: false,
-          error: "Ödeme beklemede. Lütfen daha sonra tekrar kontrol edin.",
-        };
-      } else if (error.code === PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR) {
-        return {
-          success: false,
-          error:
-            "App Store ile bağlantı sorunu. Lütfen daha sonra tekrar deneyin.",
-        };
-      }
-
-      return {
-        success: false,
-        error: "Satın alma sırasında bir hata oluştu",
-      };
-    }
-  }
-
-  /**
-   * Restore previous purchases
-   */
-  static async restorePurchases(): Promise<{
-    success: boolean;
-    customerInfo?: CustomerInfo;
-    error?: string;
-  }> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.restorePurchases();
-    }
-
-    try {
-      console.log("🔄 Restoring purchases...");
-      const customerInfo = await Purchases.restorePurchases();
-
-      const isPremium =
-        customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM] !== undefined;
-
-      if (isPremium) {
-        Logger.info("✅ Purchases restored! User is premium.");
-        // Update cached status
-        await this.getSubscriptionInfo();
-      } else {
-        console.log("ℹ️ No active premium purchases found.");
-      }
-
-      return {
-        success: isPremium,
-        customerInfo,
-      };
-    } catch (error: any) {
-      console.error("❌ Restore purchases error:", error);
-      return {
-        success: false,
-        error: "Satın alımlar geri yüklenirken bir hata oluştu",
-      };
-    }
-  }
-
-  /**
-   * Get subscription management URL for iOS
-   */
-  static getSubscriptionManagementURL(): string {
-    return "https://apps.apple.com/account/subscriptions";
-  }
-
-  /**
-   * Check if user is in free trial
-   */
-  static async isInFreeTrial(): Promise<boolean> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.isInFreeTrial();
-    }
-
-    try {
-      const info = await this.getSubscriptionInfo();
-      if (!info.isPremium) return false;
 
       const customerInfo = await Purchases.getCustomerInfo();
-      const premiumEntitlement =
-        customerInfo.entitlements.active[ENTITLEMENT_IDS.PREMIUM];
-
-      return premiumEntitlement?.periodType === "trial" || false;
+      this.currentCustomerInfo = customerInfo;
+      debugLog("📊 Customer info refreshed:", {
+        userId: customerInfo.originalAppUserId,
+        activeSubscriptions: Object.keys(customerInfo.activeSubscriptions),
+        premiumStatus: this.getPremiumStatus(),
+      });
+      return customerInfo;
     } catch (error) {
-      console.error("❌ Trial check error:", error);
-      return false;
+      console.error("❌ Failed to refresh customer info:", error);
+      if (__DEV__) {
+        return null; // Development'ta hata vermesin
+      }
+      throw error;
     }
   }
 
   /**
-   * Log out current user and clear cache
+   * Mevcut premium durumunu kontrol et
    */
-  static async logout(): Promise<void> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.logout();
+  static async getPremiumStatus(): Promise<PremiumStatus> {
+    try {
+      // Eğer customer info yoksa refresh et
+      if (!this.currentCustomerInfo) {
+        await this.refreshCustomerInfo();
+      }
+
+      if (!this.currentCustomerInfo) {
+        return { isPremium: false, isActive: false };
+      }
+
+      const premiumEntitlement =
+        this.currentCustomerInfo.entitlements.active[
+          REVENUECAT_CONFIG.entitlements.premium
+        ];
+
+      if (!premiumEntitlement) {
+        return { isPremium: false, isActive: false };
+      }
+
+      return {
+        isPremium: true,
+        isActive: premiumEntitlement.isActive,
+        expirationDate: premiumEntitlement.expirationDate
+          ? new Date(premiumEntitlement.expirationDate)
+          : undefined,
+        originalPurchaseDate: premiumEntitlement.originalPurchaseDate
+          ? new Date(premiumEntitlement.originalPurchaseDate)
+          : undefined,
+        productId: premiumEntitlement.productIdentifier,
+        willRenew: premiumEntitlement.willRenew,
+      };
+    } catch (error) {
+      console.error("❌ Failed to get premium status:", error);
+      return { isPremium: false, isActive: false };
+    }
+  }
+
+  /**
+   * Belirli bir premium özelliğe erişimi kontrol et
+   */
+  static async hasFeatureAccess(feature: PremiumFeature): Promise<boolean> {
+    const premiumStatus = await this.getPremiumStatus();
+
+    if (!premiumStatus.isPremium || !premiumStatus.isActive) {
+      return false;
     }
 
+    return PREMIUM_FEATURES[feature];
+  }
+
+  /**
+   * Mevcut offerings'leri getir
+   */
+  static async getOfferings(): Promise<PurchasesOffering[]> {
+    try {
+      const offerings = await Purchases.getOfferings();
+
+      if (!offerings.current) {
+        throw new Error("No current offering available");
+      }
+
+      debugLog("📦 Available offerings:", {
+        currentOffering: offerings.current.identifier,
+        packagesCount: offerings.current.availablePackages.length,
+      });
+
+      return [offerings.current];
+    } catch (error) {
+      console.error("❌ Failed to get offerings:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Belirli paketi satın al
+   */
+  static async purchasePackage(
+    purchasePackage: PurchasesPackage
+  ): Promise<PurchaseResult> {
+    try {
+      debugLog("🛒 Starting purchase:", {
+        identifier: purchasePackage.identifier,
+        productId: purchasePackage.product.identifier,
+      });
+
+      const { customerInfo } = await Purchases.purchasePackage(purchasePackage);
+
+      // Customer info'yu güncelle
+      this.currentCustomerInfo = customerInfo;
+
+      debugLog("✅ Purchase successful:", {
+        productId: purchasePackage.product.identifier,
+        premiumStatus: this.getPremiumStatus(),
+      });
+
+      return {
+        success: true,
+        customerInfo,
+      };
+    } catch (error: any) {
+      console.error("❌ Purchase failed:", error);
+
+      // Kullanıcı iptal etti
+      if (error.userCancelled) {
+        debugLog("ℹ️ User cancelled purchase");
+        return {
+          success: false,
+          userCancelled: true,
+          error: "Satın alma iptal edildi",
+        };
+      }
+
+      return {
+        success: false,
+        error: error.message || "Satın alma işlemi başarısız oldu",
+      };
+    }
+  }
+
+  /**
+   * Satın almaları restore et
+   */
+  static async restorePurchases(): Promise<PurchaseResult> {
+    try {
+      debugLog("🔄 Restoring purchases...");
+
+      const customerInfo = await Purchases.restorePurchases();
+      this.currentCustomerInfo = customerInfo;
+
+      debugLog("✅ Purchases restored:", {
+        activeSubscriptions: Object.keys(customerInfo.activeSubscriptions),
+        premiumStatus: this.getPremiumStatus(),
+      });
+
+      return {
+        success: true,
+        customerInfo,
+      };
+    } catch (error: any) {
+      console.error("❌ Restore failed:", error);
+      return {
+        success: false,
+        error: error.message || "Satın almaları restore etme başarısız oldu",
+      };
+    }
+  }
+
+  /**
+   * Kullanıcıyı belirle (authentication'dan sonra)
+   */
+  static async identifyUser(userId: string): Promise<void> {
+    try {
+      await Purchases.logIn(userId);
+      await this.refreshCustomerInfo();
+      debugLog("👤 User identified:", userId);
+    } catch (error) {
+      console.error("❌ Failed to identify user:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Kullanıcı çıkışı
+   */
+  static async logoutUser(): Promise<void> {
     try {
       await Purchases.logOut();
-      this.currentUserId = null;
-
-      // Clear cached data
-      await AsyncStorage.multiRemove([
-        STORAGE_KEYS.PREMIUM_STATUS,
-        STORAGE_KEYS.LAST_CHECK,
-        STORAGE_KEYS.USER_ID,
-      ]);
-
-      Logger.info("✅ User logged out successfully");
+      this.currentCustomerInfo = null;
+      debugLog("👋 User logged out");
     } catch (error) {
-      console.error("❌ Logout error:", error);
+      console.error("❌ Failed to logout user:", error);
+      throw error;
     }
   }
 
   /**
-   * Get current user ID
+   * Debug bilgileri
    */
-  static getCurrentUserId(): string | null {
-    if (this.isMockMode) {
-      return MockRevenueCatService.getCurrentUserId();
-    }
-    return this.currentUserId;
-  }
-
-  /**
-   * Check if RevenueCat is properly initialized
-   */
-  static isReady(): boolean {
-    if (this.isMockMode) {
-      return MockRevenueCatService.isReady();
-    }
-    return this.isInitialized;
-  }
-
-  /**
-   * Purchase credit package - Kredi satın alma
-   */
-  static async purchaseCredits(packageId: string): Promise<{
-    success: boolean;
-    credits?: number;
-    error?: string;
-    customerInfo?: CustomerInfo;
-  }> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.purchaseCredits(packageId);
-    }
-
-    try {
-      const offerings = await Purchases.getOfferings();
-
-      if (
-        !offerings.current ||
-        offerings.current.availablePackages.length === 0
-      ) {
-        return {
-          success: false,
-          error: "Hiçbir kredi paketi bulunamadı",
-        };
-      }
-
-      // Find the credit package to purchase
-      const packageToPurchase = offerings.current.availablePackages.find(
-        (pkg) => pkg.product.identifier === packageId
-      );
-
-      if (!packageToPurchase) {
-        return {
-          success: false,
-          error: "Kredi paketi bulunamadı",
-        };
-      }
-
-      console.log(
-        `🛒 Purchasing credit package: ${packageToPurchase.identifier}`
-      );
-      const { customerInfo } = await Purchases.purchasePackage(
-        packageToPurchase
-      );
-
-      // Check if purchase was successful
-      const hasCredits =
-        customerInfo.entitlements.active[ENTITLEMENT_IDS.CREDITS] !== undefined;
-
-      if (hasCredits) {
-        Logger.info("✅ Credit purchase successful!");
-
-        // Get credit amount from package
-        const creditAmount = this.getCreditAmountFromPackage(packageId);
-
-        return {
-          success: true,
-          credits: creditAmount,
-          customerInfo,
-        };
-      } else {
-        console.log("❌ Purchase completed but credits not activated.");
-        return {
-          success: false,
-          error: "Satın alma tamamlandı ancak krediler aktifleştirilmedi",
-        };
-      }
-    } catch (error: any) {
-      console.error("❌ Credit purchase error:", error);
-
-      // Handle specific error cases
-      if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
-        return {
-          success: false,
-          error: "Satın alma iptal edildi",
-        };
-      } else if (error.code === "PURCHASE_IN_PROGRESS_ERROR") {
-        return {
-          success: false,
-          error: "Ödeme beklemede. Lütfen daha sonra tekrar kontrol edin.",
-        };
-      } else if (error.code === PURCHASES_ERROR_CODE.STORE_PROBLEM_ERROR) {
-        return {
-          success: false,
-          error:
-            "App Store ile bağlantı sorunu. Lütfen daha sonra tekrar deneyin.",
-        };
-      }
-
-      return {
-        success: false,
-        error: "Kredi satın alma sırasında bir hata oluştu",
-      };
-    }
-  }
-
-  /**
-   * Get credit amount from package ID
-   */
-  private static getCreditAmountFromPackage(packageId: string): number {
-    const { PRODUCTS } = REVENUECAT_CONFIG;
-
-    switch (packageId) {
-      case PRODUCTS.CREDITS_STARTER:
-        return 10;
-      case PRODUCTS.CREDITS_POPULAR:
-        return 30; // 25 + 5 bonus
-      case PRODUCTS.CREDITS_PREMIUM:
-        return 75; // 60 + 15 bonus
-      default:
-        return 0;
-    }
-  }
-
-  /**
-   * Get available credit packages
-   */
-  static async getCreditPackages(): Promise<OfferingInfo[]> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.getCreditPackages();
-    }
-
-    try {
-      const offerings = await Purchases.getOfferings();
-      const result: OfferingInfo[] = [];
-
-      // Filter credit packages
-      if (offerings.current) {
-        const creditPackages = offerings.current.availablePackages.filter(
-          (pkg) => pkg.product.identifier.includes("credits_")
-        );
-
-        if (creditPackages.length > 0) {
-          const packages: PurchasePackageInfo[] = creditPackages.map(
-            (pkg: PurchasesPackage) => ({
-              identifier: pkg.identifier,
-              packageType: pkg.packageType,
-              product: {
-                identifier: pkg.product.identifier,
-                description: pkg.product.description,
-                title: pkg.product.title,
-                price: pkg.product.price,
-                priceString: pkg.product.priceString,
-                currencyCode: pkg.product.currencyCode,
-              },
-            })
-          );
-
-          result.push({
-            identifier: "credits_offering",
-            serverDescription: "Kredi paketleri",
-            packages,
-          });
-        }
-      }
-
-      return result;
-    } catch (error) {
-      console.error("❌ Get credit packages error:", error);
-      return [];
-    }
-  }
-
-  /**
-   * Get user's current tier based on their premium subscription
-   */
-  static async getCurrentPremiumTier(): Promise<string | null> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.getCurrentPremiumTier();
-    }
-
-    try {
-      const customerInfo = await Purchases.getCustomerInfo();
-      const activeEntitlements = Object.keys(customerInfo.entitlements.active);
-
-      // Map entitlements to tier IDs
-      if (activeEntitlements.includes("pro_premium")) return "pro";
-      if (activeEntitlements.includes("standard_premium")) return "standard";
-      if (activeEntitlements.includes("basic_premium")) return "basic";
-
-      return null; // Free tier
-    } catch (error) {
-      console.error("❌ Get current tier error:", error);
-      return null;
-    }
-  }
-
-  /**
-   * Check if user has specific premium feature
-   */
-  static async hasFeature(featureId: string): Promise<boolean> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.hasFeature(featureId);
-    }
-
-    try {
-      const tier = await this.getCurrentPremiumTier();
-      if (!tier) return false;
-
-      // Feature mapping based on tiers
-      const tierFeatures: { [key: string]: string[] } = {
-        basic: ["favorites", "history", "ai_monthly", "increased_limits"],
-        standard: [
-          "favorites",
-          "history",
-          "ai_monthly",
-          "increased_limits",
-          "community_pool",
-          "cloud_sync",
-          "high_limits",
-        ],
-        pro: ["all_features"], // Pro has everything
-      };
-
-      return (
-        tierFeatures[tier]?.includes(featureId) ||
-        tierFeatures[tier]?.includes("all_features") ||
-        false
-      );
-    } catch (error) {
-      console.error("❌ Feature check error:", error);
-      return false;
-    }
-  }
-
-  /**
-   * Force refresh customer info (useful after external purchase)
-   */
-  static async refreshCustomerInfo(): Promise<void> {
-    if (this.isMockMode) {
-      return MockRevenueCatService.refreshCustomerInfo();
-    }
-
-    try {
-      await Purchases.getCustomerInfo();
-      await this.getSubscriptionInfo(); // This will update the cache
-      console.log("✅ Customer info refreshed");
-    } catch (error) {
-      console.error("❌ Refresh customer info error:", error);
-    }
+  static getDebugInfo(): object {
+    return {
+      isInitialized: this.isInitialized,
+      customerId: this.currentCustomerInfo?.originalAppUserId,
+      premiumStatus: this.getPremiumStatus(),
+      activeSubscriptions: this.currentCustomerInfo
+        ? Object.keys(this.currentCustomerInfo.activeSubscriptions)
+        : [],
+      allEntitlements: this.currentCustomerInfo
+        ? Object.keys(this.currentCustomerInfo.entitlements.all)
+        : [],
+    };
   }
 }

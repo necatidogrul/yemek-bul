@@ -1,139 +1,95 @@
-import { useState, useCallback } from 'react';
-import UsageLimitService from '../services/UsageLimitService';
+/**
+ * Premium Guard Hook
+ * 
+ * Premium özellikleri için koruma sağlar
+ */
+
+import React, { useCallback } from 'react';
 import { usePremium } from '../contexts/PremiumContext';
+import { PremiumFeature } from '../config/revenueCat';
+import { useTranslation } from './useTranslation';
 
-export type PremiumFeature = 
-  | 'recipe_limit' 
-  | 'search_limit' 
-  | 'favorites' 
-  | 'ai_chat' 
-  | 'filters' 
-  | 'menu_planner'
-  | 'nutrition_analysis'
-  | 'offline_recipes'
-  | 'general';
-
-interface UsePremiumGuardReturn {
-  showPaywall: boolean;
-  currentFeature: PremiumFeature | null;
-  paywallTitle?: string;
-  paywallDescription?: string;
-  checkRecipeViewLimit: () => Promise<boolean>;
-  checkSearchLimit: () => Promise<boolean>;
-  checkPremiumFeature: (feature: PremiumFeature, title?: string, description?: string) => boolean;
-  hidePaywall: () => void;
-  incrementRecipeView: () => Promise<void>;
-  incrementSearch: () => Promise<void>;
+interface PremiumGuardOptions {
+  feature: PremiumFeature;
+  title?: string;
+  onPremiumRequired?: () => void;
 }
 
-export const usePremiumGuard = (): UsePremiumGuardReturn => {
-  const { isPremium } = usePremium();
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [currentFeature, setCurrentFeature] = useState<PremiumFeature | null>(null);
-  const [paywallTitle, setPaywallTitle] = useState<string | undefined>();
-  const [paywallDescription, setPaywallDescription] = useState<string | undefined>();
+interface PremiumGuardResult {
+  hasAccess: boolean;
+  checkAccess: () => boolean;
+  requirePremium: () => void;
+  isPremium: boolean;
+}
 
-  /**
-   * Check if user can view more recipes
-   * @returns true if can view, false if should show paywall
-   */
-  const checkRecipeViewLimit = useCallback(async (): Promise<boolean> => {
-    if (isPremium) return true;
+export const usePremiumGuard = (options: PremiumGuardOptions): PremiumGuardResult => {
+  const { feature, title, onPremiumRequired } = options;
+  const { hasFeatureAccess, isPremium, showPaywall } = usePremium();
+  const { t } = useTranslation();
 
-    const { canView } = await UsageLimitService.canViewRecipe(isPremium);
+  const hasAccess = hasFeatureAccess(feature);
+
+  const checkAccess = useCallback((): boolean => {
+    return hasFeatureAccess(feature);
+  }, [feature, hasFeatureAccess]);
+
+  const requirePremium = useCallback(() => {
+    if (hasAccess) {
+      return; // Zaten premium erişimi var
+    }
+
+    // Custom callback varsa çalıştır
+    if (onPremiumRequired) {
+      onPremiumRequired();
+      return;
+    }
+
+    // Paywall göster
+    const featureName = getFeatureDisplayName(feature);
+    const paywallTitle = title || t('premium.upgrade_for_feature', { feature: featureName });
     
-    if (!canView) {
-      setCurrentFeature('recipe_limit');
-      setPaywallTitle(undefined);
-      setPaywallDescription(undefined);
-      setShowPaywall(true);
-      return false;
-    }
-
-    return true;
-  }, [isPremium]);
-
-  /**
-   * Check if user can perform more searches
-   * @returns true if can search, false if should show paywall
-   */
-  const checkSearchLimit = useCallback(async (): Promise<boolean> => {
-    if (isPremium) return true;
-
-    const { canSearch } = await UsageLimitService.canPerformSearch(isPremium);
-    
-    if (!canSearch) {
-      setCurrentFeature('search_limit');
-      setPaywallTitle(undefined);
-      setPaywallDescription(undefined);
-      setShowPaywall(true);
-      return false;
-    }
-
-    return true;
-  }, [isPremium]);
-
-  /**
-   * Check if user can access premium feature
-   * @param feature - The premium feature to check
-   * @param title - Custom paywall title
-   * @param description - Custom paywall description
-   * @returns true if can access, false if should show paywall
-   */
-  const checkPremiumFeature = useCallback((
-    feature: PremiumFeature,
-    title?: string,
-    description?: string
-  ): boolean => {
-    if (isPremium) return true;
-
-    setCurrentFeature(feature);
-    setPaywallTitle(title);
-    setPaywallDescription(description);
-    setShowPaywall(true);
-    return false;
-  }, [isPremium]);
-
-  /**
-   * Hide the paywall modal
-   */
-  const hidePaywall = useCallback(() => {
-    setShowPaywall(false);
-    setCurrentFeature(null);
-    setPaywallTitle(undefined);
-    setPaywallDescription(undefined);
-  }, []);
-
-  /**
-   * Increment recipe view count and check limit
-   */
-  const incrementRecipeView = useCallback(async (): Promise<void> => {
-    if (!isPremium) {
-      await UsageLimitService.incrementRecipeView();
-    }
-  }, [isPremium]);
-
-  /**
-   * Increment search count and check limit
-   */
-  const incrementSearch = useCallback(async (): Promise<void> => {
-    if (!isPremium) {
-      await UsageLimitService.incrementSearch();
-    }
-  }, [isPremium]);
+    showPaywall(featureName, paywallTitle);
+  }, [hasAccess, onPremiumRequired, showPaywall, title, feature, t]);
 
   return {
-    showPaywall,
-    currentFeature,
-    paywallTitle,
-    paywallDescription,
-    checkRecipeViewLimit,
-    checkSearchLimit,
-    checkPremiumFeature,
-    hidePaywall,
-    incrementRecipeView,
-    incrementSearch,
+    hasAccess,
+    checkAccess,
+    requirePremium,
+    isPremium,
   };
 };
 
-export default usePremiumGuard;
+// Premium özelliklerinin display isimlerini getir
+const getFeatureDisplayName = (feature: PremiumFeature): string => {
+  const featureNames: Record<PremiumFeature, string> = {
+    unlimitedRecipes: 'Sınırsız Tarif',
+    advancedFilters: 'Gelişmiş Filtreler',
+    exportRecipes: 'Tarif Dışa Aktarma',
+    prioritySupport: 'Öncelikli Destek',
+    noAds: 'Reklamı Kaldır',
+  };
+
+  return featureNames[feature] || feature;
+};
+
+// Premium özellik koruması için HOC
+export const withPremiumGuard = <T extends object>(
+  Component: React.ComponentType<T>,
+  feature: PremiumFeature,
+  fallbackComponent?: React.ComponentType<T>
+) => {
+  return (props: T) => {
+    const { hasAccess } = usePremiumGuard({ feature });
+
+    if (!hasAccess && fallbackComponent) {
+      const FallbackComponent = fallbackComponent;
+      return React.createElement(FallbackComponent, props);
+    }
+
+    if (!hasAccess) {
+      return null; // Premium erişim yok, hiçbir şey gösterme
+    }
+
+    return React.createElement(Component, props);
+  };
+};

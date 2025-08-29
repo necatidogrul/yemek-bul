@@ -91,29 +91,15 @@ export class OpenAIService {
     url: string;
     headers: Record<string, string>;
   }> {
-    if (__DEV__ && this.DEV_API_KEY) {
-      // Development: Direct OpenAI API
-      return {
-        url: this.DEV_URL,
-        headers: {
-          Authorization: `Bearer ${this.DEV_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      };
-    } else {
-      // Production: Supabase Edge Function
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      return {
-        url: this.PRODUCTION_URL,
-        headers: {
-          Authorization: `Bearer ${session?.access_token || ""}`,
-          "Content-Type": "application/json",
-          apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || "",
-        },
-      };
-    }
+    // Her zaman direkt OpenAI API kullan (Supabase Edge Function yok)
+    console.log("🤖 Using direct OpenAI API");
+    return {
+      url: this.DEV_URL,
+      headers: {
+        Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+    };
   }
 
   /**

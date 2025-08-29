@@ -8,7 +8,6 @@ import {
   Animated,
   StatusBar,
   Text as RNText,
-  ScrollView,
   Platform,
 } from "react-native";
 import { Logger } from "../services/LoggerService";
@@ -36,12 +35,11 @@ interface OnboardingStep {
   subtitle: string;
   icon: string;
   color: string;
-  type: "welcome" | "features" | "preferences" | "notifications" | "ready";
+  gradient: string[];
+  type: "welcome" | "features" | "preferences" | "ready";
 }
 
 interface UserPreferences {
-  dietaryRestrictions: string[];
-  allergies: string[];
   favoriteCategories: string[];
   cookingLevel: string;
   notifications: boolean;
@@ -50,8 +48,6 @@ interface UserPreferences {
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [preferences, setPreferences] = useState<UserPreferences>({
-    dietaryRestrictions: [],
-    allergies: [],
     favoriteCategories: [],
     cookingLevel: "",
     notifications: true,
@@ -67,8 +63,9 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const slideAnimation = useRef(new Animated.Value(0)).current;
   const progressAnimation = useRef(new Animated.Value(0)).current;
   const scaleAnimation = useRef(new Animated.Value(0.8)).current;
+  const pulseAnimation = useRef(new Animated.Value(1)).current;
 
-  // Modern onboarding steps
+  // Optimized onboarding steps - 4 sayfa
   const onboardingSteps: OnboardingStep[] = [
     {
       id: 0,
@@ -76,6 +73,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       subtitle: "AI destekli yemek bulucu ile tanış",
       icon: "restaurant",
       color: "#6366f1",
+      gradient: ["#6366f1", "#8b5cf6"],
       type: "welcome",
     },
     {
@@ -84,6 +82,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       subtitle: "Sesli komutlar ve AI arama ile kolay kullanım",
       icon: "flash",
       color: "#ec4899",
+      gradient: ["#ec4899", "#f97316"],
       type: "features",
     },
     {
@@ -92,49 +91,62 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       subtitle: "Size özel tarif deneyimi",
       icon: "heart",
       color: "#06b6d4",
+      gradient: ["#06b6d4", "#10b981"],
       type: "preferences",
     },
     {
       id: 3,
-      title: "Bildirimler",
-      subtitle: "Günlük öneriler ve özel fırsatlar",
-      icon: "notifications",
-      color: "#10b981",
-      type: "notifications",
-    },
-    {
-      id: 4,
       title: "Her Şey Hazır! 🎉",
       subtitle: "Mutfak maceran başlasın",
       icon: "rocket",
       color: "#f59e0b",
+      gradient: ["#f59e0b", "#ef4444"],
       type: "ready",
     },
   ];
 
-  // Preference options
+  // Compact preference options
   const cuisinePreferences = [
-    { id: "turkish", emoji: "🇹🇷", label: "Türk Mutfağı" },
-    { id: "italian", emoji: "🍝", label: "İtalyan Mutfağı" },
-    { id: "asian", emoji: "🍜", label: "Asya Mutfağı" },
-    { id: "healthy", emoji: "🥗", label: "Sağlıklı Yemekler" },
-    { id: "dessert", emoji: "🍰", label: "Tatlılar" },
-    { id: "fast", emoji: "⚡", label: "Hızlı Yemekler" },
+    { id: "turkish", emoji: "🇹🇷", label: "Türk" },
+    { id: "italian", emoji: "🍝", label: "İtalyan" },
+    { id: "asian", emoji: "🍜", label: "Asya" },
+    { id: "healthy", emoji: "🥗", label: "Sağlıklı" },
+    { id: "dessert", emoji: "🍰", label: "Tatlı" },
+    { id: "fast", emoji: "⚡", label: "Hızlı" },
   ];
 
   const skillLevels = [
     { id: "beginner", emoji: "🐣", label: "Başlangıç" },
     { id: "intermediate", emoji: "👨‍🍳", label: "Orta" },
     { id: "advanced", emoji: "⭐", label: "İleri" },
-    { id: "expert", emoji: "👑", label: "Uzman" },
   ];
 
-  // Animations
+  // Pulse animation for interactive elements
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnimation, {
+          toValue: 1.1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnimation, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
+
+  // Step animations
   useEffect(() => {
     Animated.parallel([
       Animated.timing(progressAnimation, {
         toValue: (currentStep + 1) / onboardingSteps.length,
-        duration: 800,
+        duration: 600,
         useNativeDriver: false,
       }),
       Animated.spring(slideAnimation, {
@@ -156,8 +168,10 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
     const step = onboardingSteps[currentStep];
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    if (step.type === "notifications") {
+    if (step.type === "ready") {
       await requestNotificationPermission();
+      await completeOnboarding();
+      return;
     }
 
     if (currentStep < onboardingSteps.length - 1) {
@@ -181,8 +195,6 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       ]).start();
 
       setCurrentStep(currentStep + 1);
-    } else {
-      await completeOnboarding();
     }
   };
 
@@ -247,77 +259,65 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
     }
   };
 
-  // Render step content
+  // Render step content - Compact and scroll-free
   const renderStepContent = (step: OnboardingStep) => {
     switch (step.type) {
       case "features":
         return (
           <View style={styles.featuresContainer}>
-            <View style={styles.featureCard}>
+            <View style={styles.featureRow}>
               <View
                 style={[
-                  styles.featureIcon,
+                  styles.featureCard,
                   { backgroundColor: step.color + "15" },
                 ]}
               >
-                <Ionicons name="search" size={28} color={step.color} />
-              </View>
-              <View style={styles.featureContent}>
+                <Ionicons name="search" size={24} color={step.color} />
                 <RNText
                   style={[styles.featureTitle, { color: colors.text.primary }]}
                 >
                   AI Arama
                 </RNText>
-                <RNText
-                  style={[styles.featureDesc, { color: colors.text.secondary }]}
-                >
-                  Malzemelerinizi yazın, AI size mükemmel tarifleri bulsun
-                </RNText>
               </View>
-            </View>
-
-            <View style={styles.featureCard}>
               <View
                 style={[
-                  styles.featureIcon,
+                  styles.featureCard,
                   { backgroundColor: step.color + "15" },
                 ]}
               >
-                <Ionicons name="mic" size={28} color={step.color} />
-              </View>
-              <View style={styles.featureContent}>
+                <Ionicons name="mic" size={24} color={step.color} />
                 <RNText
                   style={[styles.featureTitle, { color: colors.text.primary }]}
                 >
-                  Sesli Komutlar
-                </RNText>
-                <RNText
-                  style={[styles.featureDesc, { color: colors.text.secondary }]}
-                >
-                  "Mercimek çorbası yapmak istiyorum" deyin, tarifi bulun
+                  Sesli Komut
                 </RNText>
               </View>
             </View>
-
-            <View style={styles.featureCard}>
+            <View style={styles.featureRow}>
               <View
                 style={[
-                  styles.featureIcon,
+                  styles.featureCard,
                   { backgroundColor: step.color + "15" },
                 ]}
               >
-                <Ionicons name="heart" size={28} color={step.color} />
-              </View>
-              <View style={styles.featureContent}>
+                <Ionicons name="heart" size={24} color={step.color} />
                 <RNText
                   style={[styles.featureTitle, { color: colors.text.primary }]}
                 >
-                  Kişisel Favoriler
+                  Favoriler
                 </RNText>
+              </View>
+              <View
+                style={[
+                  styles.featureCard,
+                  { backgroundColor: step.color + "15" },
+                ]}
+              >
+                <Ionicons name="star" size={24} color={step.color} />
                 <RNText
-                  style={[styles.featureDesc, { color: colors.text.secondary }]}
+                  style={[styles.featureTitle, { color: colors.text.primary }]}
                 >
-                  Beğendiğiniz tarifleri kaydedin, her zaman erişin
+                  Öneriler
                 </RNText>
               </View>
             </View>
@@ -326,169 +326,89 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
 
       case "preferences":
         return (
-          <ScrollView
-            style={styles.preferencesScrollView}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.preferencesContent}
-          >
-            <View style={styles.preferencesContainer}>
-              <View style={styles.sectionContainer}>
-                <RNText
-                  style={[styles.sectionTitle, { color: colors.text.primary }]}
-                >
-                  Favori Mutfakların
-                </RNText>
-                <View style={styles.preferencesGrid}>
-                  {cuisinePreferences.map((pref) => {
-                    const isSelected = preferences.favoriteCategories.includes(
-                      pref.id
-                    );
-                    return (
-                      <TouchableOpacity
-                        key={pref.id}
+          <View style={styles.preferencesContainer}>
+            <View style={styles.preferencesSection}>
+              <RNText
+                style={[styles.sectionTitle, { color: colors.text.primary }]}
+              >
+                Favori Mutfaklar
+              </RNText>
+              <View style={styles.preferencesGrid}>
+                {cuisinePreferences.map((pref) => {
+                  const isSelected = preferences.favoriteCategories.includes(
+                    pref.id
+                  );
+                  return (
+                    <TouchableOpacity
+                      key={pref.id}
+                      style={[
+                        styles.preferenceChip,
+                        {
+                          backgroundColor: isSelected
+                            ? step.color
+                            : colors.surface,
+                          borderColor: isSelected
+                            ? step.color
+                            : colors.neutral[200],
+                        },
+                      ]}
+                      onPress={() =>
+                        togglePreference("favoriteCategories", pref.id)
+                      }
+                    >
+                      <RNText style={{ fontSize: 16 }}>{pref.emoji}</RNText>
+                      <RNText
                         style={[
-                          styles.preferenceChip,
-                          {
-                            backgroundColor: isSelected
-                              ? step.color
-                              : colors.surface,
-                            borderColor: isSelected
-                              ? step.color
-                              : colors.neutral[200],
-                          },
+                          styles.preferenceLabel,
+                          { color: isSelected ? "white" : colors.text.primary },
                         ]}
-                        onPress={() =>
-                          togglePreference("favoriteCategories", pref.id)
-                        }
                       >
-                        <RNText style={{ fontSize: 20 }}>{pref.emoji}</RNText>
-                        <RNText
-                          style={[
-                            styles.preferenceLabel,
-                            {
-                              color: isSelected ? "white" : colors.text.primary,
-                            },
-                          ]}
-                        >
-                          {pref.label}
-                        </RNText>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-              </View>
-
-              <View style={styles.sectionContainer}>
-                <RNText
-                  style={[styles.sectionTitle, { color: colors.text.primary }]}
-                >
-                  Mutfak Deneyimin
-                </RNText>
-                <View style={styles.skillGrid}>
-                  {skillLevels.map((skill) => {
-                    const isSelected = preferences.cookingLevel === skill.id;
-                    return (
-                      <TouchableOpacity
-                        key={skill.id}
-                        style={[
-                          styles.skillChip,
-                          {
-                            backgroundColor: isSelected
-                              ? step.color
-                              : colors.surface,
-                            borderColor: isSelected
-                              ? step.color
-                              : colors.neutral[200],
-                          },
-                        ]}
-                        onPress={() =>
-                          togglePreference("cookingLevel", skill.id)
-                        }
-                      >
-                        <RNText style={{ fontSize: 18 }}>{skill.emoji}</RNText>
-                        <RNText
-                          style={[
-                            styles.skillLabel,
-                            {
-                              color: isSelected ? "white" : colors.text.primary,
-                            },
-                          ]}
-                        >
-                          {skill.label}
-                        </RNText>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                        {pref.label}
+                      </RNText>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
-          </ScrollView>
-        );
 
-      case "notifications":
-        return (
-          <View style={styles.notificationContainer}>
-            <View
-              style={[
-                styles.notificationCard,
-                { borderColor: step.color + "30" },
-              ]}
-            >
-              <View
-                style={[
-                  styles.notificationIcon,
-                  { backgroundColor: step.color + "15" },
-                ]}
+            <View style={styles.preferencesSection}>
+              <RNText
+                style={[styles.sectionTitle, { color: colors.text.primary }]}
               >
-                <Ionicons name="calendar" size={32} color={step.color} />
+                Mutfak Deneyimi
+              </RNText>
+              <View style={styles.skillGrid}>
+                {skillLevels.map((skill) => {
+                  const isSelected = preferences.cookingLevel === skill.id;
+                  return (
+                    <TouchableOpacity
+                      key={skill.id}
+                      style={[
+                        styles.skillChip,
+                        {
+                          backgroundColor: isSelected
+                            ? step.color
+                            : colors.surface,
+                          borderColor: isSelected
+                            ? step.color
+                            : colors.neutral[200],
+                        },
+                      ]}
+                      onPress={() => togglePreference("cookingLevel", skill.id)}
+                    >
+                      <RNText style={{ fontSize: 16 }}>{skill.emoji}</RNText>
+                      <RNText
+                        style={[
+                          styles.skillLabel,
+                          { color: isSelected ? "white" : colors.text.primary },
+                        ]}
+                      >
+                        {skill.label}
+                      </RNText>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
-              <RNText
-                style={[
-                  styles.notificationTitle,
-                  { color: colors.text.primary },
-                ]}
-              >
-                Günlük Öneriler
-              </RNText>
-              <RNText
-                style={[
-                  styles.notificationDesc,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                Her sabah senin için özel seçilmiş tarifler
-              </RNText>
-            </View>
-            <View
-              style={[
-                styles.notificationCard,
-                { borderColor: step.color + "30" },
-              ]}
-            >
-              <View
-                style={[
-                  styles.notificationIcon,
-                  { backgroundColor: step.color + "15" },
-                ]}
-              >
-                <Ionicons name="star" size={32} color={step.color} />
-              </View>
-              <RNText
-                style={[
-                  styles.notificationTitle,
-                  { color: colors.text.primary },
-                ]}
-              >
-                Özel İndirimler
-              </RNText>
-              <RNText
-                style={[
-                  styles.notificationDesc,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                Yeni özellikler ve fırsatlardan ilk sen haberdar ol
-              </RNText>
             </View>
           </View>
         );
@@ -496,8 +416,14 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       case "ready":
         return (
           <View style={styles.readyContainer}>
-            <View
-              style={[styles.readyCard, { borderColor: step.color + "30" }]}
+            <Animated.View
+              style={[
+                styles.readyCard,
+                {
+                  transform: [{ scale: pulseAnimation }],
+                  borderColor: step.color + "30",
+                },
+              ]}
             >
               <View
                 style={[
@@ -507,7 +433,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
               >
                 <Ionicons
                   name="checkmark-circle"
-                  size={48}
+                  size={40}
                   color={step.color}
                 />
               </View>
@@ -521,7 +447,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
               >
                 AI ile desteklenen mutfak maceran başlasın
               </RNText>
-            </View>
+            </Animated.View>
           </View>
         );
 
@@ -547,7 +473,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
           <View
             style={[styles.appLogo, { backgroundColor: currentStepData.color }]}
           >
-            <Ionicons name="restaurant" size={24} color="white" />
+            <Ionicons name="restaurant" size={20} color="white" />
           </View>
           <RNText style={[styles.appName, { color: colors.text.primary }]}>
             Yemek Bulucu
@@ -617,7 +543,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
           >
             <Ionicons
               name={currentStepData.icon as any}
-              size={48}
+              size={40}
               color="white"
             />
           </View>
@@ -659,7 +585,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
           </RNText>
           <Ionicons
             name={isLastStep ? "rocket" : "arrow-forward"}
-            size={20}
+            size={18}
             color="white"
           />
         </TouchableOpacity>
@@ -685,23 +611,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    paddingTop: Platform.OS === "ios" ? 0 : 16,
+    paddingVertical: 12,
+    paddingTop: Platform.OS === "ios" ? 0 : 12,
   },
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   appLogo: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
@@ -711,16 +637,16 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   appName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
   },
   skipButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   skipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
   },
 
@@ -729,20 +655,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   progressTrack: {
     flex: 1,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 16,
+    height: 4,
+    borderRadius: 2,
+    marginRight: 12,
   },
   progressFill: {
     height: "100%",
-    borderRadius: 3,
+    borderRadius: 2,
   },
   progressText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
   },
 
@@ -750,259 +676,206 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingVertical: 16,
   },
   iconContainer: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   iconCircle: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.15,
-    shadowRadius: 16,
+    shadowRadius: 12,
     elevation: 8,
   },
 
   // Text
   textContainer: {
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "800",
     textAlign: "center",
-    marginBottom: 8,
-    lineHeight: 34,
+    marginBottom: 6,
+    lineHeight: 30,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
     textAlign: "center",
-    lineHeight: 22,
-    paddingHorizontal: 20,
+    lineHeight: 20,
+    paddingHorizontal: 16,
   },
 
   // Dynamic Content
   dynamicContent: {
     flex: 1,
+    justifyContent: "center",
   },
 
-  // Features
+  // Features - Compact grid
   featuresContainer: {
-    gap: 16,
+    gap: 12,
+  },
+  featureRow: {
+    flexDirection: "row",
+    gap: 12,
   },
   featureCard: {
-    flexDirection: "row",
+    flex: 1,
     alignItems: "center",
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    padding: 16,
+    borderRadius: 12,
+    gap: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 2,
   },
-  featureIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 16,
-  },
-  featureContent: {
-    flex: 1,
-  },
   featureTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginBottom: 4,
-  },
-  featureDesc: {
-    fontSize: 14,
-    fontWeight: "500",
-    lineHeight: 20,
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
   },
 
-  // Preferences
-  preferencesScrollView: {
-    flex: 1,
-  },
-  preferencesContent: {
-    paddingBottom: 20,
-  },
+  // Preferences - Compact layout
   preferencesContainer: {
-    gap: 32,
+    gap: 20,
   },
-  sectionContainer: {
-    gap: 16,
+  preferencesSection: {
+    gap: 12,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: "700",
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   preferencesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
+    gap: 8,
     justifyContent: "center",
   },
   preferenceChip: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 24,
-    borderWidth: 2,
-    gap: 8,
-    minWidth: 120,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    gap: 6,
+    minWidth: 80,
     justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 3,
+    elevation: 1,
   },
   preferenceLabel: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: "600",
   },
   skillGrid: {
     flexDirection: "row",
-    gap: 12,
+    gap: 8,
   },
   skillChip: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 2,
-    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    gap: 6,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 3,
+    elevation: 1,
   },
   skillLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     textAlign: "center",
-  },
-
-  // Notifications
-  notificationContainer: {
-    gap: 16,
-  },
-  notificationCard: {
-    alignItems: "center",
-    padding: 24,
-    borderRadius: 20,
-    gap: 16,
-    borderWidth: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  notificationIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notificationTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    textAlign: "center",
-  },
-  notificationDesc: {
-    fontSize: 14,
-    textAlign: "center",
-    lineHeight: 20,
   },
 
   // Ready
   readyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    flex: 1,
   },
   readyCard: {
     alignItems: "center",
-    padding: 40,
-    borderRadius: 24,
-    gap: 20,
+    padding: 32,
+    borderRadius: 20,
+    gap: 16,
     borderWidth: 2,
     backgroundColor: "rgba(255, 255, 255, 0.8)",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 5,
+    shadowRadius: 12,
+    elevation: 4,
   },
   readyIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
   },
   readyTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "800",
     textAlign: "center",
   },
   readyDesc: {
-    fontSize: 16,
+    fontSize: 14,
     textAlign: "center",
-    lineHeight: 22,
+    lineHeight: 20,
   },
 
   // Footer
   footer: {
     padding: 20,
-    paddingBottom: Platform.OS === "ios" ? 40 : 20,
+    paddingBottom: Platform.OS === "ios" ? 34 : 20,
     alignItems: "center",
-    gap: 12,
+    gap: 8,
   },
   continueButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 28,
-    gap: 8,
-    minWidth: 200,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
+    borderRadius: 24,
+    gap: 6,
+    minWidth: 180,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowRadius: 6,
     elevation: 4,
   },
   continueText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: "white",
   },
   hintText: {
-    fontSize: 14,
+    fontSize: 12,
     textAlign: "center",
-    marginTop: 8,
+    marginTop: 4,
   },
 });
 

@@ -11,9 +11,8 @@ import "./src/locales";
 // Contexts
 import { ThemeProvider } from "./src/contexts/ThemeContext";
 import { ToastProvider } from "./src/contexts/ToastContext";
-import { PremiumProvider } from "./src/contexts/PremiumContext";
-import { CreditProvider } from "./src/contexts/CreditContext"; // EKLENDİ
 import { TourProvider } from "./src/contexts/TourContext";
+import { PremiumProvider } from "./src/contexts/PremiumContext";
 import { HapticProvider } from "./src/hooks/useHaptics";
 import { LanguageProvider } from "./src/contexts/LanguageContext";
 
@@ -46,7 +45,6 @@ export default function App(): React.ReactElement {
   const [isOnboardingCompleted, setIsOnboardingCompleted] = useState<
     boolean | null
   >(null);
-  const [isRevenueCatReady, setIsRevenueCatReady] = useState(false);
 
   useEffect(() => {
     initializeApp();
@@ -73,29 +71,18 @@ export default function App(): React.ReactElement {
 
   const initializeApp = async () => {
     try {
-      // 1) Check onboarding status ASAP (don't block UI on SDK inits)
-      await checkOnboardingStatus();
-
-      // 2) Initialize RevenueCat with timeout so we don't hang the app
-      const revenueCatInitialized = await withTimeout(
+      // 1) Initialize RevenueCat first (critical for premium features)
+      await withTimeout(
         RevenueCatService.initialize(),
-        5000,
-        () =>
-          console.warn(
-            "RevenueCat initialization timed out, continuing without it"
-          )
+        5000, // 5 second timeout
+        () => console.warn("⚠️ RevenueCat initialization timed out")
       );
 
-      if (revenueCatInitialized) {
-        await RevenueCatService.loginAnonymously();
-        setIsRevenueCatReady(true);
-      } else {
-        setIsRevenueCatReady(false);
-      }
+      // 2) Check onboarding status
+      await checkOnboardingStatus();
     } catch (error) {
       console.error("App initialization error:", error);
-      // Continue with app even if RevenueCat fails
-      setIsRevenueCatReady(false);
+
       // Onboarding status is already checked; nothing else to block UI
     }
   };
@@ -146,12 +133,6 @@ export default function App(): React.ReactElement {
     return <></>;
   }
 
-  // Show loading if RevenueCat is not ready yet
-  if (!isRevenueCatReady) {
-    // You can show a loading screen here if needed
-    // For now, continue with the app
-  }
-
   // Onboarding göster
   if (!isOnboardingCompleted) {
     return (
@@ -161,11 +142,13 @@ export default function App(): React.ReactElement {
             <ThemeProvider>
               <HapticProvider>
                 <ToastProvider>
-                  <GlobalErrorHandler>
-                    <OnboardingScreen onComplete={handleOnboardingComplete} />
-                    <ToastContainer />
-                    <ThemedStatusBar />
-                  </GlobalErrorHandler>
+                  <PremiumProvider>
+                    <GlobalErrorHandler>
+                      <OnboardingScreen onComplete={handleOnboardingComplete} />
+                      <ToastContainer />
+                      <ThemedStatusBar />
+                    </GlobalErrorHandler>
+                  </PremiumProvider>
                 </ToastProvider>
               </HapticProvider>
             </ThemeProvider>
@@ -182,20 +165,18 @@ export default function App(): React.ReactElement {
           <ThemeProvider>
             <HapticProvider>
               <ToastProvider>
-                <GlobalErrorHandler>
-                  <PremiumProvider>
-                    <CreditProvider>
-                      <TourProvider>
-                        <NavigationContainer>
-                          <MainTabNavigator />
-                        </NavigationContainer>
-                        <TourOverlay />
-                      </TourProvider>
-                    </CreditProvider>
-                  </PremiumProvider>
-                  <ToastContainer />
-                  <ThemedStatusBar />
-                </GlobalErrorHandler>
+                <PremiumProvider>
+                  <GlobalErrorHandler>
+                    <TourProvider>
+                      <NavigationContainer>
+                        <MainTabNavigator />
+                      </NavigationContainer>
+                      <TourOverlay />
+                    </TourProvider>
+                    <ToastContainer />
+                    <ThemedStatusBar />
+                  </GlobalErrorHandler>
+                </PremiumProvider>
               </ToastProvider>
             </HapticProvider>
           </ThemeProvider>

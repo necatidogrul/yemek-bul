@@ -1,163 +1,152 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { RevenueCatService, SubscriptionInfo, OfferingInfo } from '../services/RevenueCatService';
-import { Logger } from '../services/LoggerService';
+/**
+ * Premium Context
+ * 
+ * Premium subscription durumunu yönetir
+ */
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { RevenueCatService, PremiumStatus } from '../services/RevenueCatService';
+import { PremiumFeature } from '../config/revenueCat';
+import { debugLog } from '../config/environment';
+import { PaywallModal } from '../components/premium/PaywallModal';
 
 interface PremiumContextType {
-  isPremium: boolean;
+  // Premium durumu
+  premiumStatus: PremiumStatus;
   isLoading: boolean;
-  subscriptionInfo: SubscriptionInfo | null;
-  availableOfferings: OfferingInfo[];
-  purchasePremium: (packageId?: string) => Promise<boolean>;
-  restorePurchases: () => Promise<boolean>;
-  refreshStatus: () => Promise<void>;
-  isInFreeTrial: boolean;
-  getSubscriptionManagementURL: () => string;
+  
+  // Premium özellikleri
+  hasFeatureAccess: (feature: PremiumFeature) => boolean;
+  isPremium: boolean;
+  
+  // Paywall yönetimi
+  showPaywall: (feature?: string, title?: string) => void;
+  hidePaywall: () => void;
+  isPaywallVisible: boolean;
+  paywallContext?: {
+    feature?: string;
+    title?: string;
+  };
+  
+  // Actions
+  refreshPremiumStatus: () => Promise<void>;
+  handlePurchaseSuccess: () => void;
 }
 
 const PremiumContext = createContext<PremiumContextType | undefined>(undefined);
 
 interface PremiumProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export const PremiumProvider: React.FC<PremiumProviderProps> = ({ children }) => {
-  const [isPremium, setIsPremium] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
-  const [availableOfferings, setAvailableOfferings] = useState<OfferingInfo[]>([]);
-  const [isInFreeTrial, setIsInFreeTrial] = useState<boolean>(false);
+  const [premiumStatus, setPremiumStatus] = useState<PremiumStatus>({ 
+    isPremium: false, 
+    isActive: false 
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPaywallVisible, setIsPaywallVisible] = useState(false);
+  const [paywallContext, setPaywallContext] = useState<{
+    feature?: string;
+    title?: string;
+  } | undefined>();
 
+  // RevenueCat'i başlat ve premium durumunu kontrol et
   useEffect(() => {
-    initializePremiumStatus();
+    initializePremium();
   }, []);
 
-  const initializePremiumStatus = async () => {
+  const initializePremium = async () => {
     try {
       setIsLoading(true);
       
-      // RevenueCat should already be initialized in App.tsx
-      if (!RevenueCatService.isReady()) {
-        console.warn('RevenueCat not ready during PremiumContext initialization');
-        return;
-      }
+      // RevenueCat'i başlat
+      await RevenueCatService.initialize();
       
-      // Load available offerings
-      await loadOfferings();
+      // Premium durumunu kontrol et
+      await refreshPremiumStatus();
       
-      // Get current subscription status
-      await refreshStatus();
     } catch (error) {
-      console.error('Premium status initialization error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const loadOfferings = async () => {
-    try {
-      const offerings = await RevenueCatService.getOfferings();
-      setAvailableOfferings(offerings);
-      console.log(`✅ Loaded ${offerings.length} offerings`);
-    } catch (error) {
-      console.error('Load offerings error:', error);
-      setAvailableOfferings([]);
-    }
-  };
-
-  const refreshStatus = async () => {
-    try {
-      const info = await RevenueCatService.getSubscriptionInfo();
-      setSubscriptionInfo(info);
-      setIsPremium(info.isPremium);
-
-      // Check if user is in free trial
-      if (info.isPremium) {
-        const trialStatus = await RevenueCatService.isInFreeTrial();
-        setIsInFreeTrial(trialStatus);
-      } else {
-        setIsInFreeTrial(false);
-      }
-
-      console.log(`🔄 Premium status refreshed: ${info.isPremium ? 'Premium' : 'Free'}`);
-      if (info.isPremium && info.expirationDate && info.expirationDate instanceof Date) {
-        console.log(`📅 Expires: ${info.expirationDate.toLocaleDateString()}`);
-      }
-    } catch (error) {
-      console.error('Refresh status error:', error);
-    }
-  };
-
-  const purchasePremium = async (packageId?: string): Promise<boolean> => {
-    try {
-      setIsLoading(true);
-      
-      const result = await RevenueCatService.purchasePremium(packageId);
-      
-      if (result.success) {
-        await refreshStatus();
-        return true;
-      } else {
-        console.error('Purchase failed:', result.error);
-        return false;
-      }
-    } catch (error) {
-      console.error('Purchase premium error:', error);
-      return false;
+      console.error('Premium initialization failed:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const restorePurchases = async (): Promise<boolean> => {
+  const refreshPremiumStatus = useCallback(async () => {
     try {
-      setIsLoading(true);
+      await RevenueCatService.refreshCustomerInfo();
+      const status = RevenueCatService.getPremiumStatus();
+      setPremiumStatus(status);
       
-      const result = await RevenueCatService.restorePurchases();
-      
-      if (result.success) {
-        await refreshStatus();
-        return true;
-      } else {
-        console.error('Restore failed:', result.error);
-        return false;
-      }
+      debugLog('Premium status updated:', status);
     } catch (error) {
-      console.error('Restore purchases error:', error);
-      return false;
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to refresh premium status:', error);
     }
-  };
+  }, []);
 
-  const getSubscriptionManagementURL = (): string => {
-    return RevenueCatService.getSubscriptionManagementURL();
-  };
+  const hasFeatureAccess = useCallback((feature: PremiumFeature): boolean => {
+    return RevenueCatService.hasFeatureAccess(feature);
+  }, [premiumStatus]);
+
+  const showPaywall = useCallback((feature?: string, title?: string) => {
+    setPaywallContext({ feature, title });
+    setIsPaywallVisible(true);
+  }, []);
+
+  const hidePaywall = useCallback(() => {
+    setIsPaywallVisible(false);
+    setPaywallContext(undefined);
+  }, []);
+
+  const handlePurchaseSuccess = useCallback(() => {
+    // Premium durumunu güncelle
+    refreshPremiumStatus();
+    // Paywall'ı kapat
+    hidePaywall();
+  }, [refreshPremiumStatus, hidePaywall]);
 
   const value: PremiumContextType = {
-    isPremium,
+    // Premium durumu
+    premiumStatus,
     isLoading,
-    subscriptionInfo,
-    availableOfferings,
-    purchasePremium,
-    restorePurchases,
-    refreshStatus,
-    isInFreeTrial,
-    getSubscriptionManagementURL,
+    
+    // Premium özellikleri
+    hasFeatureAccess,
+    isPremium: premiumStatus.isPremium && premiumStatus.isActive,
+    
+    // Paywall yönetimi
+    showPaywall,
+    hidePaywall,
+    isPaywallVisible,
+    paywallContext,
+    
+    // Actions
+    refreshPremiumStatus,
+    handlePurchaseSuccess,
   };
 
   return (
     <PremiumContext.Provider value={value}>
       {children}
+      <PaywallModal
+        isVisible={isPaywallVisible}
+        onClose={hidePaywall}
+        onPurchaseSuccess={handlePurchaseSuccess}
+        title={paywallContext?.title}
+        feature={paywallContext?.feature}
+      />
     </PremiumContext.Provider>
   );
 };
 
+// Custom hook
 export const usePremium = (): PremiumContextType => {
   const context = useContext(PremiumContext);
-  if (!context) {
+  
+  if (context === undefined) {
     throw new Error('usePremium must be used within a PremiumProvider');
   }
+  
   return context;
 };
-
-export default PremiumContext;
