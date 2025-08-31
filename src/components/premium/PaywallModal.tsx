@@ -16,6 +16,7 @@ import {
 import Modal from 'react-native-modal';
 import { PurchasesPackage, PurchasesOffering } from 'react-native-purchases';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 
 // Components
 import Text from '../ui/Text';
@@ -35,7 +36,7 @@ interface PaywallModalProps {
   onClose: () => void;
   onPurchaseSuccess?: () => void;
   title?: string;
-  feature?: string; // Hangi özellik için gösterildiği
+  feature?: string;
 }
 
 interface PremiumFeature {
@@ -62,6 +63,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
     useState<PurchasesPackage | null>(null);
   const [purchasing, setPurchasing] = useState(false);
   const [restoring, setRestoring] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Premium özellikler listesi
   const premiumFeatures: PremiumFeature[] = [
@@ -104,6 +106,43 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       setLoading(true);
       console.log('🔄 Loading RevenueCat offerings...');
 
+      // Expo Go kontrolü
+      const isExpoGo = Constants.appOwnership === 'expo';
+      if (isExpoGo) {
+        console.warn('⚠️ Running in Expo Go - RevenueCat will not work');
+        showToast({
+          type: 'warning',
+          title: "Premium özellikler Expo Go'da çalışmaz",
+        });
+        setOfferings([]);
+        return;
+      }
+
+      // RevenueCat SDK'nın initialize edildiğinden emin ol
+      try {
+        console.log('⏳ Ensuring RevenueCat is initialized...');
+        await RevenueCatService.initialize();
+        console.log('✅ RevenueCat service ready');
+      } catch (initError: any) {
+        console.error('❌ RevenueCat init failed:', initError);
+
+        // Retry logic - SDK'nın başlatılmasını bekle
+        if (retryCount < 5) {
+          setRetryCount(prev => prev + 1);
+          console.log(`⏳ Waiting for SDK... (attempt ${retryCount + 1}/5)`);
+          
+          // Her denemede biraz daha bekle
+          const delay = 1000 * (retryCount + 1);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return loadOfferings();
+        }
+
+        // Son deneme başarısız - kullanıcıya bilgi ver
+        console.error('❌ RevenueCat could not be initialized after retries');
+        throw new Error('RevenueCat başlatılamadı. Lütfen uygulamayı yeniden başlatın.');
+      }
+
+      // Offerings'leri yükle
       const availableOfferings = await RevenueCatService.getOfferings();
       console.log('📦 Offerings loaded:', {
         count: availableOfferings.length,
@@ -113,16 +152,24 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         })),
       });
 
+      if (availableOfferings.length === 0) {
+        showToast({
+          type: 'warning',
+          title: 'Henüz paket tanımlanmamış',
+        });
+        return;
+      }
+
       setOfferings(availableOfferings);
 
-      // Varsayılan olarak monthly package'ı seç
-      if (
-        availableOfferings.length > 0 &&
-        availableOfferings[0].availablePackages.length > 0
-      ) {
+      // Varsayılan olarak ilk package'ı seç
+      if (availableOfferings[0]?.availablePackages?.length > 0) {
+        // Önce monthly package'ı ara
         const monthlyPackage = availableOfferings[0].availablePackages.find(
-          p => p.identifier === '$rc_monthly'
+          p =>
+            p.identifier === '$rc_monthly' || p.identifier.includes('monthly')
         );
+
         const selectedPkg =
           monthlyPackage || availableOfferings[0].availablePackages[0];
         setSelectedPackage(selectedPkg);
@@ -132,26 +179,51 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           productId: selectedPkg.product.identifier,
           price: selectedPkg.product.priceString,
         });
-      } else {
-        console.warn('⚠️ No packages available in offerings');
       }
     } catch (error) {
       console.error('❌ Failed to load offerings:', error);
 
-      // Daha detaylı hata bilgisi
+      // Kullanıcıya anlamlı hata mesajı göster
+      let errorMessage = 'Paketler yüklenemedi';
+
       if (error instanceof Error) {
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack,
-        });
+        if (error.message.includes('No offerings available') || 
+            error.message.includes('No offerings configured')) {
+          errorMessage =
+            'Premium paketler henüz yapılandırılmamış. Lütfen daha sonra tekrar deneyin.';
+        } else if (error.message.includes('RevenueCat başlatılamadı')) {
+          errorMessage = error.message;
+        } else if (error.message.includes('configure') || 
+                   error.message.includes('singleton') ||
+                   error.message.includes('SDK not')) {
+          errorMessage =
+            'RevenueCat servisi başlatılamadı. Lütfen uygulamayı kapatıp yeniden açın.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'İnternet bağlantınızı kontrol edin.';
+        }
+        
+        console.error('Error details:', error.message);
       }
 
       showToast({
         type: 'error',
-        title: t('premium.errors.load_offerings'),
+        title: errorMessage,
       });
+
+      // Development'ta detaylı hata göster
+      if (__DEV__) {
+        Alert.alert(
+          'Debug: RevenueCat Error',
+          error instanceof Error ? error.message : 'Unknown error',
+          [
+            { text: 'Tamam' },
+            { text: 'Tekrar Dene', onPress: () => loadOfferings() },
+          ]
+        );
+      }
     } finally {
       setLoading(false);
+      setRetryCount(0);
     }
   };
 
@@ -166,9 +238,12 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
     try {
       setPurchasing(true);
+      console.log('🛒 Starting purchase:', selectedPackage.identifier);
+
       const result = await RevenueCatService.purchasePackage(selectedPackage);
 
       if (result.success) {
+        console.log('✅ Purchase successful');
         showToast({
           type: 'success',
           title: t('premium.success.purchase_completed'),
@@ -176,16 +251,17 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         onPurchaseSuccess?.();
         onClose();
       } else if (result.userCancelled) {
-        // Kullanıcı iptal etti, sessiz geç
-        return;
+        console.log('ℹ️ User cancelled purchase');
+        // Sessiz geç
       } else {
+        console.error('❌ Purchase failed:', result.error);
         showToast({
           type: 'error',
           title: result.error || t('premium.errors.purchase_failed'),
         });
       }
     } catch (error: any) {
-      console.error('Purchase error:', error);
+      console.error('❌ Purchase error:', error);
       showToast({
         type: 'error',
         title: error.message || t('premium.errors.purchase_failed'),
@@ -198,11 +274,15 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   const handleRestorePurchases = async () => {
     try {
       setRestoring(true);
+      console.log('🔄 Restoring purchases...');
+
       const result = await RevenueCatService.restorePurchases();
 
       if (result.success) {
         const premiumStatus = await RevenueCatService.getPremiumStatus();
+
         if (premiumStatus.isPremium && premiumStatus.isActive) {
+          console.log('✅ Premium restored successfully');
           showToast({
             type: 'success',
             title: t('premium.success.restore_completed'),
@@ -210,19 +290,21 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           onPurchaseSuccess?.();
           onClose();
         } else {
+          console.log('ℹ️ No active purchases found');
           showToast({
             type: 'info',
             title: t('premium.info.no_purchases_found'),
           });
         }
       } else {
+        console.error('❌ Restore failed:', result.error);
         showToast({
           type: 'error',
           title: result.error || t('premium.errors.restore_failed'),
         });
       }
     } catch (error: any) {
-      console.error('Restore error:', error);
+      console.error('❌ Restore error:', error);
       showToast({
         type: 'error',
         title: error.message || t('premium.errors.restore_failed'),
@@ -234,7 +316,31 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
   const formatPrice = (packageItem: PurchasesPackage): string => {
     const { product } = packageItem;
+
+    // Package type'a göre period belirle
+    if (
+      packageItem.identifier.includes('annual') ||
+      packageItem.identifier.includes('yearly')
+    ) {
+      return `${product.priceString}/${t('premium.period.year')}`;
+    } else if (packageItem.identifier.includes('lifetime')) {
+      return product.priceString;
+    }
+
     return `${product.priceString}/${t('premium.period.month')}`;
+  };
+
+  const getPackageTitle = (packageItem: PurchasesPackage): string => {
+    if (
+      packageItem.identifier.includes('annual') ||
+      packageItem.identifier.includes('yearly')
+    ) {
+      return t('premium.yearly_subscription');
+    } else if (packageItem.identifier.includes('lifetime')) {
+      return t('premium.lifetime_purchase');
+    }
+
+    return t('premium.monthly_subscription');
   };
 
   if (loading) {
@@ -301,54 +407,74 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </View>
 
           {/* Package seçimi */}
-          {offerings.length > 0 && (
-            <View style={styles.packagesContainer}>
-              <Text style={styles.sectionTitle}>
-                {t('premium.choose_plan')}
+          {offerings.length > 0 &&
+            offerings[0].availablePackages.length > 0 && (
+              <View style={styles.packagesContainer}>
+                <Text style={styles.sectionTitle}>
+                  {t('premium.choose_plan')}
+                </Text>
+                {offerings[0].availablePackages.map(packageItem => (
+                  <TouchableOpacity
+                    key={packageItem.identifier}
+                    style={[
+                      styles.packageItem,
+                      selectedPackage?.identifier === packageItem.identifier &&
+                        styles.selectedPackage,
+                    ]}
+                    onPress={() => setSelectedPackage(packageItem)}
+                  >
+                    <View style={styles.packageInfo}>
+                      <Text style={styles.packageTitle}>
+                        {getPackageTitle(packageItem)}
+                      </Text>
+                      <Text style={styles.packagePrice}>
+                        {formatPrice(packageItem)}
+                      </Text>
+                    </View>
+                    {selectedPackage?.identifier === packageItem.identifier && (
+                      <Ionicons
+                        name='checkmark-circle'
+                        size={24}
+                        color={designColors.primary[500]}
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+          {/* No offerings message */}
+          {offerings.length === 0 && !loading && (
+            <View style={styles.noOfferingsContainer}>
+              <Ionicons name='alert-circle' size={48} color='#999' />
+              <Text style={styles.noOfferingsText}>
+                Premium paketler şu anda yükleniyor. Lütfen daha sonra tekrar
+                deneyin.
               </Text>
-              {offerings[0].availablePackages.map((packageItem, index) => (
-                <TouchableOpacity
-                  key={packageItem.identifier}
-                  style={[
-                    styles.packageItem,
-                    selectedPackage?.identifier === packageItem.identifier &&
-                      styles.selectedPackage,
-                  ]}
-                  onPress={() => setSelectedPackage(packageItem)}
-                >
-                  <View style={styles.packageInfo}>
-                    <Text style={styles.packageTitle}>
-                      {t('premium.monthly_subscription')}
-                    </Text>
-                    <Text style={styles.packagePrice}>
-                      {formatPrice(packageItem)}
-                    </Text>
-                  </View>
-                  {selectedPackage?.identifier === packageItem.identifier && (
-                    <Ionicons
-                      name='checkmark-circle'
-                      size={24}
-                      color={designColors.primary[500]}
-                    />
-                  )}
-                </TouchableOpacity>
-              ))}
+              <TouchableOpacity
+                onPress={loadOfferings}
+                style={styles.retryButton}
+              >
+                <Text style={styles.retryText}>Tekrar Dene</Text>
+              </TouchableOpacity>
             </View>
           )}
         </ScrollView>
 
         {/* Footer buttons */}
         <View style={styles.footer}>
-          <Button
-            onPress={handlePurchase}
-            disabled={!selectedPackage || purchasing || restoring}
-            loading={purchasing}
-            style={styles.purchaseButton}
-          >
-            {purchasing
-              ? t('premium.purchasing')
-              : t('premium.start_free_trial')}
-          </Button>
+          {selectedPackage && (
+            <Button
+              onPress={handlePurchase}
+              disabled={!selectedPackage || purchasing || restoring}
+              loading={purchasing}
+              style={styles.purchaseButton}
+            >
+              {purchasing
+                ? t('premium.purchasing')
+                : t('premium.start_subscription')}
+            </Button>
+          )}
 
           <TouchableOpacity
             onPress={handleRestorePurchases}
@@ -526,5 +652,27 @@ const createStyles = () =>
       lineHeight: 16,
       fontSize: 12,
       color: '#666666',
+    },
+    noOfferingsContainer: {
+      alignItems: 'center',
+      padding: 40,
+    },
+    noOfferingsText: {
+      textAlign: 'center',
+      marginTop: 16,
+      marginBottom: 24,
+      color: '#666',
+      fontSize: 16,
+      lineHeight: 24,
+    },
+    retryButton: {
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 8,
+      backgroundColor: designColors.primary[50],
+    },
+    retryText: {
+      color: designColors.primary[600],
+      fontWeight: '600',
     },
   });

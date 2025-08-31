@@ -11,13 +11,20 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
+import Constants from 'expo-constants';
 import {
   RevenueCatService,
   PremiumStatus,
 } from '../services/RevenueCatService';
 import { PremiumFeature } from '../config/revenueCat';
-import { debugLog } from '../config/environment';
 import { PaywallModal } from '../components/premium/PaywallModal';
+
+// Debug helper
+const debugLog = (message: string, data?: any) => {
+  if (__DEV__) {
+    console.log(message, data || '');
+  }
+};
 
 interface PremiumContextType {
   // Premium durumu
@@ -25,7 +32,7 @@ interface PremiumContextType {
   isLoading: boolean;
 
   // Premium özellikleri
-  hasFeatureAccess: (feature: PremiumFeature) => boolean;
+  hasFeatureAccess: (feature: PremiumFeature) => Promise<boolean>;
   isPremium: boolean;
 
   // Paywall yönetimi
@@ -67,20 +74,42 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
 
   // RevenueCat'i başlat ve premium durumunu kontrol et
   useEffect(() => {
-    initializePremium();
+    // Context mount olduktan sonra başlat
+    const timer = setTimeout(() => {
+      initializePremium();
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const initializePremium = async () => {
     try {
       setIsLoading(true);
 
-      // RevenueCat'i başlat
+      // Expo Go kontrolü
+      const isExpoGo = Constants.appOwnership === 'expo';
+
+      if (isExpoGo) {
+        debugLog('📱 Expo Go detected - Premium features will not work');
+        setIsLoading(false);
+        return;
+      }
+
+      // RevenueCat Service'i başlat (App.tsx'te configure edildikten sonra)
+      debugLog('⏳ Initializing RevenueCat Service...');
       await RevenueCatService.initialize();
+      debugLog('✅ RevenueCat Service initialized in PremiumContext');
 
       // Premium durumunu kontrol et
       await refreshPremiumStatus();
     } catch (error) {
       console.error('Premium initialization failed:', error);
+
+      // Hata olsa bile uygulamanın çalışmasına devam et
+      setPremiumStatus({
+        isPremium: false,
+        isActive: false,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -88,36 +117,55 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
 
   const refreshPremiumStatus = useCallback(async () => {
     try {
+      // Customer info'yu refresh et
       await RevenueCatService.refreshCustomerInfo();
-      const status = RevenueCatService.getPremiumStatus();
+
+      // Premium durumunu al
+      const status = await RevenueCatService.getPremiumStatus();
       setPremiumStatus(status);
 
       debugLog('Premium status updated:', status);
     } catch (error) {
       console.error('Failed to refresh premium status:', error);
+
+      // Hata durumunda premium'u false yap
+      setPremiumStatus({
+        isPremium: false,
+        isActive: false,
+      });
     }
   }, []);
 
   const hasFeatureAccess = useCallback(
-    (feature: PremiumFeature): boolean => {
-      return RevenueCatService.hasFeatureAccess(feature);
+    async (feature: PremiumFeature): Promise<boolean> => {
+      try {
+        return await RevenueCatService.hasFeatureAccess(feature);
+      } catch (error) {
+        console.error('Failed to check feature access:', error);
+        return false;
+      }
     },
-    [premiumStatus]
+    []
   );
 
   const showPaywall = useCallback((feature?: string, title?: string) => {
+    debugLog('Showing paywall:', { feature, title });
     setPaywallContext({ feature, title });
     setIsPaywallVisible(true);
   }, []);
 
   const hidePaywall = useCallback(() => {
+    debugLog('Hiding paywall');
     setIsPaywallVisible(false);
     setPaywallContext(undefined);
   }, []);
 
-  const handlePurchaseSuccess = useCallback(() => {
+  const handlePurchaseSuccess = useCallback(async () => {
+    debugLog('Purchase successful, refreshing premium status');
+
     // Premium durumunu güncelle
-    refreshPremiumStatus();
+    await refreshPremiumStatus();
+
     // Paywall'ı kapat
     hidePaywall();
   }, [refreshPremiumStatus, hidePaywall]);

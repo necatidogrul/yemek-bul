@@ -17,7 +17,14 @@ import {
   PREMIUM_FEATURES,
   PremiumFeature,
 } from '../config/revenueCat';
-import { debugLog, isProduction } from '../config/environment';
+
+// Environment helpers
+const isProduction = () => !__DEV__;
+const debugLog = (message: string, data?: any) => {
+  if (__DEV__) {
+    console.log(message, data || '');
+  }
+};
 
 export interface PremiumStatus {
   isPremium: boolean;
@@ -38,64 +45,106 @@ export interface PurchaseResult {
 export class RevenueCatService {
   private static isInitialized = false;
   private static currentCustomerInfo: CustomerInfo | null = null;
+  private static initializationPromise: Promise<void> | null = null;
 
   /**
-   * RevenueCat SDK'sını başlat
+   * RevenueCat SDK'sını başlat (singleton pattern)
    */
   static async initialize(): Promise<void> {
+    // Eğer zaten initialize ediliyorsa bekle
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+
+    // Eğer zaten initialize edildiyse return
+    if (this.isInitialized) {
+      debugLog('✅ RevenueCat already initialized');
+      return;
+    }
+
+    // Initialize işlemini başlat
+    this.initializationPromise = this.performInitialization();
+
     try {
-      if (this.isInitialized) {
-        debugLog('RevenueCat already initialized');
-        return;
-      }
+      await this.initializationPromise;
+    } finally {
+      this.initializationPromise = null;
+    }
+  }
 
-      // Development ve Expo Go kontrolü - sadece Expo Go'da mock kullan
-      if (
-        __DEV__ &&
-        (global as any).__DEV__ &&
-        Constants.appOwnership === 'expo'
-      ) {
-        debugLog('🔧 Expo Go mode: Using mock RevenueCat services');
-        this.isInitialized = true;
-        this.currentCustomerInfo = null; // Mock data
-        return;
-      }
+  private static async performInitialization(): Promise<void> {
+    try {
+      // Expo Go kontrolü
+      const isExpoGo = Constants.appOwnership === 'expo';
 
-      // Debug logging sadece development'ta
-      if (!isProduction()) {
-        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-      }
-
-      // Platform-specific API key
-      const apiKey =
-        Platform.OS === 'ios'
-          ? REVENUECAT_CONFIG.apiKeys.apple
-          : REVENUECAT_CONFIG.apiKeys.google;
-
-      if (!apiKey) {
-        throw new Error(`RevenueCat API key not found for ${Platform.OS}`);
-      }
-
-      // SDK'yı yapılandır - RevenueCat dokümantasyonuna göre
-      if (Platform.OS === 'ios') {
-        await Purchases.configure({ apiKey });
-      } else if (Platform.OS === 'android') {
-        await Purchases.configure({ apiKey });
-      }
-
-      debugLog('✅ RevenueCat initialized successfully');
-      this.isInitialized = true;
-
-      // Mevcut customer info'yu al
-      await this.refreshCustomerInfo();
-    } catch (error) {
-      console.error('❌ RevenueCat initialization failed:', error);
-      // Development'ta hata olsa bile devam et
-      if (__DEV__) {
+      if (isExpoGo) {
+        console.warn('📱 Expo Go detected - RevenueCat will use mock mode');
         this.isInitialized = true;
         this.currentCustomerInfo = null;
         return;
       }
+
+      debugLog('🔧 Checking RevenueCat SDK status...');
+
+      // SDK'nın configure edilip edilmediğini kontrol et - retry logic ile
+      let retryCount = 0;
+      const maxRetries = 5;
+      const retryDelay = 1000;
+
+      while (retryCount < maxRetries) {
+        try {
+          // Customer info'yu almayı dene
+          const customerInfo = await Purchases.getCustomerInfo();
+          debugLog('✅ RevenueCat SDK configured and ready');
+          this.currentCustomerInfo = customerInfo;
+          this.isInitialized = true;
+          return;
+        } catch (error: any) {
+          // SDK henüz configure edilmemiş veya hazır değil
+          if (
+            error.message?.includes('configure') ||
+            error.message?.includes('singleton') ||
+            error.message?.includes('not configured')
+          ) {
+            retryCount++;
+            
+            if (retryCount < maxRetries) {
+              debugLog(`⏳ Waiting for SDK configuration... (attempt ${retryCount}/${maxRetries})`);
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              continue;
+            }
+            
+            // Son deneme başarısız
+            console.error('❌ RevenueCat SDK could not be accessed after retries');
+            
+            // Development'ta mock mode'a geç
+            if (__DEV__) {
+              debugLog('🔧 Development mode - using mock mode');
+              this.isInitialized = true;
+              this.currentCustomerInfo = null;
+              return;
+            }
+            
+            throw new Error(
+              'RevenueCat SDK not ready. Please ensure Purchases.configure() is called in App.tsx'
+            );
+          }
+          
+          // Başka bir hata
+          throw error;
+        }
+      }
+    } catch (error) {
+      console.error('❌ RevenueCat initialization failed:', error);
+
+      // Development'ta mock mode'a geç
+      if (__DEV__) {
+        debugLog('🔧 Development mode - using mock mode');
+        this.isInitialized = true;
+        this.currentCustomerInfo = null;
+        return;
+      }
+
       throw error;
     }
   }
@@ -105,25 +154,33 @@ export class RevenueCatService {
    */
   static async refreshCustomerInfo(): Promise<CustomerInfo | null> {
     try {
-      // Development mock
-      if (__DEV__ && (global as any).__DEV__) {
-        debugLog('🔧 Development: Using mock customer info');
+      if (!this.isInitialized) {
+        await this.initialize();
+      }
+
+      // Expo Go mock
+      if (Constants.appOwnership === 'expo') {
+        debugLog('📱 Expo Go: Using mock customer info');
         return null;
       }
 
       const customerInfo = await Purchases.getCustomerInfo();
       this.currentCustomerInfo = customerInfo;
+
       debugLog('📊 Customer info refreshed:', {
         userId: customerInfo.originalAppUserId,
         activeSubscriptions: Object.keys(customerInfo.activeSubscriptions),
-        premiumStatus: this.getPremiumStatus(),
+        activeEntitlements: Object.keys(customerInfo.entitlements.active),
       });
+
       return customerInfo;
     } catch (error) {
       console.error('❌ Failed to refresh customer info:', error);
+
       if (__DEV__) {
-        return null; // Development'ta hata vermesin
+        return null;
       }
+
       throw error;
     }
   }
@@ -133,7 +190,6 @@ export class RevenueCatService {
    */
   static async getPremiumStatus(): Promise<PremiumStatus> {
     try {
-      // Eğer customer info yoksa refresh et
       if (!this.currentCustomerInfo) {
         await this.refreshCustomerInfo();
       }
@@ -142,12 +198,17 @@ export class RevenueCatService {
         return { isPremium: false, isActive: false };
       }
 
+      // Entitlement kontrolü - "Premium Subscription" ile eşleşmeli
       const premiumEntitlement =
         this.currentCustomerInfo.entitlements.active[
           REVENUECAT_CONFIG.entitlements.premium
-        ];
+        ] || 
+        this.currentCustomerInfo.entitlements.active['Premium Subscription'] ||
+        this.currentCustomerInfo.entitlements.active['premium'];
 
       if (!premiumEntitlement) {
+        debugLog('No active premium entitlement found. Checking all entitlements:', 
+          Object.keys(this.currentCustomerInfo.entitlements.active));
         return { isPremium: false, isActive: false };
       }
 
@@ -179,62 +240,132 @@ export class RevenueCatService {
       return false;
     }
 
-    return PREMIUM_FEATURES[feature];
+    return PREMIUM_FEATURES[feature] || false;
   }
 
   /**
-   * Mevcut offerings'leri getir
+   * Mevcut offerings'leri getir (retry logic ile)
    */
   static async getOfferings(): Promise<PurchasesOffering[]> {
-    try {
-      // SDK'nın initialize edildiğinden emin ol
-      if (!this.isInitialized) {
-        await this.initialize();
-      }
+    if (!this.isInitialized) {
+      await this.initialize();
+    }
 
-      const offerings = await Purchases.getOfferings();
+    // Expo Go mock
+    if (Constants.appOwnership === 'expo') {
+      debugLog('📱 Expo Go: Returning mock offerings');
+      return this.getMockOfferings();
+    }
 
-      if (!offerings.current) {
-        console.warn(
-          '⚠️ No current offering available, checking all offerings...'
+    let retryCount = 0;
+    const maxRetries = 3;
+    const retryDelay = 1000;
+
+    while (retryCount < maxRetries) {
+      try {
+        debugLog(
+          `🔄 Fetching offerings (attempt ${retryCount + 1}/${maxRetries})...`
         );
 
-        // Tüm offerings'leri kontrol et
-        const allOfferings = Object.values(offerings.all);
-        if (allOfferings.length === 0) {
-          throw new Error('No offerings available in RevenueCat dashboard');
+        const offerings = await Purchases.getOfferings();
+
+        if (!offerings) {
+          throw new Error('Offerings object is null');
         }
 
-        // İlk available offering'i kullan
-        const firstOffering = allOfferings[0];
-        debugLog('📦 Using first available offering:', {
-          offeringId: firstOffering.identifier,
-          packagesCount: firstOffering.availablePackages.length,
-        });
+        // Current offering kontrolü
+        if (!offerings.current) {
+          debugLog('⚠️ No current offering, checking for Default offering...');
 
-        return [firstOffering];
+          // "Default" offering'i ara (büyük harfle başlıyor)
+          const defaultOffering = offerings.all['Default'] || offerings.all['default'];
+          
+          if (defaultOffering) {
+            debugLog(`✅ Found Default offering: ${defaultOffering.identifier}`);
+            return [defaultOffering];
+          }
+
+          const allOfferings = Object.values(offerings.all);
+
+          if (allOfferings.length === 0) {
+            if (retryCount < maxRetries - 1) {
+              debugLog(`⏳ No offerings found, retrying in ${retryDelay}ms...`);
+              await new Promise(resolve => setTimeout(resolve, retryDelay));
+              retryCount++;
+              continue;
+            }
+
+            throw new Error(
+              'No offerings configured in RevenueCat dashboard. ' +
+                'Please check your RevenueCat dashboard configuration.'
+            );
+          }
+
+          // İlk offering'i kullan
+          debugLog(
+            `✅ Using first available offering: ${allOfferings[0].identifier}`
+          );
+          return [allOfferings[0]];
+        }
+
+        debugLog(`✅ Found current offering: ${offerings.current.identifier}`);
+        return [offerings.current];
+      } catch (error: any) {
+        console.error(`❌ Attempt ${retryCount + 1} failed:`, error.message);
+
+        if (retryCount < maxRetries - 1) {
+          debugLog(`⏳ Retrying in ${retryDelay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          retryCount++;
+        } else {
+          // Development'ta mock data dön
+          if (__DEV__) {
+            debugLog('🔧 Development: Returning mock offerings');
+            return this.getMockOfferings();
+          }
+
+          throw error;
+        }
       }
-
-      debugLog('📦 Available offerings:', {
-        currentOffering: offerings.current.identifier,
-        packagesCount: offerings.current.availablePackages.length,
-        allOfferings: Object.keys(offerings.all),
-      });
-
-      return [offerings.current];
-    } catch (error) {
-      console.error('❌ Failed to get offerings:', error);
-
-      // Daha detaylı hata bilgisi
-      if (error instanceof Error) {
-        console.error('Error details:', {
-          message: error.message,
-          stack: error.stack,
-        });
-      }
-
-      throw error;
     }
+
+    throw new Error('Failed to fetch offerings after all retries');
+  }
+
+  /**
+   * Mock offerings for development/Expo Go
+   */
+  private static getMockOfferings(): PurchasesOffering[] {
+    return [
+      {
+        identifier: 'Default',
+        serverDescription: 'Default Offering',
+        availablePackages: [
+          {
+            identifier: '$rc_monthly',
+            packageType: 'MONTHLY',
+            product: {
+              identifier: 'com.yemekbulucu.subscription.basic.monthly',
+              description: 'Premium Monthly Subscription',
+              title: 'Premium Aylık',
+              price: 39.99,
+              priceString: '₺39,99',
+              currencyCode: 'TRY',
+              introPrice: null,
+              discounts: null,
+            },
+            offeringIdentifier: 'Default',
+          },
+        ],
+        lifetime: null,
+        annual: null,
+        sixMonth: null,
+        threeMonth: null,
+        twoMonth: null,
+        monthly: null,
+        weekly: null,
+      } as any,
+    ];
   }
 
   /**
@@ -244,6 +375,19 @@ export class RevenueCatService {
     purchasePackage: PurchasesPackage
   ): Promise<PurchaseResult> {
     try {
+      if (!this.isInitialized) {
+        await this.initialize();
+      }
+
+      // Expo Go kontrolü
+      if (Constants.appOwnership === 'expo') {
+        debugLog('📱 Expo Go: Mock purchase');
+        return {
+          success: false,
+          error: "Satın alma Expo Go'da çalışmaz. Lütfen build alın.",
+        };
+      }
+
       debugLog('🛒 Starting purchase:', {
         identifier: purchasePackage.identifier,
         productId: purchasePackage.product.identifier,
@@ -251,13 +395,9 @@ export class RevenueCatService {
 
       const { customerInfo } = await Purchases.purchasePackage(purchasePackage);
 
-      // Customer info'yu güncelle
       this.currentCustomerInfo = customerInfo;
 
-      debugLog('✅ Purchase successful:', {
-        productId: purchasePackage.product.identifier,
-        premiumStatus: this.getPremiumStatus(),
-      });
+      debugLog('✅ Purchase successful');
 
       return {
         success: true,
@@ -276,9 +416,28 @@ export class RevenueCatService {
         };
       }
 
+      // Error code'lara göre mesaj
+      let errorMessage = 'Satın alma işlemi başarısız oldu';
+
+      if (error.code === '1' || error.message?.includes('cancelled')) {
+        return {
+          success: false,
+          userCancelled: true,
+          error: 'Satın alma iptal edildi',
+        };
+      } else if (error.code === '2') {
+        errorMessage = 'Ürün bulunamadı';
+      } else if (error.code === '3') {
+        errorMessage = 'Ürün satın alınamıyor';
+      } else if (error.code === '7') {
+        errorMessage = 'Bu ürün zaten satın alınmış';
+      } else if (error.code === '8') {
+        errorMessage = 'Satın alma işlemi henüz tamamlanmadı';
+      }
+
       return {
         success: false,
-        error: error.message || 'Satın alma işlemi başarısız oldu',
+        error: errorMessage,
       };
     }
   }
@@ -288,6 +447,19 @@ export class RevenueCatService {
    */
   static async restorePurchases(): Promise<PurchaseResult> {
     try {
+      if (!this.isInitialized) {
+        await this.initialize();
+      }
+
+      // Expo Go kontrolü
+      if (Constants.appOwnership === 'expo') {
+        debugLog('📱 Expo Go: Mock restore');
+        return {
+          success: false,
+          error: "Restore Expo Go'da çalışmaz. Lütfen build alın.",
+        };
+      }
+
       debugLog('🔄 Restoring purchases...');
 
       const customerInfo = await Purchases.restorePurchases();
@@ -295,7 +467,6 @@ export class RevenueCatService {
 
       debugLog('✅ Purchases restored:', {
         activeSubscriptions: Object.keys(customerInfo.activeSubscriptions),
-        premiumStatus: this.getPremiumStatus(),
       });
 
       return {
@@ -306,7 +477,7 @@ export class RevenueCatService {
       console.error('❌ Restore failed:', error);
       return {
         success: false,
-        error: error.message || 'Satın almaları restore etme başarısız oldu',
+        error: error.message || 'Satın almaları geri yükleme başarısız oldu',
       };
     }
   }
@@ -316,6 +487,10 @@ export class RevenueCatService {
    */
   static async identifyUser(userId: string): Promise<void> {
     try {
+      if (!this.isInitialized) {
+        await this.initialize();
+      }
+
       await Purchases.logIn(userId);
       await this.refreshCustomerInfo();
       debugLog('👤 User identified:', userId);
@@ -330,6 +505,10 @@ export class RevenueCatService {
    */
   static async logoutUser(): Promise<void> {
     try {
+      if (!this.isInitialized) {
+        await this.initialize();
+      }
+
       await Purchases.logOut();
       this.currentCustomerInfo = null;
       debugLog('👋 User logged out');
@@ -345,13 +524,13 @@ export class RevenueCatService {
   static getDebugInfo(): object {
     return {
       isInitialized: this.isInitialized,
+      isExpoGo: Constants.appOwnership === 'expo',
       customerId: this.currentCustomerInfo?.originalAppUserId,
-      premiumStatus: this.getPremiumStatus(),
       activeSubscriptions: this.currentCustomerInfo
         ? Object.keys(this.currentCustomerInfo.activeSubscriptions)
         : [],
-      allEntitlements: this.currentCustomerInfo
-        ? Object.keys(this.currentCustomerInfo.entitlements.all)
+      activeEntitlements: this.currentCustomerInfo
+        ? Object.keys(this.currentCustomerInfo.entitlements.active)
         : [],
     };
   }
