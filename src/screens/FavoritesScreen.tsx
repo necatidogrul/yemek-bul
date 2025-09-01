@@ -11,6 +11,7 @@ import {
   TextInput,
   Animated,
   Image,
+  ScrollView,
 } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +25,8 @@ import { Text } from '../components/ui';
 import { useThemedStyles } from '../hooks/useThemedStyles';
 import { useToast } from '../contexts/ToastContext';
 import { useHaptics } from '../hooks/useHaptics';
+import { usePremium } from '../contexts/PremiumContext';
+import { usePremiumGuard } from '../hooks/usePremiumGuard';
 import { spacing, borderRadius, shadows } from '../theme/design-tokens';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -48,6 +51,13 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const { colors } = useThemedStyles();
   const { showSuccess, showError } = useToast();
   const haptics = useHaptics();
+  const { isPremium, showPaywall } = usePremium();
+
+  // Premium guard for favorites access
+  const favoritesGuard = usePremiumGuard({
+    feature: 'unlimitedRecipes',
+    title: 'Favoriler özelliği premium kullanıcılar içindir',
+  });
 
   // Animation for filter panel
   const filterAnimation = useState(new Animated.Value(0))[0];
@@ -100,6 +110,11 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   }, [favorites, searchQuery, sortBy, filterBy]);
 
   async function loadFavorites() {
+    if (!favoritesGuard.hasAccess) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const favRecipes = await FavoritesService.getFavoriteRecipes();
@@ -114,13 +129,18 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   }
 
   useEffect(() => {
+    if (!favoritesGuard.hasAccess) {
+      favoritesGuard.requirePremium();
+      return;
+    }
+
     const unsubscribe = navigation.addListener('focus', () => {
       loadFavorites();
     });
 
     loadFavorites();
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, favoritesGuard.hasAccess]);
 
   const handleRecipePress = (recipe: Recipe) => {
     if (!recipe.id) {
@@ -406,6 +426,94 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       )}
     </View>
   );
+
+  // Premium olmayan kullanıcılar için paywall
+  if (!favoritesGuard.hasAccess) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+        <StatusBar barStyle='light-content' backgroundColor={colors.primary[600]} />
+        
+        {/* Header */}
+        <LinearGradient
+          colors={[colors.primary[600], colors.primary[700]]}
+          style={styles.premiumHeader}
+        >
+          <View style={styles.premiumHeaderContainer}>
+            <TouchableOpacity
+              style={styles.premiumBackButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name='chevron-back' size={24} color='white' />
+            </TouchableOpacity>
+            
+            <View style={styles.premiumHeaderCenter}>
+              <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
+                Favorilerim
+              </Text>
+            </View>
+            
+            <View style={styles.premiumHeaderActions} />
+          </View>
+        </LinearGradient>
+
+        {/* Scrollable Premium Required Content */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.premiumScrollContent}
+          bounces={true}
+        >
+          <View style={styles.premiumRequiredContainer}>
+            <LinearGradient
+              colors={['#FF6B6B', '#FF8E8E']}
+              style={styles.premiumMainIcon}
+            >
+              <Ionicons name='heart' size={40} color='white' />
+            </LinearGradient>
+            
+            <Text variant='displaySmall' weight='bold' color='primary' align='center'>
+              Premium Özellik
+            </Text>
+            
+            <Text variant='bodyLarge' color='secondary' align='center' style={styles.premiumDescription}>
+              Favori tariflerinizi kaydetmek ve yönetmek için Premium'a geçin
+            </Text>
+            
+            <View style={styles.premiumFeaturesList}>
+              {[
+                'Sınırsız favori tarif kaydetme',
+                'Favorileri kategorilere ayırma', 
+                'Offline erişim için kaydetme',
+                'Favori tarifleri dışa aktarma',
+                'Gelişmiş arama ve filtreleme'
+              ].map((feature, index) => (
+                <View key={index} style={styles.premiumFeatureItem}>
+                  <Ionicons name='checkmark-circle' size={20} color={colors.success[500]} />
+                  <Text variant='bodyMedium' style={{ flex: 1, marginLeft: 12 }}>
+                    {feature}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            
+            <LinearGradient
+              colors={['#FF6B6B', '#FF8E8E']}
+              style={styles.premiumButton}
+            >
+              <TouchableOpacity
+                style={styles.premiumButtonContent}
+                onPress={() => favoritesGuard.requirePremium()}
+              >
+                <Ionicons name='heart' size={20} color='white' />
+                <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
+                  Premium'a Geç
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
@@ -838,6 +946,85 @@ const styles = StyleSheet.create({
     paddingVertical: spacing[3],
     paddingHorizontal: spacing[6],
     gap: spacing[2],
+  },
+
+  // Premium Required Styles
+  premiumHeader: {
+    paddingBottom: spacing[3],
+    ...shadows.sm,
+  },
+  premiumHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[2],
+    minHeight: 56,
+  },
+  premiumBackButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premiumHeaderCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  premiumHeaderActions: {
+    width: 36,
+    alignItems: 'flex-end',
+  },
+  premiumScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 100,
+  },
+  premiumRequiredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing[6],
+    gap: spacing[6],
+    minHeight: 600,
+  },
+  premiumMainIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.lg,
+  },
+  premiumDescription: {
+    maxWidth: 300,
+    lineHeight: 24,
+    marginVertical: spacing[2],
+  },
+  premiumFeaturesList: {
+    width: '100%',
+    gap: spacing[3],
+    marginVertical: spacing[4],
+  },
+  premiumFeatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: spacing[4],
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
+  },
+  premiumButton: {
+    borderRadius: borderRadius.xl,
+    width: '100%',
+    ...shadows.lg,
+  },
+  premiumButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing[5],
+    gap: spacing[3],
   },
 });
 

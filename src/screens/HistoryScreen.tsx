@@ -1000,55 +1000,61 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           </SafeAreaView>
         </LinearGradient>
 
-        {/* Premium Required Content */}
-        <View style={styles.premiumRequiredContainer}>
-          <LinearGradient
-            colors={['#FFD700', '#FFA500']}
-            style={styles.premiumMainIcon}
-          >
-            <Ionicons name='star' size={40} color='white' />
-          </LinearGradient>
-          
-          <Text variant='displaySmall' weight='bold' color='primary' align='center'>
-            Premium Özellik
-          </Text>
-          
-          <Text variant='bodyLarge' color='secondary' align='center' style={styles.premiumDescription}>
-            Arama geçmişinizi görmek ve detaylı istatistikler almak için Premium'a geçin
-          </Text>
-          
-          <View style={styles.premiumFeaturesList}>
-            {[
-              'Sınırsız geçmiş kaydı',
-              'Detaylı arama istatistikleri', 
-              'Popüler kombinasyonlar',
-              'Tarif başarı oranları',
-              'En çok kullanılan malzemeler'
-            ].map((feature, index) => (
-              <View key={index} style={styles.premiumFeatureItem}>
-                <Ionicons name='checkmark-circle' size={20} color={colors.success[500]} />
-                <Text variant='bodyMedium' style={{ flex: 1, marginLeft: 12 }}>
-                  {feature}
-                </Text>
-              </View>
-            ))}
-          </View>
-          
-          <LinearGradient
-            colors={['#FFD700', '#FFA500']}
-            style={styles.premiumButton}
-          >
-            <TouchableOpacity
-              style={styles.premiumButtonContent}
-              onPress={() => historyGuard.requirePremium()}
+        {/* Scrollable Premium Required Content */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.premiumScrollContent}
+          bounces={true}
+        >
+          <View style={styles.premiumRequiredContainer}>
+            <LinearGradient
+              colors={['#FFD700', '#FFA500']}
+              style={styles.premiumMainIcon}
             >
-              <Ionicons name='star' size={20} color='white' />
-              <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
-                Premium'a Geç
-              </Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        </View>
+              <Ionicons name='star' size={40} color='white' />
+            </LinearGradient>
+            
+            <Text variant='displaySmall' weight='bold' color='primary' align='center'>
+              Premium Özellik
+            </Text>
+            
+            <Text variant='bodyLarge' color='secondary' align='center' style={styles.premiumDescription}>
+              Arama geçmişinizi görmek ve detaylı istatistikler almak için Premium'a geçin
+            </Text>
+            
+            <View style={styles.premiumFeaturesList}>
+              {[
+                'Sınırsız geçmiş kaydı',
+                'Detaylı arama istatistikleri', 
+                'Popüler kombinasyonlar',
+                'Tarif başarı oranları',
+                'En çok kullanılan malzemeler'
+              ].map((feature, index) => (
+                <View key={index} style={styles.premiumFeatureItem}>
+                  <Ionicons name='checkmark-circle' size={20} color={colors.success[500]} />
+                  <Text variant='bodyMedium' style={{ flex: 1, marginLeft: 12 }}>
+                    {feature}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            
+            <LinearGradient
+              colors={['#FFD700', '#FFA500']}
+              style={styles.premiumButton}
+            >
+              <TouchableOpacity
+                style={styles.premiumButtonContent}
+                onPress={() => historyGuard.requirePremium()}
+              >
+                <Ionicons name='star' size={20} color='white' />
+                <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
+                  Premium'a Geç
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -1944,12 +1950,17 @@ const styles = StyleSheet.create({
   },
 
   // Premium Required Styles
+  premiumScrollContent: {
+    flexGrow: 1,
+    paddingBottom: 100,
+  },
   premiumRequiredContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing[6],
     gap: spacing[6],
+    minHeight: 600,
   },
   premiumMainIcon: {
     width: 80,
