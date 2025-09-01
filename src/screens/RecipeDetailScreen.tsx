@@ -29,6 +29,7 @@ import { RecipeQAModal } from '../components/modals/RecipeQAModal';
 import { useToast } from '../contexts/ToastContext';
 import { useHaptics } from '../hooks/useHaptics';
 import { usePremiumGuard } from '../hooks/usePremiumGuard';
+import { useTranslation } from '../hooks/useTranslation';
 
 // Services
 import { OpenAIService } from '../services/openaiService';
@@ -71,6 +72,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   const { colors, spacing } = useTheme();
   const { showSuccess, showError } = useToast();
   const haptics = useHaptics();
+  const { t } = useTranslation();
 
   // Premium export özelliği için guard
   const exportGuard = usePremiumGuard({
@@ -145,13 +147,13 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     }
 
     // TODO: PDF export implementasyonu
-    showSuccess('PDF export özelliği yakında eklenecek!');
+    showSuccess(t('success.pdfExportComingSoon'));
   };
 
   const startCooking = () => {
     setCurrentStep(0);
     haptics.notificationSuccess();
-    showSuccess('Pişirme başladı! 👨‍🍳');
+    showSuccess(t('success.cookingStarted'));
   };
 
   const nextStep = () => {
@@ -192,11 +194,11 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
       // OpenAI'a soru sor
       const answer = await OpenAIService.askRecipeQuestion(recipe, question);
 
-      showSuccess('🤖 AI cevabı hazır!');
+      showSuccess(t('success.aiResponseReady'));
       return answer;
     } catch (error) {
       Logger.error('Recipe Q&A failed:', error);
-      showError('Soru yanıtlanırken hata oluştu');
+      showError(t('errors.questionAnswerFailed'));
       throw error;
     }
   };

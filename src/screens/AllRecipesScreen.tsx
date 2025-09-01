@@ -31,6 +31,7 @@ import { useOptimizedFlatList } from '../hooks/useOptimizedFlatList';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { useHaptics } from '../hooks/useHaptics';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -64,6 +65,7 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
 
   const { colors } = useTheme();
   const { showSuccess, showError, showWarning } = useToast();
+  const { t } = useTranslation();
   const haptics = useHaptics();
 
   const [filters, setFilters] = useState<FilterState>({
@@ -266,7 +268,7 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
       Logger.info(`Loaded ${newRecipes.length} recipes, total: ${totalCount}`);
     } catch (error) {
       Logger.error('Failed to load recipes:', error);
-      showError('Tarifler yüklenemedi');
+      showError(t('errors.recipesLoadFailed'));
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
@@ -284,7 +286,7 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
       setFilteredRecipes(searchResults.recipes);
     } catch (error) {
       Logger.error('Search failed:', error);
-      showError('Arama başarısız');
+      showError(t('errors.search'));
     }
   }
 

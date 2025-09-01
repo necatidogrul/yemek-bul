@@ -217,11 +217,11 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       }));
 
       if (status === 'granted') {
-        showSuccess('Bildirimler açıldı! 🔔');
+        showSuccess(t('success.notificationsEnabled'));
       }
     } catch (error) {
       Logger.error('Notification permission error:', error);
-      showError('Bildirim izni alınamadı');
+      showError(t('errors.notificationPermissionDenied'));
     }
   };
 
@@ -233,7 +233,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       });
 
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      showSuccess('Hoş geldin! 🎉');
+      showSuccess(t('success.onboardingWelcome'));
       onComplete();
     } catch (error) {
       Logger.error('Onboarding completion error:', error);

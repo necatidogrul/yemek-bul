@@ -206,8 +206,15 @@ export const en = {
     purchase: 'Purchase failed',
     minIngredients: 'Please add at least one ingredient',
     noRecipesFound: 'No recipes found with these ingredients',
-    // Onboarding specific
     notificationPermissionDenied: 'Notification permission denied',
+    aiError: 'AI Error',
+    aiErrorDesc: 'An error occurred while generating recipe',
+    recipesLoadFailed: 'Failed to load recipes',
+    favoritesLoadFailed: 'Failed to load favorites',
+    recipeCorrupted: 'This recipe appears to be corrupted. Please restart the app.',
+    recipeCorruptedShort: 'This recipe appears to be corrupted. Try clearing favorites.',
+    recipeRemoveFailed: 'Error occurred while removing recipe',
+    questionAnswerFailed: 'Error occurred while answering question',
   },
 
   // Success Messages
@@ -219,6 +226,17 @@ export const en = {
     welcome: 'Welcome! 🎉',
     recipesFound: '{count} recipes found!',
     notificationsEnabled: 'Notifications enabled! 🔔',
+    ingredientAdded: '{ingredient} added to your list',
+    historyIngredientsAdded: 'Ingredients added from history',
+    recipesReady: 'Recipes Ready!',
+    recipesRefreshed: 'Recipes refreshed',
+    developerOptionsEnabled: 'Developer options enabled',
+    languageChanged: 'Language changed',
+    debugToolsActivated: 'Debug tools activated',
+    recipeRemovedFromFavorites: 'Recipe removed from favorites',
+    pdfExportComingSoon: 'PDF export feature coming soon!',
+    cookingStarted: 'Cooking started! 👨‍🍳',
+    aiResponseReady: '🤖 AI response ready!',
     // Onboarding specific
     onboardingWelcome: 'Welcome! 🎉',
     notificationPermissionGranted: 'Notifications enabled! 🔔',
@@ -229,6 +247,11 @@ export const en = {
     unsavedChanges: 'You have unsaved changes',
     deleteConfirm: 'Are you sure you want to delete?',
     internetRequired: 'This feature requires internet connection',
+    ingredientAlreadyInList: 'This ingredient is already in your list',
+    recipeNotFound: 'Recipe Not Found',
+    recipeNotFoundDesc: 'Could not generate recipes with these ingredients',
+    ingredientRequired: 'Ingredient Required',
+    ingredientRequiredDesc: 'Please add at least one ingredient',
   },
 
   // Categories
@@ -461,6 +484,86 @@ export const en = {
       notNow: 'Not Now',
       later: 'Later',
     },
+  },
+
+  // Premium
+  premium: {
+    upgrade_to_premium: 'Upgrade to Premium',
+    upgrade_for_feature: 'Upgrade to Premium for {{feature}}',
+    feature_unlock: 'Unlock {{feature}} with Premium',
+    start_free_trial: '7 Days Free Trial',
+    monthly_subscription: 'Monthly Subscription',
+    choose_plan: 'Choose Your Plan',
+    purchasing: 'Purchasing...',
+    restoring: 'Restoring...',
+    restore_purchases: 'Restore Purchases',
+    loading_offers: 'Loading offers...',
+
+    // Features
+    features: {
+      unlimited_recipes: 'Unlimited Recipes',
+      unlimited_recipes_desc: 'Access to thousands of recipes',
+      advanced_filters: 'Advanced Filters',
+      advanced_filters_desc: 'Detailed search and filtering',
+      export_recipes: 'Export Recipes',
+      export_recipes_desc: 'Save your recipes as PDF',
+      priority_support: 'Priority Support',
+      priority_support_desc: '24/7 priority customer support',
+      no_ads: 'Ad-Free Experience',
+      no_ads_desc: 'Use without any ads',
+      offline_mode: 'Offline Mode',
+      offline_mode_desc: 'Use even without internet',
+      custom_meal_plans: 'Custom Meal Plans',
+      custom_meal_plans_desc: 'Personalized weekly menus',
+      nutrition_tracking: 'Nutrition Tracking',
+      nutrition_tracking_desc: 'Track calories and nutritional values',
+    },
+
+    // Period
+    period: {
+      month: 'month',
+      year: 'year',
+    },
+
+    // Messages
+    success: {
+      purchase_completed: 'Premium subscription successfully activated!',
+      restore_completed: 'Purchases successfully restored!',
+    },
+    errors: {
+      load_offerings: 'Error loading offers',
+      no_package_selected: 'Please select a package',
+      purchase_failed: 'Purchase failed',
+      restore_failed: 'Restore failed',
+    },
+    info: {
+      no_purchases_found: 'No purchases found to restore',
+    },
+
+    // Legal
+    terms_agreement:
+      'By continuing, you agree to the Terms of Service and Privacy Policy',
+  },
+
+  // Settings Screen
+  settings: {
+    title: 'Settings',
+    debugInfo: 'Debug Info',
+    debugInfoDesc: 'App version and environment information',
+    notifications: 'Notifications',
+    sound: 'Sound',
+    hapticFeedback: 'Haptic Feedback',
+    language: 'Language',
+    theme: 'Theme',
+    darkMode: 'Dark Mode',
+    privacy: 'Privacy Policy',
+    terms: 'Terms of Service',
+    support: 'Support',
+    version: 'Version',
+    environment: 'Environment',
+    build: 'Build',
+    developerOptions: 'Developer Options',
+    debugTools: 'Debug Tools',
   },
 
   // Additional onboarding content moved to main onboarding object above

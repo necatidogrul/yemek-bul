@@ -30,6 +30,7 @@ import { spacing, borderRadius, elevation } from '../contexts/ThemeContext';
 
 import { useToast } from '../contexts/ToastContext';
 import { useHaptics } from '../hooks/useHaptics';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -53,6 +54,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const { colors } = useTheme();
   const { showSuccess, showError, showWarning } = useToast();
   const haptics = useHaptics();
+  const { t } = useTranslation();
 
   // Animation for filter panel
   const filterAnimation = useState(new Animated.Value(0))[0];
@@ -130,7 +132,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       Logger.info(`Loaded ${favRecipes.length} favorite recipes`);
     } catch (error) {
       Logger.error('Failed to load favorites:', error);
-      showError('Favoriler yüklenemedi');
+      showError(t('errors.favoritesLoadFailed'));
       setFavorites([]); // Set empty array as fallback
     } finally {
       setIsLoading(false);
@@ -149,9 +151,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const handleRecipePress = (recipe: Recipe) => {
     // Check if recipe has valid id
     if (!recipe.id) {
-      showError(
-        'Bu tarif bozuk görünüyor. Lütfen uygulamayı yeniden başlatın.'
-      );
+      showError(t('errors.recipeCorrupted'));
       return;
     }
 
@@ -260,19 +260,17 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           ]}
           onPress={async () => {
             if (!item.id) {
-              showError(
-                'Bu tarif bozuk görünüyor. Favorileri temizlemeyi deneyin.'
-              );
+              showError(t('errors.recipeCorruptedShort'));
               return;
             }
 
             const success = await FavoritesService.removeFromFavorites(item.id);
             if (success) {
               haptics.notificationSuccess();
-              showSuccess('Tarif favorilerden çıkarıldı');
+              showSuccess(t('success.recipeRemovedFromFavorites'));
               loadFavorites(); // Refresh list
             } else {
-              showError('Tarif çıkarılırken hata oluştu');
+              showError(t('errors.recipeRemoveFailed'));
             }
           }}
         >

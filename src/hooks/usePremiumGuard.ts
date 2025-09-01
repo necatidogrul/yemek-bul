@@ -4,7 +4,7 @@
  * Premium özellikleri için koruma sağlar
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { usePremium } from '../contexts/PremiumContext';
 import { PremiumFeature } from '../config/revenueCat';
 import { useTranslation } from './useTranslation';
@@ -28,12 +28,19 @@ export const usePremiumGuard = (
   const { feature, title, onPremiumRequired } = options;
   const { hasFeatureAccess, isPremium, showPaywall } = usePremium();
   const { t } = useTranslation();
+  const [hasAccess, setHasAccess] = useState<boolean>(false);
 
-  const hasAccess = hasFeatureAccess(feature);
+  useEffect(() => {
+    const checkFeatureAccess = async () => {
+      const access = await hasFeatureAccess(feature);
+      setHasAccess(access);
+    };
+    checkFeatureAccess();
+  }, [feature, hasFeatureAccess]);
 
   const checkAccess = useCallback((): boolean => {
-    return hasFeatureAccess(feature);
-  }, [feature, hasFeatureAccess]);
+    return hasAccess;
+  }, [hasAccess]);
 
   const requirePremium = useCallback(() => {
     if (hasAccess) {
@@ -70,6 +77,9 @@ const getFeatureDisplayName = (feature: PremiumFeature): string => {
     exportRecipes: 'Tarif Dışa Aktarma',
     prioritySupport: 'Öncelikli Destek',
     noAds: 'Reklamı Kaldır',
+    offlineMode: 'Çevrimdışı Mod',
+    customMealPlans: 'Özel Yemek Planları',
+    nutritionTracking: 'Beslenme Takibi',
   };
 
   return featureNames[feature] || feature;
@@ -82,7 +92,16 @@ export const withPremiumGuard = <T extends object>(
   fallbackComponent?: React.ComponentType<T>
 ) => {
   return (props: T) => {
-    const { hasAccess } = usePremiumGuard({ feature });
+    const [hasAccess, setHasAccess] = useState<boolean>(false);
+    const { hasFeatureAccess } = usePremium();
+    
+    useEffect(() => {
+      const checkAccess = async () => {
+        const access = await hasFeatureAccess(feature);
+        setHasAccess(access);
+      };
+      checkAccess();
+    }, [feature, hasFeatureAccess]);
 
     if (!hasAccess && fallbackComponent) {
       const FallbackComponent = fallbackComponent;

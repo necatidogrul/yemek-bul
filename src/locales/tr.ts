@@ -205,8 +205,15 @@ export const tr = {
     purchase: 'Satın alma başarısız',
     minIngredients: 'Lütfen en az bir malzeme ekleyin',
     noRecipesFound: 'Bu malzemelerle tarif bulunamadı',
-    // Onboarding specific
     notificationPermissionDenied: 'Bildirim izni alınamadı',
+    aiError: 'AI Hatası',
+    aiErrorDesc: 'Tarif üretilirken bir hata oluştu',
+    recipesLoadFailed: 'Tarifler yüklenemedi',
+    favoritesLoadFailed: 'Favoriler yüklenemedi',
+    recipeCorrupted: 'Bu tarif bozuk görünüyor. Lütfen uygulamayı yeniden başlatın.',
+    recipeCorruptedShort: 'Bu tarif bozuk görünüyor. Favorileri temizlemeyi deneyin.',
+    recipeRemoveFailed: 'Tarif çıkarılırken hata oluştu',
+    questionAnswerFailed: 'Soru yanıtlanırken hata oluştu',
   },
 
   // Success Messages
@@ -218,6 +225,17 @@ export const tr = {
     welcome: 'Hoş geldiniz! 🎉',
     recipesFound: '{count} tarif bulundu!',
     notificationsEnabled: 'Bildirimler açıldı! 🔔',
+    ingredientAdded: '{ingredient} listene eklendi',
+    historyIngredientsAdded: 'Geçmişten malzemeler eklendi',
+    recipesReady: 'Tarifler Hazır!',
+    recipesRefreshed: 'Tarifler yenilendi',
+    developerOptionsEnabled: 'Geliştirici seçenekleri etkinleştirildi',
+    languageChanged: 'Dil değiştirildi',
+    debugToolsActivated: 'Debug araçları etkinleştirildi',
+    recipeRemovedFromFavorites: 'Tarif favorilerden çıkarıldı',
+    pdfExportComingSoon: 'PDF export özelliği yakında eklenecek!',
+    cookingStarted: 'Pişirme başladı! 👨‍🍳',
+    aiResponseReady: '🤖 AI cevabı hazır!',
     // Onboarding specific
     onboardingWelcome: 'Hoş geldin! 🎉',
     notificationPermissionGranted: 'Bildirimler açıldı! 🔔',
@@ -228,6 +246,11 @@ export const tr = {
     unsavedChanges: 'Kaydedilmemiş değişiklikler var',
     deleteConfirm: 'Silmek istediğinizden emin misiniz?',
     internetRequired: 'Bu özellik internet bağlantısı gerektirir',
+    ingredientAlreadyInList: 'Bu malzeme zaten listende',
+    recipeNotFound: 'Tarif Bulunamadı',
+    recipeNotFoundDesc: 'Bu malzemeler için tarif üretilemedi',
+    ingredientRequired: 'Malzeme Gerekli',
+    ingredientRequiredDesc: 'Lütfen en az bir malzeme ekleyin',
   },
 
   // Categories
@@ -487,6 +510,12 @@ export const tr = {
       priority_support_desc: '7/24 öncelikli müşteri desteği',
       no_ads: 'Reklamsız Deneyim',
       no_ads_desc: 'Hiç reklam görmeden kullanın',
+      offline_mode: 'Çevrimdışı Mod',
+      offline_mode_desc: 'İnternet olmadan da kullanın',
+      custom_meal_plans: 'Özel Yemek Planları',
+      custom_meal_plans_desc: 'Kişiselleştirilmiş haftalık menüler',
+      nutrition_tracking: 'Beslenme Takibi',
+      nutrition_tracking_desc: 'Kalori ve besin değerlerini takip edin',
     },
 
     // Period
@@ -513,6 +542,27 @@ export const tr = {
     // Legal
     terms_agreement:
       "Devam ederek Kullanım Koşulları ve Gizlilik Politikası'nı kabul ediyorsunuz",
+  },
+
+  // Settings Screen
+  settings: {
+    title: 'Ayarlar',
+    debugInfo: 'Debug Bilgisi',
+    debugInfoDesc: 'Uygulama sürümü ve ortam bilgileri',
+    notifications: 'Bildirimler',
+    sound: 'Ses',
+    hapticFeedback: 'Dokunsal Geri Bildirim',
+    language: 'Dil',
+    theme: 'Tema',
+    darkMode: 'Karanlık Mod',
+    privacy: 'Gizlilik Politikası',
+    terms: 'Kullanım Koşulları',
+    support: 'Destek',
+    version: 'Sürüm',
+    environment: 'Ortam',
+    build: 'Yapı',
+    developerOptions: 'Geliştirici Seçenekleri',
+    debugTools: 'Debug Araçları',
   },
 
   // Additional onboarding content moved to main onboarding object above

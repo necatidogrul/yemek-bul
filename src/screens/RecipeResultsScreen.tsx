@@ -35,6 +35,7 @@ import {
 import { useToast } from '../contexts/ToastContext';
 import { useHaptics } from '../hooks/useHaptics';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { useTranslation } from '../hooks/useTranslation';
 // import { useOptimizedFlatList } from "../hooks/useOptimizedFlatList";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -67,6 +68,7 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
   const { colors } = useTheme();
   const { showSuccess, showError, showInfo } = useToast();
   const haptics = useHaptics();
+  const { t } = useTranslation();
 
   const scrollY = useRef(new Animated.Value(0)).current;
   const filterAnimation = useRef(new Animated.Value(0)).current;
@@ -171,7 +173,7 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
       );
     } catch (error) {
       Logger.error('Recipe search failed:', error);
-      showError('Tarifler yüklenemedi');
+      showError(t('errors.recipesLoadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -182,7 +184,7 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
     await loadRecipes();
     setRefreshing(false);
     haptics.notificationSuccess();
-    showSuccess('Tarifler yenilendi');
+    showSuccess(t('success.recipesRefreshed'));
   };
 
   const shareResults = async () => {

@@ -66,7 +66,7 @@ export const SettingsScreen: React.FC = () => {
       }
 
       setShowDeveloperOptions(true);
-      showSuccess('Developer options enabled');
+      showSuccess(t('success.developerOptionsEnabled'));
     }
 
     // 15 taps = Show debug information (development only)
@@ -76,7 +76,7 @@ export const SettingsScreen: React.FC = () => {
       }
 
       Alert.alert(
-        'Debug Information',
+        t('settings.debugInfo'),
         `Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT || 'development'}
 Version: ${Constants.expoConfig?.version || 'unknown'}
 Build: ${
@@ -242,9 +242,7 @@ Build: ${
             onPress={() => {
               const newLang = currentLanguage === 'tr' ? 'en' : 'tr';
               changeLanguage(newLang);
-              showSuccess(
-                `Language changed to ${newLang === 'tr' ? 'Türkçe' : 'English'}`
-              );
+              showSuccess(t('success.languageChanged'));
             }}
           />
         </View>
@@ -303,7 +301,7 @@ Build: ${
                 subtitle={`Environment: ${
                   process.env.EXPO_PUBLIC_ENVIRONMENT || 'development'
                 }`}
-                onPress={() => showSuccess('Debug tools activated')}
+                onPress={() => showSuccess(t('success.debugToolsActivated'))}
               />
               <SettingItem
                 icon='bug-outline'
@@ -311,7 +309,7 @@ Build: ${
                 subtitle='View application debug information'
                 onPress={() =>
                   Alert.alert(
-                    'Debug Info',
+                    t('settings.debugInfo'),
                     `Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT}\nVersion: ${Constants.expoConfig?.version}`
                   )
                 }

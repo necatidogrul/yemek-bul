@@ -1,3 +1,9 @@
+/**
+ * Device Service
+ *
+ * Cihaz kimliği ve oturum yönetimi
+ */
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import * as Application from 'expo-application';
@@ -5,38 +11,49 @@ import { v4 as uuidv4 } from 'uuid';
 import { Logger } from './LoggerService';
 
 export class DeviceService {
-  private static DEVICE_ID_KEY = 'device_id';
-  private static SESSION_ID_KEY = 'session_id';
+  private static readonly DEVICE_ID_KEY = 'device_id';
+  private static readonly SESSION_ID_KEY = 'session_id';
 
   /**
-   * Unique device ID al veya oluştur
+   * Cihaz ID'sini al veya oluştur
    */
   static async getDeviceId(): Promise<string> {
     try {
-      // Önce storage'dan kontrol et
       let deviceId = await AsyncStorage.getItem(this.DEVICE_ID_KEY);
 
       if (!deviceId) {
         // Platform-specific device ID oluştur
         if (Platform.OS === 'ios') {
           // iOS için Application ID kullan
-          deviceId = Application.androidId || `ios_${uuidv4()}`;
+          try {
+            const androidId = await Application.getAndroidId();
+            deviceId = androidId || `ios_${uuidv4()}`;
+          } catch {
+            deviceId = `ios_${uuidv4()}`;
+          }
         } else if (Platform.OS === 'android') {
           // Android için Application ID kullan
-          deviceId = Application.androidId || `android_${uuidv4()}`;
+          try {
+            const androidId = await Application.getAndroidId();
+            deviceId = androidId || `android_${uuidv4()}`;
+          } catch {
+            deviceId = `android_${uuidv4()}`;
+          }
         } else {
           // Web için UUID
           deviceId = `web_${uuidv4()}`;
         }
 
         // Storage'a kaydet
-        await AsyncStorage.setItem(this.DEVICE_ID_KEY, deviceId);
-        Logger.info(`🆕 Generated new device ID: ${deviceId}`);
+        if (deviceId) {
+          await AsyncStorage.setItem(this.DEVICE_ID_KEY, deviceId);
+          Logger.info(`🆕 Generated new device ID: ${deviceId}`);
+        }
       } else {
         Logger.info(`📱 Found existing device ID: ${deviceId}`);
       }
 
-      return deviceId;
+      return deviceId || `fallback_${uuidv4()}`;
     } catch (error) {
       Logger.error('Failed to get device ID:', error);
       // Fallback UUID
@@ -70,18 +87,65 @@ export class DeviceService {
   }
 
   /**
-   * Device bilgilerini al
+   * Cihaz bilgilerini al
    */
   static getDeviceInfo() {
+    const platformInfo = Platform as any;
     return {
       platform: Platform.OS,
       version: Platform.Version,
-      isDevice: Platform.isPad || Platform.isTV,
+      isDevice: platformInfo.isPad || platformInfo.isTV || false,
       brand: Platform.select({
         ios: 'iOS',
         android: 'Android',
         default: 'Unknown',
       }),
     };
+  }
+
+  /**
+   * Cihaz tipini belirle
+   */
+  static getDeviceType(): 'phone' | 'tablet' | 'desktop' {
+    const { width } = Platform.OS === 'web' 
+      ? { width: window.innerWidth } 
+      : { width: 375 }; // Default mobile width
+
+    if (Platform.OS === 'web') {
+      return width > 768 ? 'desktop' : 'phone';
+    }
+
+    const platformInfo = Platform as any;
+    const isTablet = Platform.OS === 'ios' 
+      ? platformInfo.isPad || false
+      : width > 600;
+
+    return isTablet ? 'tablet' : 'phone';
+  }
+
+  /**
+   * Eski session ID'leri temizle
+   */
+  static async cleanOldSessions(): Promise<void> {
+    try {
+      const keys = await AsyncStorage.getAllKeys();
+      const sessionKeys = keys.filter(key =>
+        key.startsWith(this.SESSION_ID_KEY)
+      );
+
+      const today = new Date().toDateString();
+      const currentSessionKey = `${this.SESSION_ID_KEY}_${today}`;
+
+      const oldSessionKeys = sessionKeys.filter(
+        key => key !== currentSessionKey
+      );
+
+      if (oldSessionKeys.length > 0) {
+        await AsyncStorage.multiRemove(oldSessionKeys);
+        Logger.info(`🧹 Cleaned ${oldSessionKeys.length} old session IDs`);
+      }
+    } catch (error) {
+      Logger.error('Failed to clean old sessions:', error);
+    }
   }
 }
