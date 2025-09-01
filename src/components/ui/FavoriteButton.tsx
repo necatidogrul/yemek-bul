@@ -10,6 +10,7 @@ import {
 import { Logger } from '../../services/LoggerService';
 import { Recipe } from '../../types/Recipe';
 import { FavoritesService } from '../../services/FavoritesService';
+import { useToast } from '../../contexts/ToastContext';
 
 interface FavoriteButtonProps {
   recipe: Recipe;
@@ -26,6 +27,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     checkFavoriteStatus();
@@ -53,11 +55,21 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
       if (result.success) {
         setIsFavorite(result.isAdded || false);
+        if (result.message) {
+          showSuccess(result.message);
+        }
       } else if (result.message) {
         Logger.warn('Favorite toggle failed:', result.message);
+        showError(result.message);
+
+        // If it's a premium limit error, trigger upgrade prompt
+        if (result.message.includes('Premium')) {
+          onUpgradeRequired?.();
+        }
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
+      showError('Favorileme işlemi başarısız oldu.');
     } finally {
       setIsLoading(false);
     }

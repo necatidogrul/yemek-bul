@@ -195,7 +195,7 @@ export class OpenAIService {
           dinner: '🌆 AKŞAM YEMEĞİ için',
           snack: '🍿 ATIŞTIRMALIK için',
         },
-        basePrompt: 'Bu malzemeleri kullanarak 3 tarif öner:',
+        basePrompt: 'Bu malzemelerden bazılarını veya tamamını kullanarak 3 tarif öner (her tarif en az 2-3 malzeme kullanmalı):',
         userProfile: 'KULLANICI PROFİLİ:',
         nutrition: 'Beslenme:',
         favorites: 'Favori mutfaklar:',
@@ -222,7 +222,7 @@ export class OpenAIService {
           dinner: '🌆 For DINNER',
           snack: '🍿 For SNACK',
         },
-        basePrompt: 'Suggest 3 recipes using these ingredients:',
+        basePrompt: 'Suggest 3 recipes using some or all of these ingredients (each recipe should use at least 2-3 ingredients):',
         userProfile: 'USER PROFILE:',
         nutrition: 'Dietary restrictions:',
         favorites: 'Favorite cuisines:',
@@ -273,7 +273,14 @@ export class OpenAIService {
         ? t.mealTimes[mealTime as keyof typeof t.mealTimes]
         : '';
 
-    let prompt = `${mealTimePrompt} ${t.basePrompt} ${ingredients.join(', ')}`;
+    let prompt = `${mealTimePrompt} ${t.basePrompt} ${ingredients.join(', ')}
+
+ÖNEMLI KURALLAR:
+- Her tarif en az 2-3 malzeme kullanmalı, ancak hepsini kullanmak zorunlu değil
+- Malzeme sayısı fazlaysa (5+), farklı kombinasyonlarla çeşitli tarifler öner
+- Örneğin: 10 malzeme varsa, bir tarif 3 tanesini, başka bir tarif 5 tanesini kullanabilir
+- Tarifler çeşitli olmalı (çorba, ana yemek, salata vb.)
+- Her tarifin ingredients listesinde SADECE kullanılan malzemeler olmalı`;
 
     // Kullanıcı profili ekleme
     if (userProfile) {
@@ -343,7 +350,8 @@ export class OpenAIService {
       "imageUrl": "https://source.unsplash.com/featured/?pasta,food", // Prefer direct Unsplash Source URL; if unknown, leave empty
       "recommendationType": "preference", // "preference" or "discovery"
       "recommendationReason": "Briefly explain why recommended",
-      "tips": "Tip (optional)"
+      "tips": "Tip (optional)",
+      "usedFromUserIngredients": ["tomato", "onion"] // User's ingredients that were used
     }
   ]
 }`
@@ -363,7 +371,8 @@ export class OpenAIService {
       "imageUrl": "https://source.unsplash.com/featured/?pasta,food", // Mümkünse direkt Unsplash Source URL ver; bilmiyorsan boş bırak
       "recommendationType": "preference", // "preference" veya "discovery"
       "recommendationReason": "Neden önerildiğini kısaca açıkla",
-      "tips": "İpucu (opsiyonel)"
+      "tips": "İpucu (opsiyonel)",
+      "usedFromUserIngredients": ["domates", "soğan"] // Kullanıcının verdiği malzemelerden kullanılanlar
     }
   ]
 }`;

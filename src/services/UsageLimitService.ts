@@ -5,7 +5,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { debugLog } from '../config/environment';
+import { debugLog, isDevelopment } from '../config/environment';
 
 export interface DailyUsage {
   date: string; // YYYY-MM-DD format
@@ -15,7 +15,7 @@ export interface DailyUsage {
 
 export class UsageLimitService {
   private static readonly STORAGE_KEY = 'daily_usage';
-  private static readonly FREE_DAILY_LIMIT = 2;
+  private static readonly FREE_DAILY_LIMIT = isDevelopment() ? 100 : 2; // Development'ta 10, production'da 2
 
   /**
    * Bugünün tarihini YYYY-MM-DD formatında al
@@ -33,6 +33,14 @@ export class UsageLimitService {
       const todayDate = this.getTodayDateString();
       const storedUsage = await AsyncStorage.getItem(this.STORAGE_KEY);
 
+      // Development ortamında debug
+      if (isDevelopment()) {
+        debugLog(
+          '📊 Getting daily usage, current limit:',
+          this.FREE_DAILY_LIMIT
+        );
+      }
+
       if (storedUsage) {
         const usage: DailyUsage = JSON.parse(storedUsage);
 
@@ -45,6 +53,13 @@ export class UsageLimitService {
           };
           await this.saveDailyUsage(newUsage);
           return newUsage;
+        }
+
+        // Mevcut usage'ın maxRequests'ini güncelle (development ortamında değişebilir)
+        if (usage.maxRequests !== this.FREE_DAILY_LIMIT) {
+          usage.maxRequests = this.FREE_DAILY_LIMIT;
+          await this.saveDailyUsage(usage);
+          debugLog('🔄 Updated maxRequests to:', this.FREE_DAILY_LIMIT);
         }
 
         return usage;

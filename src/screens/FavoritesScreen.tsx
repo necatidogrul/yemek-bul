@@ -10,8 +10,8 @@ import {
   StatusBar,
   TextInput,
   Animated,
+  Image,
 } from 'react-native';
-import { Logger } from '../services/LoggerService';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,17 +20,11 @@ import { Recipe } from '../types/Recipe';
 import { FavoritesService } from '../services/FavoritesService';
 
 // UI Components
-import { Button, Card, Text } from '../components/ui';
-import { RecipeCard } from '../components/ui/RecipeCard';
-import { PullToRefresh } from '../components/ui/PullToRefresh';
-import { usePullToRefresh } from '../hooks/usePullToRefresh';
-import { useOptimizedFlatList } from '../hooks/useOptimizedFlatList';
-import { useTheme } from '../contexts/ThemeContext';
-import { spacing, borderRadius, elevation } from '../contexts/ThemeContext';
-
+import { Text } from '../components/ui';
+import { useThemedStyles } from '../hooks/useThemedStyles';
 import { useToast } from '../contexts/ToastContext';
 import { useHaptics } from '../hooks/useHaptics';
-import { useTranslation } from '../hooks/useTranslation';
+import { spacing, borderRadius, shadows } from '../theme/design-tokens';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -51,13 +45,13 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  const { colors } = useTheme();
-  const { showSuccess, showError, showWarning } = useToast();
+  const { colors } = useThemedStyles();
+  const { showSuccess, showError } = useToast();
   const haptics = useHaptics();
-  const { t } = useTranslation();
 
   // Animation for filter panel
   const filterAnimation = useState(new Animated.Value(0))[0];
+  const scaleAnim = useState(new Animated.Value(1))[0];
 
   // Filtering and sorting logic
   const filteredFavorites = useMemo(() => {
@@ -77,9 +71,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     // Apply difficulty filter
     if (filterBy !== 'all') {
       const difficultyMap = {
-        easy: ['Kolay', 'Easy'],
-        medium: ['Orta', 'Medium'],
-        hard: ['Zor', 'Hard'],
+        easy: ['Kolay', 'Easy', 'kolay'],
+        medium: ['Orta', 'Medium', 'orta'],
+        hard: ['Zor', 'Hard', 'zor'],
       };
       result = result.filter(recipe =>
         difficultyMap[filterBy].includes(recipe.difficulty || '')
@@ -105,35 +99,15 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     return result;
   }, [favorites, searchQuery, sortBy, filterBy]);
 
-  const { isRefreshing, handleRefresh } = usePullToRefresh({
-    onRefresh: loadFavorites,
-  });
-
-  const { optimizedProps, onEndReached } = useOptimizedFlatList<Recipe>({
-    enableGetItemLayout: true,
-    itemHeight: viewMode === 'grid' ? 180 : 120,
-    keyExtractor: item => item.id || `recipe-${Date.now()}-${Math.random()}`,
-  });
-
   async function loadFavorites() {
     try {
       setIsLoading(true);
       const favRecipes = await FavoritesService.getFavoriteRecipes();
-
-      // Validate recipes have valid IDs
-      const invalidRecipes = favRecipes.filter(recipe => !recipe.id);
-      if (invalidRecipes.length > 0) {
-        Logger.warn(
-          `Found ${invalidRecipes.length} recipes without IDs, they should be auto-fixed`
-        );
-      }
-
       setFavorites(favRecipes);
-      Logger.info(`Loaded ${favRecipes.length} favorite recipes`);
     } catch (error) {
-      Logger.error('Failed to load favorites:', error);
-      showError(t('errors.favoritesLoadFailed'));
-      setFavorites([]); // Set empty array as fallback
+      console.error('Failed to load favorites:', error);
+      showError('Favoriler yüklenemedi');
+      setFavorites([]);
     } finally {
       setIsLoading(false);
     }
@@ -149,21 +123,48 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   }, [navigation]);
 
   const handleRecipePress = (recipe: Recipe) => {
-    // Check if recipe has valid id
     if (!recipe.id) {
-      showError(t('errors.recipeCorrupted'));
+      showError('Tarif bilgisi eksik');
       return;
     }
 
-    navigation.navigate('RecipeDetail', {
-      recipeId: recipe.id,
-      recipeName: recipe.name,
-    });
+    // Eğer recipe eksikse, tam halini yükleyelim
+    if (!recipe.instructions || !recipe.ingredients) {
+      // Eksik tarif bilgisi var, sadece ID ve isimle gönder
+      // RecipeDetailScreen kendi başına yükleyecek
+      navigation.navigate('RecipeDetail', {
+        recipeId: recipe.id,
+        recipeName: recipe.name,
+      });
+    } else {
+      // Tam recipe var, hepsini gönder
+      navigation.navigate('RecipeDetail', {
+        recipeId: recipe.id,
+        recipeName: recipe.name,
+        recipe: recipe,
+      });
+    }
+  };
+
+  const animateScale = () => {
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 0.95,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start();
   };
 
   const toggleFilters = () => {
     const toValue = showFilters ? 0 : 1;
     setShowFilters(!showFilters);
+    haptics.selection();
 
     Animated.spring(filterAnimation, {
       toValue,
@@ -178,391 +179,412 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     setSortBy('recent');
     setFilterBy('all');
     haptics.selection();
+    animateScale();
   };
 
-  const renderGridItem = ({ item, index }: { item: Recipe; index: number }) => (
+  const renderGridItem = ({ item }: { item: Recipe }) => (
     <TouchableOpacity
-      style={[styles.gridItem, { backgroundColor: colors.surface }]}
-      onPress={() => handleRecipePress(item)}
+      style={[styles.gridCard]}
+      onPress={() => {
+        haptics.selection();
+        handleRecipePress(item);
+      }}
       activeOpacity={0.9}
     >
-      <LinearGradient
-        colors={[colors.primary[400], colors.primary[600]]}
-        style={styles.gridItemImage}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <Ionicons name='restaurant' size={32} color='white' />
+      <View style={styles.gridImageContainer}>
+        {item.imageUrl ? (
+          <Image 
+            source={{ uri: item.imageUrl }} 
+            style={styles.gridImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <LinearGradient
+            colors={['#F97316', '#FB923C']}
+            style={styles.gridImagePlaceholder}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name='restaurant' size={32} color='white' />
+          </LinearGradient>
+        )}
 
         {/* Difficulty Badge */}
         {item.difficulty && (
-          <View
-            style={[
-              styles.difficultyBadge,
-              {
-                backgroundColor:
-                  item.difficulty === 'kolay'
-                    ? colors.semantic.success
-                    : item.difficulty === 'orta'
-                      ? colors.semantic.warning
-                      : colors.semantic.error,
-              },
-            ]}
-          >
-            <Ionicons
-              name={
-                item.difficulty === 'kolay'
-                  ? 'checkmark'
-                  : item.difficulty === 'orta'
-                    ? 'pause'
-                    : 'alert'
-              }
-              size={10}
-              color='white'
-            />
+          <View style={[styles.difficultyBadge, {
+            backgroundColor: item.difficulty === 'kolay' ? '#10B981' :
+                           item.difficulty === 'orta' ? '#F59E0B' : '#EF4444'
+          }]}>
+            <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>
+              {item.difficulty.toUpperCase()}
+            </Text>
           </View>
         )}
-      </LinearGradient>
 
-      <View style={styles.gridItemContent}>
-        <Text variant='labelLarge' weight='600' numberOfLines={2}>
-          {item.name}
-        </Text>
-
-        <View style={styles.gridItemStats}>
-          <View style={styles.gridItemStat}>
-            <Ionicons
-              name='time-outline'
-              size={12}
-              color={colors.text.secondary}
-            />
-            <Text variant='labelSmall' color='secondary'>
-              {item.cookingTime || '30'}dk
-            </Text>
-          </View>
-
-          <View style={styles.gridItemStat}>
-            <Ionicons
-              name='people-outline'
-              size={12}
-              color={colors.text.secondary}
-            />
-            <Text variant='labelSmall' color='secondary'>
-              {item.servings || '4'}
-            </Text>
-          </View>
-        </View>
-
+        {/* Remove Favorite Button */}
         <TouchableOpacity
-          style={[
-            styles.favoriteIcon,
-            { backgroundColor: colors.semantic.error + '20' },
-          ]}
-          onPress={async () => {
-            if (!item.id) {
-              showError(t('errors.recipeCorruptedShort'));
-              return;
-            }
+          style={styles.removeButton}
+          onPress={async (e) => {
+            e.stopPropagation();
+            if (!item.id) return;
 
+            haptics.notificationSuccess();
             const success = await FavoritesService.removeFromFavorites(item.id);
             if (success) {
-              haptics.notificationSuccess();
-              showSuccess(t('success.recipeRemovedFromFavorites'));
-              loadFavorites(); // Refresh list
-            } else {
-              showError(t('errors.recipeRemoveFailed'));
+              showSuccess('Favorilerden kaldırıldı');
+              loadFavorites();
             }
           }}
         >
-          <Ionicons name='heart' size={14} color={colors.semantic.error} />
+          <Ionicons name='heart' size={20} color='#EF4444' />
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.gridContent}>
+        <Text 
+          variant='bodyMedium' 
+          weight='600' 
+          numberOfLines={2}
+          style={{ color: colors.text.primary }}
+        >
+          {item.name}
+        </Text>
+
+        <View style={styles.gridStats}>
+          <View style={styles.statItem}>
+            <Ionicons name='time-outline' size={14} color={colors.neutral[400]} />
+            <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
+              {item.cookingTime || 30} dk
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Ionicons name='people-outline' size={14} color={colors.neutral[400]} />
+            <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
+              {item.servings || 4} kişi
+            </Text>
+          </View>
+        </View>
       </View>
     </TouchableOpacity>
   );
 
   const renderListItem = ({ item }: { item: Recipe }) => (
-    <RecipeCard
-      recipe={item}
-      variant='compact'
-      onPress={() => handleRecipePress(item)}
-    />
-  );
-
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <LinearGradient
-        colors={[colors.primary[100], colors.primary[200]]}
-        style={styles.emptyIcon}
-      >
-        <Ionicons name='heart-outline' size={60} color={colors.primary[500]} />
-      </LinearGradient>
-
-      <Text
-        variant='headlineSmall'
-        weight='600'
-        align='center'
-        style={{ marginVertical: spacing.lg }}
-      >
-        {searchQuery || filterBy !== 'all'
-          ? 'Sonuç Bulunamadı'
-          : 'Henüz Favori Yok'}
-      </Text>
-
-      <Text
-        variant='bodyMedium'
-        color='secondary'
-        align='center'
-        style={{ marginBottom: spacing.xl }}
-      >
-        {searchQuery || filterBy !== 'all'
-          ? 'Arama kriterlerinize uygun favori tarif bulunamadı'
-          : 'Beğendiğin tarifleri favorilere ekleyerek burada görebilirsin'}
-      </Text>
-
-      {!searchQuery && filterBy === 'all' && (
-        <Button
-          variant='primary'
-          onPress={() => navigation.getParent()?.navigate('HomeTab' as any)}
-          leftIcon={<Ionicons name='search' size={20} color='white' />}
-        >
-          Tarifler Keşfet
-        </Button>
-      )}
-
-      {(searchQuery || filterBy !== 'all') && (
-        <Button
-          variant='outline'
-          onPress={clearFilters}
-          leftIcon={<Ionicons name='refresh' size={20} />}
-        >
-          Filtreleri Temizle
-        </Button>
-      )}
-    </View>
-  );
-
-  const renderFilterPanel = () => (
-    <Animated.View
-      style={[
-        styles.filterPanel,
-        {
-          backgroundColor: colors.surface,
-          maxHeight: filterAnimation.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 200],
-          }),
-          opacity: filterAnimation,
-        },
-      ]}
+    <TouchableOpacity
+      style={styles.listCard}
+      onPress={() => {
+        haptics.selection();
+        handleRecipePress(item);
+      }}
+      activeOpacity={0.9}
     >
-      <View style={styles.filterRow}>
-        <Text variant='labelMedium' weight='600'>
-          Sıralama:
-        </Text>
-        <View style={styles.filterOptions}>
-          {[
-            { key: 'recent', label: 'En Yeni' },
-            { key: 'name', label: 'İsim' },
-            { key: 'cookingTime', label: 'Süre' },
-          ].map(option => (
-            <TouchableOpacity
-              key={option.key}
-              style={[
-                styles.filterOption,
-                {
-                  backgroundColor:
-                    sortBy === option.key ? colors.primary[500] : 'transparent',
-                  borderColor: colors.primary[500],
-                },
-              ]}
-              onPress={() => setSortBy(option.key as SortOption)}
-            >
-              <Text
-                variant='labelSmall'
-                weight='500'
-                style={{
-                  color: sortBy === option.key ? 'white' : colors.primary[500],
-                }}
-              >
-                {option.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      <View style={styles.listImageContainer}>
+        {item.imageUrl ? (
+          <Image 
+            source={{ uri: item.imageUrl }} 
+            style={styles.listImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <LinearGradient
+            colors={['#F97316', '#FB923C']}
+            style={styles.listImagePlaceholder}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name='restaurant' size={24} color='white' />
+          </LinearGradient>
+        )}
       </View>
 
-      <View style={styles.filterRow}>
-        <Text variant='labelMedium' weight='600'>
-          Zorluk:
+      <View style={styles.listContent}>
+        <Text 
+          variant='bodyLarge' 
+          weight='600' 
+          numberOfLines={1}
+          style={{ color: colors.text.primary }}
+        >
+          {item.name}
         </Text>
-        <View style={styles.filterOptions}>
-          {[
-            { key: 'all', label: 'Tümü' },
-            { key: 'easy', label: 'Kolay' },
-            { key: 'medium', label: 'Orta' },
-            { key: 'hard', label: 'Zor' },
-          ].map(option => (
-            <TouchableOpacity
-              key={option.key}
-              style={[
-                styles.filterOption,
-                {
-                  backgroundColor:
-                    filterBy === option.key
-                      ? colors.secondary[500]
-                      : 'transparent',
-                  borderColor: colors.secondary[500],
-                },
-              ]}
-              onPress={() => setFilterBy(option.key as FilterOption)}
-            >
-              <Text
-                variant='labelSmall'
-                weight='500'
-                style={{
-                  color:
-                    filterBy === option.key ? 'white' : colors.secondary[500],
-                }}
-              >
-                {option.label}
+        
+        <View style={styles.listStats}>
+          <View style={styles.statItem}>
+            <Ionicons name='time-outline' size={12} color={colors.neutral[400]} />
+            <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
+              {item.cookingTime || 30} dk
+            </Text>
+          </View>
+          <View style={styles.statItem}>
+            <Ionicons name='people-outline' size={12} color={colors.neutral[400]} />
+            <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
+              {item.servings || 4}
+            </Text>
+          </View>
+          {item.difficulty && (
+            <View style={[styles.difficultyChip, {
+              backgroundColor: item.difficulty === 'kolay' ? '#10B98120' :
+                             item.difficulty === 'orta' ? '#F59E0B20' : '#EF444420'
+            }]}>
+              <Text style={{ 
+                color: item.difficulty === 'kolay' ? '#10B981' :
+                       item.difficulty === 'orta' ? '#F59E0B' : '#EF4444',
+                fontSize: 11,
+                fontWeight: '600'
+              }}>
+                {item.difficulty}
               </Text>
-            </TouchableOpacity>
-          ))}
+            </View>
+          )}
         </View>
       </View>
 
       <TouchableOpacity
-        style={[
-          styles.clearFiltersButton,
-          { borderColor: colors.neutral[300] },
-        ]}
-        onPress={clearFilters}
+        style={styles.listRemoveButton}
+        onPress={async () => {
+          if (!item.id) return;
+          haptics.notificationSuccess();
+          const success = await FavoritesService.removeFromFavorites(item.id);
+          if (success) {
+            showSuccess('Favorilerden kaldırıldı');
+            loadFavorites();
+          }
+        }}
       >
-        <Ionicons name='refresh' size={16} color={colors.text.secondary} />
-        <Text variant='labelMedium' color='secondary'>
-          Temizle
-        </Text>
+        <Ionicons name='heart' size={22} color='#EF4444' />
       </TouchableOpacity>
-    </Animated.View>
+    </TouchableOpacity>
+  );
+
+  const renderEmpty = () => (
+    <View style={styles.emptyContainer}>
+      <View style={styles.emptyIconContainer}>
+        <Ionicons name='heart-outline' size={60} color={colors.primary[400]} />
+      </View>
+
+      <Text
+        variant='headlineMedium'
+        weight='700'
+        align='center'
+        style={{ marginTop: spacing[4], color: colors.text.primary }}
+      >
+        {searchQuery || filterBy !== 'all'
+          ? 'Sonuç Bulunamadı'
+          : 'Favori Tarifin Yok'}
+      </Text>
+
+      <Text
+        variant='bodyMedium'
+        align='center'
+        style={{ 
+          marginTop: spacing[2], 
+          marginBottom: spacing[6],
+          color: colors.neutral[500],
+          paddingHorizontal: spacing[6]
+        }}
+      >
+        {searchQuery || filterBy !== 'all'
+          ? 'Arama kriterlerine uygun tarif bulunamadı'
+          : 'Beğendiğin tarifleri favorilere ekle ve burada topla'}
+      </Text>
+
+      {!searchQuery && filterBy === 'all' && (
+        <TouchableOpacity
+          style={styles.emptyButton}
+          onPress={() => navigation.getParent()?.navigate('HomeTab' as any)}
+        >
+          <LinearGradient
+            colors={[colors.primary[500], colors.primary[600]]}
+            style={styles.emptyButtonGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            <Ionicons name='search' size={20} color='white' />
+            <Text variant='bodyMedium' weight='600' style={{ color: 'white' }}>
+              Tarif Keşfet
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
+    </View>
   );
 
   return (
-    <SafeAreaView
-      style={[styles.container, { backgroundColor: colors.background }]}
-    >
-      <StatusBar barStyle='dark-content' backgroundColor={colors.background} />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+      <StatusBar barStyle='dark-content' />
 
-      {/* Header */}
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
+      {/* Compact Header */}
+      <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
         <View style={styles.headerTop}>
-          <View style={styles.headerLeft}>
-            <Text variant='displaySmall' weight='700'>
+          <View>
+            <Text variant='headlineMedium' weight='bold' style={{ color: colors.text.primary }}>
               Favorilerim
             </Text>
-            <Text variant='bodyMedium' color='secondary'>
-              {filteredFavorites.length} tarif
-            </Text>
+            {filteredFavorites.length > 0 && (
+              <Text variant='bodySmall' style={{ color: colors.neutral[500], marginTop: 2 }}>
+                {filteredFavorites.length} tarif kayıtlı
+              </Text>
+            )}
           </View>
 
-          <View style={styles.headerRight}>
+          <View style={styles.viewToggle}>
             <TouchableOpacity
-              style={[
-                styles.headerButton,
-                {
-                  backgroundColor:
-                    viewMode === 'grid' ? colors.primary[500] : colors.surface,
-                },
-              ]}
+              style={[styles.toggleButton, viewMode === 'grid' && styles.toggleActive]}
               onPress={() => {
                 setViewMode('grid');
                 haptics.selection();
               }}
             >
-              <Ionicons
-                name='grid'
-                size={20}
-                color={viewMode === 'grid' ? 'white' : colors.text.primary}
+              <Ionicons 
+                name='grid' 
+                size={18} 
+                color={viewMode === 'grid' ? colors.primary[600] : colors.neutral[400]} 
               />
             </TouchableOpacity>
-
             <TouchableOpacity
-              style={[
-                styles.headerButton,
-                {
-                  backgroundColor:
-                    viewMode === 'list' ? colors.primary[500] : colors.surface,
-                },
-              ]}
+              style={[styles.toggleButton, viewMode === 'list' && styles.toggleActive]}
               onPress={() => {
                 setViewMode('list');
                 haptics.selection();
               }}
             >
-              <Ionicons
-                name='list'
-                size={20}
-                color={viewMode === 'list' ? 'white' : colors.text.primary}
+              <Ionicons 
+                name='list' 
+                size={20} 
+                color={viewMode === 'list' ? colors.primary[600] : colors.neutral[400]} 
               />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Search and Filter */}
+        {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <View
-            style={[styles.searchInput, { backgroundColor: colors.surface }]}
-          >
-            <Ionicons name='search' size={20} color={colors.text.secondary} />
+          <View style={[styles.searchBar, { backgroundColor: colors.neutral[50] }]}>
+            <Ionicons name='search' size={18} color={colors.neutral[400]} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder='Favorilerde ara...'
-              placeholderTextColor={colors.text.secondary}
-              style={[styles.searchText, { color: colors.text.primary }]}
+              placeholderTextColor={colors.neutral[400]}
+              style={[styles.searchInput, { color: colors.text.primary }]}
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons
-                  name='close-circle'
-                  size={20}
-                  color={colors.text.secondary}
-                />
+                <Ionicons name='close-circle' size={18} color={colors.neutral[400]} />
               </TouchableOpacity>
             )}
           </View>
 
           <TouchableOpacity
-            style={[
-              styles.filterButton,
-              {
-                backgroundColor: showFilters
-                  ? colors.primary[500]
-                  : colors.surface,
-              },
-            ]}
+            style={[styles.filterToggle, showFilters && { backgroundColor: colors.primary[100] }]}
             onPress={toggleFilters}
           >
-            <Ionicons
-              name='options'
-              size={20}
-              color={showFilters ? 'white' : colors.text.primary}
+            <Ionicons 
+              name='options-outline' 
+              size={20} 
+              color={showFilters ? colors.primary[600] : colors.neutral[600]} 
             />
           </TouchableOpacity>
         </View>
 
-        {/* Filter Panel */}
-        {renderFilterPanel()}
+        {/* Filter Options */}
+        <Animated.View
+          style={[
+            styles.filterContainer,
+            {
+              height: filterAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 120],
+              }),
+              opacity: filterAnimation,
+              marginTop: filterAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, spacing[3]],
+              }),
+            },
+          ]}
+        >
+          <View style={styles.filterSection}>
+            <Text variant='labelSmall' weight='600' style={{ color: colors.neutral[600] }}>
+              Sıralama
+            </Text>
+            <View style={styles.filterChips}>
+              {[
+                { key: 'recent', label: 'En Yeni', icon: 'time' },
+                { key: 'name', label: 'İsim', icon: 'text' },
+                { key: 'cookingTime', label: 'Süre', icon: 'timer' },
+              ].map(option => (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[
+                    styles.filterChip,
+                    sortBy === option.key && { backgroundColor: colors.primary[100] },
+                  ]}
+                  onPress={() => {
+                    setSortBy(option.key as SortOption);
+                    haptics.selection();
+                  }}
+                >
+                  <Ionicons 
+                    name={option.icon as any} 
+                    size={14} 
+                    color={sortBy === option.key ? colors.primary[600] : colors.neutral[500]} 
+                  />
+                  <Text 
+                    variant='labelSmall' 
+                    weight={sortBy === option.key ? '600' : '400'}
+                    style={{ 
+                      color: sortBy === option.key ? colors.primary[600] : colors.neutral[600] 
+                    }}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.filterSection}>
+            <Text variant='labelSmall' weight='600' style={{ color: colors.neutral[600] }}>
+              Zorluk
+            </Text>
+            <View style={styles.filterChips}>
+              {[
+                { key: 'all', label: 'Tümü' },
+                { key: 'easy', label: 'Kolay' },
+                { key: 'medium', label: 'Orta' },
+                { key: 'hard', label: 'Zor' },
+              ].map(option => (
+                <TouchableOpacity
+                  key={option.key}
+                  style={[
+                    styles.filterChip,
+                    filterBy === option.key && { backgroundColor: colors.secondary[100] },
+                  ]}
+                  onPress={() => {
+                    setFilterBy(option.key as FilterOption);
+                    haptics.selection();
+                  }}
+                >
+                  <Text 
+                    variant='labelSmall' 
+                    weight={filterBy === option.key ? '600' : '400'}
+                    style={{ 
+                      color: filterBy === option.key ? colors.secondary[600] : colors.neutral[600] 
+                    }}
+                  >
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </Animated.View>
       </View>
 
       {/* Content */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={colors.primary[500]} />
-          <Text
-            variant='bodyMedium'
-            color='secondary'
-            style={{ marginTop: spacing.md }}
-          >
+          <Text variant='bodyMedium' style={{ marginTop: spacing[3], color: colors.neutral[500] }}>
             Favoriler yükleniyor...
           </Text>
         </View>
@@ -571,24 +593,16 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           data={filteredFavorites}
           renderItem={viewMode === 'grid' ? renderGridItem : renderListItem}
           numColumns={viewMode === 'grid' ? 2 : 1}
-          key={viewMode} // Force re-render when switching modes
+          key={viewMode}
           contentContainerStyle={[
             styles.listContainer,
-            filteredFavorites.length === 0 && styles.emptyListContainer,
-            { flexGrow: 1, paddingBottom: 100 },
+            filteredFavorites.length === 0 && { flex: 1, justifyContent: 'center' }
           ]}
-          bounces={true}
-          nestedScrollEnabled={true}
           columnWrapperStyle={viewMode === 'grid' ? styles.gridRow : undefined}
           showsVerticalScrollIndicator={false}
-          refreshing={isRefreshing}
-          onRefresh={handleRefresh}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.5}
-          {...optimizedProps}
           ListEmptyComponent={renderEmpty}
-          ItemSeparatorComponent={() =>
-            viewMode === 'list' ? <View style={{ height: spacing.sm }} /> : null
+          ItemSeparatorComponent={() => 
+            viewMode === 'list' ? <View style={{ height: spacing[2] }} /> : null
           }
         />
       )}
@@ -603,92 +617,82 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    paddingHorizontal: spacing.component.section.paddingX,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.lg,
-    ...elevation.low,
+    paddingHorizontal: spacing[3],
+    paddingTop: spacing[2],
+    paddingBottom: spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: spacing.lg,
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    gap: spacing.xs,
-  },
-  headerButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
     alignItems: 'center',
-    justifyContent: 'center',
-    ...elevation.low,
+    marginBottom: spacing[3],
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: borderRadius.md,
+    padding: 2,
+  },
+  toggleButton: {
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.md - 2,
+  },
+  toggleActive: {
+    backgroundColor: 'white',
+    ...shadows.sm,
   },
 
   // Search
   searchContainer: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
+    gap: spacing[2],
+  },
+  searchBar: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.md,
+    gap: spacing[2],
   },
   searchInput: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.medium,
-    gap: spacing.sm,
-    ...elevation.low,
+    fontSize: 15,
   },
-  searchText: {
-    flex: 1,
-    fontSize: 16,
-  },
-  filterButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  filterToggle: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    ...elevation.low,
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
 
-  // Filter Panel
-  filterPanel: {
-    borderRadius: borderRadius.large,
-    padding: spacing.md,
-    gap: spacing.md,
+  // Filters
+  filterContainer: {
     overflow: 'hidden',
-    ...elevation.medium,
   },
-  filterRow: {
-    gap: spacing.sm,
+  filterSection: {
+    marginBottom: spacing[2],
   },
-  filterOptions: {
+  filterChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.xs,
+    gap: spacing[1],
+    marginTop: spacing[1],
   },
-  filterOption: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.medium,
-    borderWidth: 1,
-  },
-  clearFiltersButton: {
+  filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    borderRadius: borderRadius.medium,
-    borderWidth: 1,
-    gap: spacing.xs,
+    paddingHorizontal: spacing[2],
+    paddingVertical: 6,
+    borderRadius: borderRadius.sm,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    gap: 4,
   },
 
   // Content
@@ -696,89 +700,144 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xl,
   },
   listContainer: {
-    padding: spacing.md,
-  },
-  emptyListContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: spacing[3],
   },
   gridRow: {
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.xs,
   },
 
-  // Grid Items
-  gridItem: {
-    width: (screenWidth - spacing.md * 3) / 2,
-    borderRadius: borderRadius.large,
+  // Grid Card
+  gridCard: {
+    width: (screenWidth - spacing[3] * 3) / 2,
+    backgroundColor: 'white',
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing[3],
+    ...shadows.sm,
     overflow: 'hidden',
-    marginBottom: spacing.md,
-    ...elevation.low,
   },
-  gridItemImage: {
-    height: 120,
-    alignItems: 'center',
-    justifyContent: 'center',
+  gridImageContainer: {
+    height: 140,
     position: 'relative',
   },
-  premiumBadge: {
-    position: 'absolute',
-    top: spacing.xs,
-    left: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.tiny,
-    borderRadius: borderRadius.small,
+  gridImage: {
+    width: '100%',
+    height: '100%',
+  },
+  gridImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gridContent: {
+    padding: spacing[2],
+  },
+  gridStats: {
+    flexDirection: 'row',
+    gap: spacing[2],
+    marginTop: spacing[1],
+  },
+
+  // List Card
+  listCard: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: borderRadius.lg,
+    padding: spacing[2],
+    ...shadows.sm,
+  },
+  listImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  listImage: {
+    width: '100%',
+    height: '100%',
+  },
+  listImagePlaceholder: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listContent: {
+    flex: 1,
+    marginLeft: spacing[3],
+    justifyContent: 'center',
+  },
+  listStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
+    marginTop: spacing[1],
+  },
+  listRemoveButton: {
+    justifyContent: 'center',
+    paddingHorizontal: spacing[2],
+  },
+
+  // Common
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   difficultyBadge: {
     position: 'absolute',
-    top: spacing.xs,
-    right: spacing.xs,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    top: spacing[2],
+    left: spacing[2],
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: borderRadius.sm,
   },
-  gridItemContent: {
-    padding: spacing.md,
-    position: 'relative',
+  difficultyChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
   },
-  gridItemStats: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: spacing.xs,
-  },
-  gridItemStat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.tiny,
-  },
-  favoriteIcon: {
+  removeButton: {
     position: 'absolute',
-    top: spacing.xs,
-    right: spacing.xs,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: spacing[2],
+    right: spacing[2],
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'white',
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.sm,
   },
 
   // Empty State
   emptyContainer: {
     alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xxxl,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[8],
   },
-  emptyIcon: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(249, 115, 22, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  emptyButton: {
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  emptyButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[6],
+    gap: spacing[2],
   },
 });
 

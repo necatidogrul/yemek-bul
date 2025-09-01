@@ -27,6 +27,7 @@ import { HistoryService } from '../services/historyService';
 import { UserPreferencesService } from '../services/UserPreferencesService';
 import { UsageLimitService } from '../services/UsageLimitService';
 import { getCurrentLanguage } from '../locales';
+import { useTranslation } from 'react-i18next';
 
 // Components
 import { Text } from '../components/ui';
@@ -51,81 +52,79 @@ interface AIStage {
   progress: number;
 }
 
-const SMART_SUGGESTIONS = [
+const getSmartSuggestions = (t: any) => [
   {
     id: 'breakfast',
-    name: 'Kahvaltı Öner',
-    subtitle: 'Hızlı başlat',
+    name: t('home.suggestions.breakfast.name'),
+    subtitle: t('home.suggestions.breakfast.subtitle'),
     icon: '🌅',
     color: '#F59E0B',
     mealTime: 'breakfast' as const,
-    defaultIngredients: ['yumurta', 'peynir', 'domates'],
+    defaultIngredients: t('home.suggestions.breakfast.ingredients', {
+      returnObjects: true,
+    }) as string[],
     cookingTime: 15,
   },
   {
     id: 'lunch',
-    name: 'Öğle Yemeği',
-    subtitle: 'Doyurucu tarif',
+    name: t('home.suggestions.lunch.name'),
+    subtitle: t('home.suggestions.lunch.subtitle'),
     icon: '☀️',
     color: '#EF4444',
     mealTime: 'lunch' as const,
-    defaultIngredients: ['tavuk', 'pirinç', 'sebze'],
+    defaultIngredients: t('home.suggestions.lunch.ingredients', {
+      returnObjects: true,
+    }) as string[],
     cookingTime: 30,
   },
   {
     id: 'dinner',
-    name: 'Akşam Yemeği',
-    subtitle: 'Lezzetli akşam',
+    name: t('home.suggestions.dinner.name'),
+    subtitle: t('home.suggestions.dinner.subtitle'),
     icon: '🌆',
     color: '#8B5CF6',
     mealTime: 'dinner' as const,
-    defaultIngredients: ['et', 'patates', 'soğan'],
+    defaultIngredients: t('home.suggestions.dinner.ingredients', {
+      returnObjects: true,
+    }) as string[],
     cookingTime: 45,
   },
   {
     id: 'snack',
-    name: 'Hızlı Tarif',
-    subtitle: '15 dk hazır',
+    name: t('home.suggestions.snack.name'),
+    subtitle: t('home.suggestions.snack.subtitle'),
     icon: '⚡',
     color: '#10B981',
     mealTime: 'snack' as const,
-    defaultIngredients: ['makarna', 'domates', 'peynir'],
+    defaultIngredients: t('home.suggestions.snack.ingredients', {
+      returnObjects: true,
+    }) as string[],
     cookingTime: 15,
   },
-];
-
-const POPULAR_INGREDIENTS = [
-  { name: 'Domates', icon: '🍅', color: '#EF4444' },
-  { name: 'Soğan', icon: '🧅', color: '#A855F7' },
-  { name: 'Peynir', icon: '🧀', color: '#F59E0B' },
-  { name: 'Yumurta', icon: '🥚', color: '#10B981' },
-  { name: 'Patates', icon: '🥔', color: '#8B5CF6' },
-  { name: 'Tavuk', icon: '🐔', color: '#F97316' },
 ];
 
 export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   navigation,
   route,
 }) => {
+  const { t } = useTranslation();
   // State
   const [ingredients, setIngredients] = useState<string[]>([]);
-  const [inputText, setInputText] = useState('');
   const [showAIModal, setShowAIModal] = useState(false);
   const [aiStage, setAiStage] = useState<AIStage>({
     stage: 'analyzing',
     progress: 0,
   });
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [remainingRequests, setRemainingRequests] = useState<number>(2);
-  // Removed dropdown - always show advanced mode
-  const showAdvancedMode = true;
 
   // Hooks
   const { colors } = useThemedStyles();
   const { showSuccess, showError, showWarning } = useToast();
   const haptics = useHaptics();
   const { isPremium, showPaywall } = usePremium();
+
+  // Get localized suggestions
+  const SMART_SUGGESTIONS = getSmartSuggestions(t);
 
   // Animations
   const searchScale = new RNAnimated.Value(1);
@@ -143,65 +142,39 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   // Load remaining requests on mount
   React.useEffect(() => {
     const loadRemainingRequests = async () => {
+      console.log('🔋 Loading remaining requests, isPremium:', isPremium);
+
       if (!isPremium) {
         const remaining = await UsageLimitService.getRemainingRequests();
+        console.log('🔋 Remaining requests from service:', remaining);
         setRemainingRequests(remaining);
+      } else {
+        // Premium kullanıcı için unlimited
+        setRemainingRequests(999);
       }
     };
     loadRemainingRequests();
   }, [isPremium]);
 
-  // Handle prefilled ingredients from history
+  // Handle prefilled ingredients from history or IngredientsScreen
   React.useEffect(() => {
     if (route.params?.prefillIngredients) {
       setIngredients(route.params.prefillIngredients);
-      showSuccess('Geçmişten malzemeler eklendi');
-    }
-  }, [route.params?.prefillIngredients]);
 
-  // Add ingredient
-  const addIngredient = (ingredient: string) => {
-    const trimmed = ingredient.trim().toLowerCase();
-    if (trimmed && !ingredients.includes(trimmed)) {
-      setIngredients(prev => [...prev, trimmed]);
-      setInputText('');
-      setShowSuggestions(false);
-      haptics.selection();
-      showSuccess(`${ingredient} listene eklendi`);
-    } else if (ingredients.includes(trimmed)) {
-      showWarning('Bu malzeme zaten listende');
-    }
-  };
-
-  // Remove ingredient
-  const removeIngredient = (ingredient: string) => {
-    setIngredients(prev => prev.filter(item => item !== ingredient));
-    haptics.selection();
-  };
-
-  // Handle input change
-  const handleInputChange = async (text: string) => {
-    setInputText(text);
-
-    if (text.trim().length > 1) {
-      try {
-        const suggestions = await RecipeService.getIngredientSuggestions(
-          text.trim(),
-          6
-        );
-        setSuggestions(suggestions);
-        setShowSuggestions(suggestions.length > 0);
-      } catch (error) {
-        console.warn('Suggestions failed:', error);
+      if (route.params?.shouldGenerateRecipes) {
+        // From IngredientsScreen - start recipe generation
+        showSuccess(t('messages.ingredientsSelected'));
+        generateAIRecipes(route.params.prefillIngredients);
+      } else {
+        // From history
+        showSuccess(t('messages.ingredientsFromHistory'));
       }
-    } else {
-      setShowSuggestions(false);
     }
-  };
+  }, [route.params?.prefillIngredients, route.params?.shouldGenerateRecipes]);
 
   // Smart suggestion tap handler
   const handleSmartSuggestion = async (
-    suggestion: (typeof SMART_SUGGESTIONS)[0]
+    suggestion: ReturnType<typeof getSmartSuggestions>[0]
   ) => {
     // Set the ingredients for display
     setIngredients(suggestion.defaultIngredients);
@@ -212,7 +185,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
   // Smart AI Recipe Generation with defaults
   const generateAIRecipesWithSmartDefaults = async (
-    suggestion: (typeof SMART_SUGGESTIONS)[0]
+    suggestion: ReturnType<typeof getSmartSuggestions>[0]
   ) => {
     // Check usage limit for non-premium users
     if (!isPremium) {
@@ -293,8 +266,8 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
         haptics.success();
         showSuccess(
-          'Tarifler Hazır!',
-          `${aiResponse.recipes.length} AI tarif önerisi oluşturuldu`
+          t('messages.recipesReady'),
+          t('messages.recipesGenerated', { count: aiResponse.recipes.length })
         );
 
         // Navigate to results
@@ -303,12 +276,15 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
           aiRecipes: aiResponse.recipes,
         });
       } else {
-        showWarning('Tarif Bulunamadı', 'Bu malzemeler için tarif üretilemedi');
+        showWarning(
+          t('messages.noRecipeFound'),
+          t('messages.noRecipeFoundDescription')
+        );
       }
     } catch (error: any) {
       setShowAIModal(false);
 
-      showError('AI Hatası', 'Tarif üretilirken bir hata oluştu');
+      showError(t('messages.aiError'), t('messages.aiErrorDescription'));
       haptics.error();
     }
   };
@@ -322,7 +298,10 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
     const useMealTime = customMealTime || 'lunch'; // Default to lunch
 
     if (useIngredients.length === 0) {
-      showWarning('Malzeme Gerekli', 'Lütfen en az bir malzeme ekleyin');
+      showWarning(
+        t('messages.ingredientRequired'),
+        t('messages.ingredientRequiredDescription')
+      );
       return;
     }
 
@@ -410,11 +389,12 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
         haptics.success();
         showSuccess(
-          'Tarifler Hazır!',
-          `${aiResponse.recipes.length} AI tarif önerisi oluşturuldu`
+          t('messages.recipesReady'),
+          t('messages.recipesGenerated', { count: aiResponse.recipes.length })
         );
 
         // Save to history
+        const startTime = Date.now();
         await HistoryService.saveRequest({
           ingredients: useIngredients,
           preferences: {
@@ -429,10 +409,27 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
               name: recipe.name,
               difficulty: recipe.difficulty,
               cookingTime: recipe.cookingTime,
+              // Premium için ek bilgiler
+              ...(isPremium && {
+                servings: recipe.servings,
+                ingredients: recipe.ingredients,
+                instructions: recipe.instructions,
+                imageUrl: recipe.imageUrl,
+              }),
             })),
           },
           success: true,
-        });
+          requestDetails: isPremium ? {
+            tokenUsed: aiResponse.totalTokensUsed || 0,
+            responseTime: Date.now() - startTime,
+            model: 'gpt-3.5-turbo',
+            requestType: 'ai' as const,
+          } : undefined,
+          userContext: {
+            isPremium,
+            userId: 'user_' + Date.now(),
+          },
+        }, isPremium);
 
         // Navigate to results
         navigation.navigate('RecipeResults', {
@@ -440,7 +437,10 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
           aiRecipes: aiResponse.recipes,
         });
       } else {
-        showWarning('Tarif Bulunamadı', 'Bu malzemeler için tarif üretilemedi');
+        showWarning(
+          t('messages.noRecipeFound'),
+          t('messages.noRecipeFoundDescription')
+        );
 
         // Save failed attempt to history
         await HistoryService.saveRequest({
@@ -455,7 +455,11 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
             recipes: [],
           },
           success: false,
-        });
+          userContext: {
+            isPremium,
+            userId: 'user_' + Date.now(),
+          },
+        }, isPremium);
       }
     } catch (error: any) {
       console.error('AI Generation Error:', error);
@@ -485,20 +489,15 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
         },
         success: false,
         error: errorMessage,
-      });
+        userContext: {
+          isPremium,
+          userId: 'user_' + Date.now(),
+        },
+      }, isPremium);
 
       // Fallback to normal search
       navigation.navigate('RecipeResults', { ingredients: useIngredients });
     }
-  };
-
-  // Popular ingredient press
-  const handlePopularIngredientPress = (ingredient: string) => {
-    animateScale(inputScale, 0.95);
-    setTimeout(() => {
-      animateScale(inputScale, 1);
-      addIngredient(ingredient);
-    }, 100);
   };
 
   return (
@@ -511,13 +510,13 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       <View style={styles.compactHeader}>
         <View style={styles.compactHeaderContent}>
           <View style={styles.compactHeaderLeft}>
-            <Ionicons name='restaurant' size={24} color={colors.primary[500]} />
+            <Ionicons name='restaurant' size={20} color={colors.primary[500]} />
             <Text
-              variant='headlineSmall'
+              variant='bodyLarge'
               weight='bold'
               style={{ color: colors.text.primary }}
             >
-              Yemek Bulucu
+              {t('app.name')}
             </Text>
           </View>
 
@@ -531,11 +530,11 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
               onPress={() => showPaywall()}
               activeOpacity={0.7}
             >
-              <Ionicons name='diamond' size={16} color={colors.primary[600]} />
+              <Ionicons name='diamond' size={14} color={colors.primary[600]} />
               <Text
-                variant='labelMedium'
+                variant='labelSmall'
                 weight='600'
-                style={{ color: colors.primary[600] }}
+                style={{ color: colors.primary[600], fontSize: 12 }}
               >
                 {remainingRequests}
               </Text>
@@ -546,33 +545,36 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? -20 : 0}
       >
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
-          bounces={true}
+          bounces={false}
           keyboardShouldPersistTaps='handled'
-          keyboardDismissMode='on-drag'
+          keyboardDismissMode='interactive'
         >
           <View style={styles.mainContent}>
             {/* Welcome Section */}
             <View style={styles.welcomeSection}>
               <Text
-                variant='displaySmall'
+                variant='headlineMedium'
                 weight='bold'
-                style={{ color: colors.text.primary }}
+                style={{
+                  color: colors.text.primary,
+                  fontSize: screenWidth < 380 ? 24 : 28,
+                }}
               >
-                Ne pişirmek istersin?
+                {t('home.welcomeTitle')}
               </Text>
               <Text
-                variant='bodyLarge'
+                variant='bodyMedium'
                 color='secondary'
-                style={{ marginTop: 8 }}
+                style={{ marginTop: 4 }}
               >
-                Tek dokunuşla AI tarif önerisi al
+                {t('home.welcomeSubtitle')}
               </Text>
             </View>
 
@@ -586,33 +588,38 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
                   activeOpacity={0.8}
                 >
                   <LinearGradient
-                    colors={[suggestion.color, suggestion.color + 'E6']}
+                    colors={[suggestion.color, suggestion.color + 'CC']}
                     style={styles.suggestionGradient}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
                     <Text style={styles.suggestionIcon}>{suggestion.icon}</Text>
                     <Text
-                      variant='bodyLarge'
+                      variant='bodyMedium'
                       weight='600'
-                      style={{ color: 'white', textAlign: 'center' }}
+                      style={{
+                        color: 'white',
+                        textAlign: 'center',
+                        fontSize: screenWidth < 380 ? 14 : 15,
+                      }}
                     >
                       {suggestion.name}
                     </Text>
                     <Text
                       variant='labelSmall'
                       style={{
-                        color: 'rgba(255,255,255,0.9)',
+                        color: 'rgba(255,255,255,0.85)',
                         textAlign: 'center',
+                        fontSize: screenWidth < 380 ? 11 : 12,
                       }}
                     >
                       {suggestion.subtitle}
                     </Text>
                     <View style={styles.aiIndicator}>
-                      <Ionicons name='sparkles' size={14} color='white' />
+                      <Ionicons name='sparkles' size={12} color='white' />
                       <Text
                         variant='labelSmall'
-                        style={{ color: 'white', marginLeft: 4 }}
+                        style={{ color: 'white', marginLeft: 2, fontSize: 10 }}
                       >
                         AI
                       </Text>
@@ -622,183 +629,51 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
               ))}
             </View>
 
-            {/* Custom Input Section Header */}
-            <View style={styles.customInputSection}>
-              <View
-                style={[
-                  styles.customInputHeader,
-                  { backgroundColor: colors.surface?.primary || '#fff' },
-                ]}
-              >
-                <View style={styles.customInputContent}>
-                  <Ionicons
-                    name='create-outline'
-                    size={24}
-                    color={colors.primary[500]}
-                  />
-                  <View style={styles.customInputText}>
-                    <Text
-                      variant='bodyLarge'
-                      weight='600'
-                      style={{ color: colors.text.primary }}
-                    >
-                      Özel Tarif Oluştur
-                    </Text>
-                    <Text variant='labelMedium' color='secondary'>
-                      Kendi malzemelerinle tarif bul
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* Advanced Mode - Always shown */}
-            <View
-              style={[
-                styles.advancedInputSection,
-                { backgroundColor: colors.neutral[50] },
-              ]}
+            {/* Kendi Malzemelerinle Oluştur Button */}
+            <TouchableOpacity
+              style={styles.customCreateButton}
+              onPress={() => {
+                console.log('🔥 Kendi malzemelerinle oluştur pressed!');
+                haptics.selection();
+                navigation.navigate('IngredientsSelect');
+              }}
+              activeOpacity={0.8}
             >
-              <Text
-                variant='bodyLarge'
-                weight='600'
-                style={{ marginBottom: 16, color: colors.text.primary }}
+              <LinearGradient
+                colors={['#6366F1', '#8B5CF6']}
+                style={styles.customCreateGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
               >
-                Malzemelerinizi ekleyin
-              </Text>
-
-              {/* Compact Input */}
-              <View style={styles.compactInputContainer}>
-                <View
-                  style={[
-                    styles.compactTextInput,
-                    { borderColor: colors.neutral[300] },
-                  ]}
-                >
-                  <Ionicons
-                    name='restaurant-outline'
-                    size={20}
-                    color={colors.neutral[400]}
-                  />
-                  <TextInput
-                    style={[styles.inputField, { color: colors.text.primary }]}
-                    placeholder='Malzeme ekle...'
-                    placeholderTextColor={colors.neutral[400]}
-                    value={inputText}
-                    onChangeText={handleInputChange}
-                    onSubmitEditing={() => addIngredient(inputText)}
-                    returnKeyType='done'
-                  />
-                  {inputText.length > 0 && (
-                    <TouchableOpacity
-                      onPress={() => addIngredient(inputText)}
-                      style={[
-                        styles.quickAddButton,
-                        { backgroundColor: colors.primary[500] },
-                      ]}
-                    >
-                      <Ionicons name='add' size={18} color='#fff' />
-                    </TouchableOpacity>
-                  )}
+                <View style={styles.customCreateLeft}>
+                  <Ionicons name='create-outline' size={24} color='white' />
                 </View>
-
-                {/* Quick Popular Ingredients */}
-                <View style={styles.quickIngredients}>
-                  {POPULAR_INGREDIENTS.slice(0, 4).map(item => (
-                    <TouchableOpacity
-                      key={item.name}
-                      style={[
-                        styles.quickIngredientTag,
-                        { backgroundColor: colors.surface?.primary || '#fff' },
-                      ]}
-                      onPress={() => addIngredient(item.name)}
-                    >
-                      <Text style={{ fontSize: 16 }}>{item.icon}</Text>
-                      <Text
-                        variant='labelSmall'
-                        style={{ color: colors.text.primary }}
-                      >
-                        {item.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                <View style={styles.customCreateContent}>
+                  <Text
+                    variant='bodyLarge'
+                    weight='600'
+                    style={{ color: 'white' }}
+                  >
+                    {t('home.customCreate.title')}
+                  </Text>
+                  <Text
+                    variant='bodySmall'
+                    style={{ color: 'rgba(255,255,255,0.85)', marginTop: 2 }}
+                  >
+                    {t('home.customCreate.subtitle')}
+                  </Text>
                 </View>
-
-                {/* Added Ingredients Display */}
-                {ingredients.length > 0 && (
-                  <View style={styles.addedIngredients}>
-                    <View style={styles.addedIngredientsHeader}>
-                      <Text
-                        variant='labelMedium'
-                        weight='600'
-                        style={{ color: colors.text.primary }}
-                      >
-                        Eklenen ({ingredients.length})
-                      </Text>
-                      <TouchableOpacity onPress={() => setIngredients([])}>
-                        <Text
-                          variant='labelSmall'
-                          style={{ color: colors.error[500] }}
-                        >
-                          Temizle
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                    <View style={styles.ingredientChips}>
-                      {ingredients.map(ingredient => (
-                        <TouchableOpacity
-                          key={ingredient}
-                          style={[
-                            styles.ingredientChip,
-                            { backgroundColor: colors.primary[100] },
-                          ]}
-                          onPress={() => removeIngredient(ingredient)}
-                        >
-                          <Text
-                            variant='labelSmall'
-                            style={{ color: colors.primary[700] }}
-                          >
-                            {ingredient}
-                          </Text>
-                          <Ionicons
-                            name='close'
-                            size={12}
-                            color={colors.primary[700]}
-                          />
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-
-                    {/* Generate Button */}
-                    <TouchableOpacity
-                      style={[styles.generateButton]}
-                      onPress={() => generateAIRecipes()}
-                      activeOpacity={0.8}
-                    >
-                      <LinearGradient
-                        colors={['#8B5CF6', '#A855F7']}
-                        style={styles.generateButtonGradient}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                      >
-                        <Ionicons name='sparkles' size={20} color='white' />
-                        <Text
-                          variant='bodyMedium'
-                          weight='600'
-                          style={{ color: 'white' }}
-                        >
-                          AI Tarif Üret
-                        </Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </View>
-                )}
-              </View>
-            </View>
+                <Ionicons
+                  name='chevron-forward'
+                  size={20}
+                  color='rgba(255,255,255,0.8)'
+                />
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
 
           {/* Bottom Spacing */}
-          <View style={{ height: 120 }} />
+          <View style={{ height: 80 }} />
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -825,16 +700,21 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: Platform.OS === 'ios' ? 150 : 120,
+    paddingBottom: Platform.OS === 'ios' ? 90 : 70,
   },
 
   // Compact Header
   compactHeader: {
-    paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
     backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: 'rgba(0,0,0,0.03)',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   compactHeaderContent: {
     flexDirection: 'row',
@@ -844,26 +724,25 @@ const styles = StyleSheet.create({
   compactHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[3],
+    gap: spacing[2],
   },
   creditCounter: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
+    paddingHorizontal: spacing[2],
+    paddingVertical: 4,
     borderRadius: borderRadius.full,
-    gap: spacing[1],
-    ...shadows.sm,
+    gap: 4,
   },
 
   // Main Content
   mainContent: {
     flex: 1,
-    paddingHorizontal: spacing[4],
+    paddingHorizontal: spacing[3],
   },
   welcomeSection: {
-    paddingTop: spacing[6],
-    paddingBottom: spacing[6],
+    paddingTop: screenHeight < 700 ? spacing[3] : spacing[4],
+    paddingBottom: screenHeight < 700 ? spacing[3] : spacing[4],
     alignItems: 'center',
   },
 
@@ -871,134 +750,75 @@ const styles = StyleSheet.create({
   smartSuggestionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing[3],
-    marginBottom: spacing[6],
+    gap: spacing[2],
+    marginBottom: screenHeight < 700 ? spacing[3] : spacing[4],
   },
   suggestionCard: {
-    width: (screenWidth - spacing[4] * 2 - spacing[3]) / 2,
-    aspectRatio: 1.1,
-    borderRadius: borderRadius.xl,
+    width: (screenWidth - spacing[3] * 2 - spacing[2]) / 2,
+    height: screenHeight < 700 ? 90 : 100,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
-    ...shadows.lg,
+    ...shadows.md,
   },
   suggestionGradient: {
     flex: 1,
-    padding: spacing[4],
-    justifyContent: 'space-between',
+    padding: spacing[3],
+    justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
   },
   suggestionIcon: {
-    fontSize: 36,
-    marginBottom: spacing[2],
+    fontSize: 28,
+    marginBottom: spacing[1],
   },
   aiIndicator: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: borderRadius.full,
+  },
+
+  // Custom Create Button
+  customCreateButton: {
+    marginBottom: spacing[4],
+    borderRadius: borderRadius.xl,
+    overflow: 'hidden',
+    ...shadows.lg,
+  },
+  customCreateGradient: {
+    padding: spacing[4],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[3],
+  },
+  customCreateLeft: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  customCreateContent: {
+    flex: 1,
+  },
+  customCardBadge: {
     position: 'absolute',
     top: spacing[2],
     right: spacing[2],
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: borderRadius.full,
   },
 
-  // Custom Input Section
-  customInputSection: {
-    marginBottom: spacing[4],
-  },
-  customInputHeader: {
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-  customInputContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing[4],
-    gap: spacing[3],
-  },
-  customInputText: {
-    flex: 1,
-  },
-
-  // Advanced Input
-  advancedInputSection: {
-    borderRadius: borderRadius.lg,
-    padding: spacing[4],
-    ...shadows.sm,
-  },
-  compactInputContainer: {
-    gap: spacing[3],
-  },
-  compactTextInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderWidth: 1,
-    borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[3],
-    gap: spacing[2],
-  },
-  inputField: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  quickAddButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  quickIngredients: {
-    flexDirection: 'row',
-    gap: spacing[2],
-  },
-  quickIngredientTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing[2],
-    paddingVertical: 8,
-    borderRadius: borderRadius.md,
-    gap: 4,
-    ...shadows.sm,
-  },
-  addedIngredients: {
-    gap: spacing[3],
-  },
-  addedIngredientsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  ingredientChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  ingredientChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing[2],
-    paddingVertical: 6,
-    borderRadius: borderRadius.full,
-    gap: 6,
-  },
-  generateButton: {
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    ...shadows.md,
-  },
-  generateButtonGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing[3],
-    gap: spacing[2],
-  },
   header: {
     paddingTop: spacing[6],
     paddingBottom: spacing[8],

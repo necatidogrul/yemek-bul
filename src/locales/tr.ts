@@ -130,6 +130,19 @@ export const tr = {
       advanced: 'İleri',
       expert: 'Uzman',
     },
+    categoriesLabels: {
+      turkish: 'Türk',
+      italian: 'İtalyan',
+      asian: 'Asya',
+      healthy: 'Sağlıklı',
+      dessert: 'Tatlı',
+      fast: 'Hızlı'
+    },
+    levelLabels: {
+      beginner: 'Başlangıç',
+      intermediate: 'Orta',
+      advanced: 'İleri'
+    },
     dietaryRestrictions: 'Beslenme Tercihleri',
     favoriteCategories: 'Favori Mutfaklar',
     cookingLevel: 'Mutfak Deneyimi',
@@ -155,6 +168,34 @@ export const tr = {
     discoverRecipes: '500+ tarif keşfet',
     favorites: 'Favoriler',
     likedRecipes: 'Beğendiğin tarifler',
+    suggestions: {
+      breakfast: {
+        name: 'Kahvaltı',
+        subtitle: 'Hızlı başlat',
+        ingredients: ['yumurta', 'peynir', 'domates']
+      },
+      lunch: {
+        name: 'Öğle',
+        subtitle: 'Doyurucu',
+        ingredients: ['tavuk', 'pirinç', 'sebze']
+      },
+      dinner: {
+        name: 'Akşam',
+        subtitle: 'Lezzetli',
+        ingredients: ['et', 'patates', 'soğan']
+      },
+      snack: {
+        name: 'Hızlı',
+        subtitle: '15 dakika',
+        ingredients: ['makarna', 'domates', 'peynir']
+      }
+    },
+    welcomeTitle: 'Ne pişirmek istersin?',
+    welcomeSubtitle: 'Tek dokunuşla AI tarif önerisi al',
+    customCreate: {
+      title: 'Kendi Malzemelerinle Oluştur',
+      subtitle: 'Elindeki malzemeleri seç, AI sana özel tarifler bulsun'
+    }
   },
 
   // Recipe
@@ -216,6 +257,20 @@ export const tr = {
     questionAnswerFailed: 'Soru yanıtlanırken hata oluştu',
   },
 
+  // Messages
+  messages: {
+    ingredientsSelected: 'Malzemeler seçildi, tarifler aranıyor...',
+    ingredientsFromHistory: 'Geçmişten malzemeler eklendi',
+    recipesReady: 'Tarifler Hazır!',
+    recipesGenerated: '{{count}} AI tarif önerisi oluşturuldu',
+    noRecipeFound: 'Tarif Bulunamadı',
+    noRecipeFoundDescription: 'Bu malzemeler için tarif üretilemedi',
+    aiError: 'AI Hatası',
+    aiErrorDescription: 'Tarif üretilirken bir hata oluştu',
+    ingredientRequired: 'Malzeme Gerekli',
+    ingredientRequiredDescription: 'Lütfen en az bir malzeme ekleyin',
+  },
+
   // Success Messages
   success: {
     saved: 'Kaydedildi!',
@@ -239,6 +294,108 @@ export const tr = {
     // Onboarding specific
     onboardingWelcome: 'Hoş geldin! 🎉',
     notificationPermissionGranted: 'Bildirimler açıldı! 🔔',
+  },
+
+  // Settings Screen
+  settings: {
+    title: 'Ayarlar',
+    account: 'Hesap',
+    profile: {
+      title: 'Profil',
+      subtitle: 'Profil bilgilerinizi yönetin'
+    },
+    notifications: {
+      title: 'Bildirimler',
+      subtitle: 'Push bildirimleri ve uyarılar'
+    },
+    language: {
+      title: 'Dil',
+      turkish: 'Türkçe',
+      english: 'English'
+    },
+    appSettings: 'Uygulama Ayarları',
+    theme: {
+      title: 'Tema',
+      light: 'Açık mod',
+      dark: 'Karanlık mod'
+    },
+    soundEffects: {
+      title: 'Ses Efektleri',
+      subtitle: 'Uygulama sesleri ve geri bildirimler'
+    },
+    hapticFeedback: {
+      title: 'Haptik Geri Bildirim',
+      subtitle: 'Titreşim geri bildirimi'
+    },
+    premiumFeatures: 'Premium Özellikler',
+    advancedRecipes: {
+      title: 'Gelişmiş Tarif Önerileri',
+      subtitle: 'AI destekli kişiselleştirilmiş tarifler'
+    },
+    unlimitedSearch: {
+      title: 'Sınırsız Tarif Arama',
+      subtitle: 'Günlük limit olmadan sınırsız erişim'
+    },
+    premiumSupport: {
+      title: 'Öncelikli Destek',
+      subtitle: '7/24 müşteri desteği'
+    },
+    offlineRecipes: {
+      title: 'Çevrimdışı Tarifler',
+      subtitle: 'İnternet bağlantısı olmadan tariflere erişin'
+    },
+    support: 'Destek',
+    helpCenter: {
+      title: 'Yardım Merkezi',
+      subtitle: 'SSS ve kullanım kılavuzu'
+    },
+    contactUs: {
+      title: 'İletişim',
+      subtitle: 'Sorularınız için bize ulaşın'
+    },
+    supportContact: {
+      title: 'Destek İletişimi',
+      subtitle: 'Ekibimizden yardım alın'
+    },
+    shareApp: {
+      title: 'Uygulamayı Paylaş',
+      subtitle: 'Arkadaşlarınızla paylaşın'
+    },
+    rateApp: {
+      title: 'Uygulamayı Değerlendir',
+      subtitle: 'App Store\'da değerlendirme yapın'
+    },
+    about: 'Hakkında',
+    legal: 'Yasal',
+    developerTools: 'Geliştirici Araçları',
+    developmentMode: {
+      title: 'Geliştirme Modu',
+      subtitle: 'Ortam: {{environment}}'
+    },
+    debugLogs: {
+      title: 'Debug Logları',
+      subtitle: 'Uygulama debug bilgilerini görüntüle'
+    },
+    debugInfo: 'Debug Bilgisi',
+    privacyPolicy: {
+      title: 'Gizlilik Politikası',
+      subtitle: 'Veri koruma ve gizlilik'
+    },
+    termsOfService: {
+      title: 'Kullanım Koşulları',
+      subtitle: 'Uygulama kullanım şartları'
+    },
+    version: 'Sürüm',
+    developerOptions: 'Geliştirici Seçenekleri',
+    clearCache: 'Önbellek Temizle',
+    resetApp: 'Uygulamayı Sıfırla',
+    showDebugInfo: 'Debug Bilgisi Göster',
+    premiumRequired: 'Bu özellik Premium üyelik gerektirir',
+    languageChanged: 'Dil değiştirildi',
+    themeChanged: 'Tema değiştirildi',
+    debugEnabled: 'Debug modu etkinleştirildi',
+    cacheCleared: 'Önbellek temizlendi',
+    environment: 'Ortam'
   },
 
   // Warnings
@@ -488,11 +645,20 @@ export const tr = {
   // Premium
   premium: {
     upgrade_to_premium: "Premium'a Geç",
+    unlock_all_features: 'Tüm özelliklerin kilidini aç',
+    what_you_get: 'Neler Kazanacaksın?',
     upgrade_for_feature: "{{feature}} özelliği için Premium'a geçin",
     feature_unlock: "{{feature}} özelliğini açmak için Premium'a geçin",
     start_free_trial: '7 Gün Ücretsiz Dene',
+    start_subscription: 'Aboneliği Başlat',
     monthly_subscription: 'Aylık Abonelik',
+    yearly_subscription: 'Yıllık Abonelik',
+    weekly_trial: 'Haftalık Deneme',
+    three_month_subscription: '3 Aylık Abonelik',
+    six_month_subscription: '6 Aylık Abonelik',
+    lifetime_purchase: 'Lifetime Satın Alma',
     choose_plan: 'Planınızı Seçin',
+    save_percentage: '%{{percentage}} Tasarruf Et',
     purchasing: 'Satın alınıyor...',
     restoring: 'Geri yükleniyor...',
     restore_purchases: 'Satın Almaları Geri Yükle',
@@ -501,27 +667,30 @@ export const tr = {
     // Features
     features: {
       unlimited_recipes: 'Sınırsız Tarif',
-      unlimited_recipes_desc: 'Binlerce tarife erişim',
+      unlimited_recipes_desc: 'Günlük limit olmadan binlerce tarife erişim',
       advanced_filters: 'Gelişmiş Filtreler',
-      advanced_filters_desc: 'Detaylı arama ve filtreleme',
+      advanced_filters_desc: 'Detaylı arama ve akıllı filtreleme',
       export_recipes: 'Tarif Dışa Aktarma',
-      export_recipes_desc: 'Tariflerinizi PDF olarak kaydedin',
-      priority_support: 'Öncelikli Destek',
-      priority_support_desc: '7/24 öncelikli müşteri desteği',
+      export_recipes_desc: 'Tariflerinizi PDF olarak kaydedin ve paylaşın',
       no_ads: 'Reklamsız Deneyim',
-      no_ads_desc: 'Hiç reklam görmeden kullanın',
+      no_ads_desc: 'Hiç reklam görmeden kesintisiz kullanım',
+      priority_support: 'Öncelikli Destek',
+      priority_support_desc: '24 saat içinde öncelikli müşteri desteği',
       offline_mode: 'Çevrimdışı Mod',
-      offline_mode_desc: 'İnternet olmadan da kullanın',
+      offline_mode_desc: 'İnternet bağlantısı olmadan tariflere erişim',
       custom_meal_plans: 'Özel Yemek Planları',
-      custom_meal_plans_desc: 'Kişiselleştirilmiş haftalık menüler',
+      custom_meal_plans_desc: 'AI destekli kişisel haftalık menü önerileri',
       nutrition_tracking: 'Beslenme Takibi',
-      nutrition_tracking_desc: 'Kalori ve besin değerlerini takip edin',
+      nutrition_tracking_desc: 'Detaylı kalori ve besin değeri analizi',
     },
 
     // Period
     period: {
+      week: 'hafta',
       month: 'ay',
+      months: 'ay',
       year: 'yıl',
+      once: 'tek seferlik',
     },
 
     // Messages
@@ -544,26 +713,6 @@ export const tr = {
       "Devam ederek Kullanım Koşulları ve Gizlilik Politikası'nı kabul ediyorsunuz",
   },
 
-  // Settings Screen
-  settings: {
-    title: 'Ayarlar',
-    debugInfo: 'Debug Bilgisi',
-    debugInfoDesc: 'Uygulama sürümü ve ortam bilgileri',
-    notifications: 'Bildirimler',
-    sound: 'Ses',
-    hapticFeedback: 'Dokunsal Geri Bildirim',
-    language: 'Dil',
-    theme: 'Tema',
-    darkMode: 'Karanlık Mod',
-    privacy: 'Gizlilik Politikası',
-    terms: 'Kullanım Koşulları',
-    support: 'Destek',
-    version: 'Sürüm',
-    environment: 'Ortam',
-    build: 'Yapı',
-    developerOptions: 'Geliştirici Seçenekleri',
-    debugTools: 'Debug Araçları',
-  },
 
   // Additional onboarding content moved to main onboarding object above
 };

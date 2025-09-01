@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
 import { Recipe } from '../types/Recipe';
+import { RevenueCatService } from './RevenueCatService';
 
 const FAVORITES_KEY = 'user_favorites';
 const FREE_FAVORITES_LIMIT = 3; // Ücretsiz kullanıcılar için limit
@@ -79,6 +80,24 @@ export class FavoritesService {
     message?: string;
   }> {
     try {
+      // Check if user is premium
+      const premiumStatus = await RevenueCatService.getPremiumStatus();
+      const isPremium = premiumStatus.isPremium;
+      if (isPremium) {
+        return { canAdd: true };
+      }
+
+      // Free user - check limit
+      const favorites = await this.getFavoritesFromStorage();
+      const currentCount = favorites.length;
+
+      if (currentCount >= FREE_FAVORITES_LIMIT) {
+        return {
+          canAdd: false,
+          message: `Ücretsiz kullanıcılar en fazla ${FREE_FAVORITES_LIMIT} tarif kaydedebilir. Premium'a geçin!`,
+        };
+      }
+
       return { canAdd: true };
     } catch (error) {
       console.error('Error checking favorite limit:', error);

@@ -1,0 +1,475 @@
+import React, { useState } from 'react';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  Dimensions,
+} from 'react-native';
+import Modal from 'react-native-modal';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
+import { Text } from '../ui';
+import { useThemedStyles } from '../../hooks/useThemedStyles';
+import { useHaptics } from '../../hooks/useHaptics';
+import { useToast } from '../../contexts/ToastContext';
+import { spacing, borderRadius, shadows } from '../../theme/design-tokens';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+interface IngredientsModalProps {
+  visible: boolean;
+  onClose: () => void;
+  onSubmit: (ingredients: string[]) => void;
+  initialIngredients?: string[];
+}
+
+const SUGGESTED_INGREDIENTS = [
+  { name: 'Domates', icon: '🍅' },
+  { name: 'Soğan', icon: '🧅' },
+  { name: 'Peynir', icon: '🧀' },
+  { name: 'Yumurta', icon: '🥚' },
+  { name: 'Patates', icon: '🥔' },
+  { name: 'Tavuk', icon: '🍗' },
+  { name: 'Et', icon: '🥩' },
+  { name: 'Biber', icon: '🌶️' },
+  { name: 'Süt', icon: '🥛' },
+  { name: 'Un', icon: '🌾' },
+  { name: 'Yağ', icon: '🧈' },
+  { name: 'Salça', icon: '🥫' },
+];
+
+export const IngredientsModal: React.FC<IngredientsModalProps> = ({
+  visible,
+  onClose,
+  onSubmit,
+  initialIngredients = [],
+}) => {
+  const [ingredients, setIngredients] = useState<string[]>(initialIngredients);
+  const [inputText, setInputText] = useState('');
+  const { colors } = useThemedStyles();
+  const haptics = useHaptics();
+  const { showSuccess, showWarning } = useToast();
+
+  React.useEffect(() => {
+    console.log('🔵 IngredientsModal visibility changed:', visible);
+    if (visible) {
+      console.log('🔵 Modal is VISIBLE - initializing');
+      setIngredients(initialIngredients);
+      setInputText('');
+    }
+  }, [visible, initialIngredients]);
+
+  const addIngredient = (ingredient: string) => {
+    const trimmed = ingredient.trim().toLowerCase();
+    if (trimmed && !ingredients.includes(trimmed)) {
+      setIngredients(prev => [...prev, trimmed]);
+      setInputText('');
+      haptics.selection();
+    } else if (ingredients.includes(trimmed)) {
+      showWarning('Bu malzeme zaten eklendi');
+    }
+  };
+
+  const removeIngredient = (ingredient: string) => {
+    setIngredients(prev => prev.filter(item => item !== ingredient));
+    haptics.selection();
+  };
+
+  const handleSubmit = () => {
+    if (ingredients.length === 0) {
+      showWarning('En az bir malzeme ekleyin');
+      return;
+    }
+    haptics.success();
+    showSuccess(`${ingredients.length} malzeme ile tarif aranıyor`);
+    onSubmit(ingredients);
+    onClose();
+  };
+
+  const handleClose = () => {
+    haptics.selection();
+    onClose();
+  };
+
+  return (
+    <Modal
+      isVisible={visible}
+      onBackdropPress={handleClose}
+      onSwipeComplete={handleClose}
+      swipeDirection='down'
+      style={styles.modal}
+      backdropOpacity={0.5}
+      animationIn='slideInUp'
+      animationOut='slideOutDown'
+      useNativeDriverForBackdrop
+      avoidKeyboard
+      onShow={() => console.log('🟢 Modal onShow called')}
+      onModalHide={() => console.log('🔴 Modal onModalHide called')}
+    >
+      <View
+        style={[
+          styles.modalContainer,
+          {
+            backgroundColor: colors.background.primary,
+          },
+        ]}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <View style={styles.handle} />
+
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <View
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: colors.primary[100] },
+                ]}
+              >
+                <Ionicons
+                  name='restaurant'
+                  size={24}
+                  color={colors.primary[600]}
+                />
+              </View>
+              <View>
+                <Text
+                  variant='headlineSmall'
+                  weight='bold'
+                  style={{ color: colors.text.primary }}
+                >
+                  Malzeme Seç
+                </Text>
+                <Text variant='bodySmall' color='secondary'>
+                  Evindeki malzemeleri ekle, sana özel tarifler bulalım
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={handleClose}
+              style={[
+                styles.closeButton,
+                { backgroundColor: colors.neutral[100] },
+              ]}
+            >
+              <Ionicons name='close' size={20} color={colors.text.primary} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            style={styles.content}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps='handled'
+          >
+            <View
+              style={[
+                styles.inputSection,
+                { backgroundColor: colors.neutral[50] },
+              ]}
+            >
+              <View
+                style={[
+                  styles.inputContainer,
+                  { borderColor: colors.neutral[200] },
+                ]}
+              >
+                <Ionicons name='search' size={20} color={colors.neutral[400]} />
+                <TextInput
+                  style={[styles.input, { color: colors.text.primary }]}
+                  placeholder='Malzeme ara veya ekle...'
+                  placeholderTextColor={colors.neutral[400]}
+                  value={inputText}
+                  onChangeText={setInputText}
+                  onSubmitEditing={() => addIngredient(inputText)}
+                  returnKeyType='done'
+                />
+                {inputText.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => addIngredient(inputText)}
+                    style={[
+                      styles.addButton,
+                      { backgroundColor: colors.primary[500] },
+                    ]}
+                  >
+                    <Ionicons name='add' size={18} color='#fff' />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+
+            {ingredients.length > 0 && (
+              <View style={styles.selectedSection}>
+                <View style={styles.sectionHeader}>
+                  <Text
+                    variant='labelLarge'
+                    weight='600'
+                    style={{ color: colors.text.primary }}
+                  >
+                    Seçilen Malzemeler ({ingredients.length})
+                  </Text>
+                  <TouchableOpacity onPress={() => setIngredients([])}>
+                    <Text
+                      variant='labelSmall'
+                      style={{ color: colors.primary[500] }}
+                    >
+                      Temizle
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.selectedIngredients}>
+                  {ingredients.map((ingredient, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={[
+                        styles.selectedIngredientChip,
+                        { backgroundColor: colors.primary[100] },
+                      ]}
+                      onPress={() => removeIngredient(ingredient)}
+                    >
+                      <Text
+                        variant='labelSmall'
+                        weight='500'
+                        style={{ color: colors.primary[700] }}
+                      >
+                        {ingredient}
+                      </Text>
+                      <Ionicons
+                        name='close-circle'
+                        size={16}
+                        color={colors.primary[500]}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            <View style={styles.suggestionsSection}>
+              <Text
+                variant='labelLarge'
+                weight='600'
+                style={{ color: colors.text.primary, marginBottom: spacing[3] }}
+              >
+                Önerilen Malzemeler
+              </Text>
+              <View style={styles.suggestionsGrid}>
+                {SUGGESTED_INGREDIENTS.map((item, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={[
+                      styles.suggestionChip,
+                      {
+                        backgroundColor: ingredients.includes(
+                          item.name.toLowerCase()
+                        )
+                          ? colors.primary[100]
+                          : colors.background.secondary,
+                        borderColor: ingredients.includes(
+                          item.name.toLowerCase()
+                        )
+                          ? colors.primary[300]
+                          : colors.neutral[200],
+                      },
+                    ]}
+                    onPress={() => addIngredient(item.name)}
+                  >
+                    <Text style={styles.suggestionIcon}>{item.icon}</Text>
+                    <Text
+                      variant='labelSmall'
+                      style={{
+                        color: ingredients.includes(item.name.toLowerCase())
+                          ? colors.primary[700]
+                          : colors.text.primary,
+                        textAlign: 'center',
+                      }}
+                    >
+                      {item.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+
+          <View style={styles.footer}>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+              disabled={ingredients.length === 0}
+            >
+              <LinearGradient
+                colors={
+                  ingredients.length > 0
+                    ? [colors.primary[500], colors.primary[600]]
+                    : [colors.neutral[300], colors.neutral[400]]
+                }
+                style={styles.submitGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Ionicons name='sparkles' size={20} color='#fff' />
+                <Text
+                  variant='bodyLarge'
+                  weight='600'
+                  style={{ color: '#fff' }}
+                >
+                  Tarif Bul ({ingredients.length})
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  modal: {
+    justifyContent: 'flex-end',
+    margin: 0,
+  },
+  modalContainer: {
+    maxHeight: screenHeight * 0.85,
+    borderTopLeftRadius: borderRadius['2xl'],
+    borderTopRightRadius: borderRadius['2xl'],
+    ...shadows.xl,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  handle: {
+    width: 40,
+    height: 4,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginTop: spacing[2],
+    marginBottom: spacing[2],
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: spacing[4],
+    paddingBottom: spacing[3],
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    flex: 1,
+    gap: spacing[3],
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  content: {
+    flex: 1,
+  },
+  inputSection: {
+    padding: spacing[4],
+    marginHorizontal: spacing[4],
+    marginTop: spacing[4],
+    borderRadius: borderRadius.lg,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    gap: spacing[2],
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: spacing[1],
+  },
+  addButton: {
+    width: 28,
+    height: 28,
+    borderRadius: borderRadius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectedSection: {
+    paddingHorizontal: spacing[4],
+    marginTop: spacing[4],
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing[3],
+  },
+  selectedIngredients: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  selectedIngredientChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.full,
+    gap: spacing[2],
+  },
+  suggestionsSection: {
+    paddingHorizontal: spacing[4],
+    marginTop: spacing[6],
+  },
+  suggestionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing[2],
+  },
+  suggestionChip: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[3],
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    minWidth: (screenWidth - spacing[4] * 2 - spacing[2] * 3) / 4,
+    gap: spacing[1],
+  },
+  suggestionIcon: {
+    fontSize: 20,
+  },
+  footer: {
+    padding: spacing[4],
+    paddingTop: spacing[3],
+  },
+  submitButton: {
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  submitGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing[4],
+    gap: spacing[2],
+  },
+});

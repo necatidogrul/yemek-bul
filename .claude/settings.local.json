@@ -49,7 +49,8 @@
       "mcp__playwright__browser_snapshot",
       "mcp__playwright__browser_click",
       "mcp__playwright__browser_take_screenshot",
-      "Read(c:\\Users\\necat\\AppData\\Local\\Packages\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\\TempState\\EC47A5DE1EBD60F559FEE4AFD739D59B/**)"
+      "Read(c:\\Users\\necat\\AppData\\Local\\Packages\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\\TempState\\EC47A5DE1EBD60F559FEE4AFD739D59B/**)",
+      "Bash(npx eslint:*)"
     ],
     "deny": []
   },

@@ -6,9 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { shadows, borderRadius } from '../../theme/design-tokens';
+import { useTranslation } from 'react-i18next';
 
 // Screens
 import ModernHomeScreen from '../../screens/ModernHomeScreen';
+import { IngredientsScreen } from '../../screens/IngredientsScreen';
 import RecipeDetailScreen from '../../screens/RecipeDetailScreen';
 import RecipeResultsScreen from '../../screens/RecipeResultsScreen';
 import FavoritesScreen from '../../screens/FavoritesScreen';
@@ -20,7 +22,11 @@ import SettingsScreen from '../../screens/SettingsScreen';
 
 // Navigation Types
 export type HomeStackParamList = {
-  HomeMain: { prefillIngredients?: string[] } | undefined;
+  HomeMain: { 
+    prefillIngredients?: string[];
+    shouldGenerateRecipes?: boolean;
+  } | undefined;
+  IngredientsSelect: undefined;
   RecipeResults: {
     ingredients: string[];
     aiRecipes?: any[];
@@ -39,7 +45,12 @@ export type HomeStackParamList = {
 
 export type FavoritesStackParamList = {
   FavoritesMain: undefined;
-  RecipeDetail: { recipeId: string; recipeName: string };
+  RecipeDetail: { 
+    recipeId: string; 
+    recipeName: string;
+    recipe?: any;
+    isAiGenerated?: boolean; 
+  };
 };
 
 export type HistoryStackParamList = {
@@ -49,7 +60,12 @@ export type HistoryStackParamList = {
     aiRecipes?: any[];
     fromHistory?: boolean;
   };
-  RecipeDetail: { recipeId: string; recipeName: string };
+  RecipeDetail: { 
+    recipeId: string; 
+    recipeName: string;
+    recipe?: any;
+    isAiGenerated?: boolean; 
+  };
 };
 
 export type SettingsStackParamList = {
@@ -168,6 +184,13 @@ export function HomeStackScreen() {
       <HomeStack.Screen
         name='HomeMain'
         component={ModernHomeScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+      <HomeStack.Screen
+        name='IngredientsSelect'
+        component={IngredientsScreen}
         options={{
           headerShown: false,
         }}
@@ -480,6 +503,7 @@ const ModernTabBar = ({ state, descriptors, navigation, colors }: any) => {
 // Main Tab Navigator
 export function MainTabNavigator() {
   const { colors } = useThemedStyles();
+  const { t } = useTranslation();
 
   return (
     <Tab.Navigator
@@ -492,28 +516,28 @@ export function MainTabNavigator() {
         name='HomeTab'
         component={HomeStackScreen}
         options={{
-          tabBarLabel: 'Ana Sayfa',
+          tabBarLabel: t('navigation.home'),
         }}
       />
       <Tab.Screen
         name='HistoryTab'
         component={HistoryStackScreen}
         options={{
-          tabBarLabel: 'Geçmiş',
+          tabBarLabel: t('navigation.history'),
         }}
       />
       <Tab.Screen
         name='FavoritesTab'
         component={FavoritesStackScreen}
         options={{
-          tabBarLabel: 'Favoriler',
+          tabBarLabel: t('navigation.favorites'),
         }}
       />
       <Tab.Screen
         name='SettingsTab'
         component={SettingsStackScreen}
         options={{
-          tabBarLabel: 'Ayarlar',
+          tabBarLabel: t('navigation.settings'),
         }}
       />
     </Tab.Navigator>

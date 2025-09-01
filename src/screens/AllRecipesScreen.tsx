@@ -237,7 +237,7 @@ const AllRecipesScreen: React.FC<AllRecipesScreenProps> = ({ navigation }) => {
   const { optimizedProps, onEndReached } = useOptimizedFlatList<Recipe>({
     enableGetItemLayout: true,
     itemHeight: viewMode === 'grid' ? 200 : 120,
-    keyExtractor: item => item.id,
+    keyExtractor: item => item?.id || `recipe-${Math.random()}`,
   });
 
   async function loadRecipes(refresh = false) {

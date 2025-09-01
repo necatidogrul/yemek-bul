@@ -26,6 +26,8 @@ export interface Recipe {
   missingIngredients?: string[];
   matchingIngredients?: number;
   totalIngredients?: number;
+  usedIngredients?: string[]; // Kullanılan malzemeler (kullanıcının verdiklerinden)
+  unusedIngredients?: string[]; // Kullanılmayan malzemeler (kullanıcının verdiklerinden)
   isFavorite?: boolean;
   source?: 'ai' | 'database' | 'mock'; // Tarif kaynağı
   aiGenerated?: boolean; // AI tarafından üretildi mi

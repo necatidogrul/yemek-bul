@@ -13,7 +13,8 @@ class HistoryService {
    * Yeni AI isteği kaydeder
    */
   static async saveRequest(
-    request: Omit<AIRequestHistory, 'id' | 'timestamp'>
+    request: Omit<AIRequestHistory, 'id' | 'timestamp'>,
+    isPremium: boolean = false
   ): Promise<void> {
     try {
       const history = await this.getHistory();
@@ -22,13 +23,20 @@ class HistoryService {
         ...request,
         id: this.generateId(),
         timestamp: Date.now(),
+        // Premium kullanıcı için ek bilgiler
+        userContext: {
+          ...request.userContext,
+          isPremium,
+          sessionId: this.generateSessionId(),
+        },
       };
 
       // Yeni kaydı başa ekle
       const updatedHistory = [newRequest, ...history];
 
-      // Maksimum sayıda tutma
-      const trimmedHistory = updatedHistory.slice(0, this.MAX_HISTORY_ITEMS);
+      // Premium kullanıcılar için daha fazla kayıt tutma
+      const maxItems = isPremium ? this.MAX_HISTORY_ITEMS * 5 : this.MAX_HISTORY_ITEMS;
+      const trimmedHistory = updatedHistory.slice(0, maxItems);
 
       await AsyncStorage.setItem(
         this.HISTORY_KEY,
@@ -40,6 +48,7 @@ class HistoryService {
         ingredients: newRequest.ingredients,
         success: newRequest.success,
         resultsCount: newRequest.results.count,
+        isPremium,
       });
     } catch (error) {
       console.error('❌ Failed to save AI request to history:', error);
@@ -84,7 +93,7 @@ class HistoryService {
   /**
    * İstatistikleri hesaplar
    */
-  static async getStats(): Promise<HistoryStats> {
+  static async getStats(includePremiumStats: boolean = false): Promise<HistoryStats> {
     try {
       const history = await this.getHistory();
 
@@ -120,7 +129,7 @@ class HistoryService {
       const lastRequestDate =
         history.length > 0 ? history[0].timestamp : undefined;
 
-      return {
+      let stats: HistoryStats = {
         totalRequests,
         successfulRequests,
         totalRecipesGenerated,
@@ -128,6 +137,16 @@ class HistoryService {
         averageIngredientsPerRequest,
         lastRequestDate,
       };
+
+      // Premium istatistikler ekle
+      if (includePremiumStats) {
+        stats = {
+          ...stats,
+          ...this.calculatePremiumStats(history),
+        };
+      }
+
+      return stats;
     } catch (error) {
       console.error('❌ Failed to get history stats:', error);
       return {
@@ -276,6 +295,107 @@ class HistoryService {
    */
   private static generateId(): string {
     return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Session ID üretir
+   */
+  private static generateSessionId(): string {
+    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+  }
+
+  /**
+   * Premium istatistikleri hesaplar
+   */
+  private static calculatePremiumStats(history: AIRequestHistory[]): Partial<HistoryStats> {
+    const now = new Date();
+    
+    // Token kullanımı
+    const totalTokensUsed = history.reduce(
+      (sum, item) => sum + (item.requestDetails?.tokenUsed || 0),
+      0
+    );
+
+    // Ortalama yanıt süresi
+    const responseTimes = history
+      .map(item => item.requestDetails?.responseTime)
+      .filter(time => time !== undefined) as number[];
+    const averageResponseTime = responseTimes.length > 0
+      ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
+      : 0;
+
+    // Günün saatine göre kullanım
+    const hourCounts: { [key: number]: number } = {};
+    history.forEach(item => {
+      const hour = new Date(item.timestamp).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+    const favoriteTimeOfDay = Object.entries(hourCounts)
+      .map(([hour, count]) => ({ hour: parseInt(hour), count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // Mutfak türlerine göre başarı oranı
+    const cuisineCounts: { [key: string]: { success: number; total: number } } = {};
+    history.forEach(item => {
+      if (item.preferences?.cuisine) {
+        const cuisine = item.preferences.cuisine;
+        if (!cuisineCounts[cuisine]) {
+          cuisineCounts[cuisine] = { success: 0, total: 0 };
+        }
+        cuisineCounts[cuisine].total++;
+        if (item.success) {
+          cuisineCounts[cuisine].success++;
+        }
+      }
+    });
+    const mostSuccessfulCuisines = Object.entries(cuisineCounts)
+      .map(([cuisine, data]) => ({
+        cuisine,
+        successRate: data.total > 0 ? data.success / data.total : 0,
+        count: data.total,
+      }))
+      .sort((a, b) => b.successRate - a.successRate)
+      .slice(0, 5);
+
+    // Haftalık aktivite (0: Pazar, 6: Cumartesi)
+    const dayCounts: { [key: number]: number } = {};
+    history.forEach(item => {
+      const day = new Date(item.timestamp).getDay();
+      dayCounts[day] = (dayCounts[day] || 0) + 1;
+    });
+    const weeklyActivity = Array.from({ length: 7 }, (_, i) => ({
+      day: i,
+      count: dayCounts[i] || 0,
+    }));
+
+    // Aylık trend (son 6 ay)
+    const monthlyTrends = [];
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = date.toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' });
+      const monthStart = date.getTime();
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0).getTime();
+      
+      const monthHistory = history.filter(
+        item => item.timestamp >= monthStart && item.timestamp <= monthEnd
+      );
+      
+      monthlyTrends.push({
+        month: monthKey,
+        requests: monthHistory.length,
+        success: monthHistory.filter(item => item.success).length,
+      });
+    }
+
+    return {
+      totalTokensUsed,
+      averageResponseTime,
+      favoriteTimeOfDay,
+      mostSuccessfulCuisines,
+      weeklyActivity,
+      monthlyTrends,
+    };
   }
 }
 

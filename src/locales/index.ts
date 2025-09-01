@@ -63,6 +63,11 @@ i18n.use(initReactI18next).init({
   // React options
   react: {
     useSuspense: false,
+    bindI18n: 'languageChanged',
+    bindI18nStore: 'added removed',
+    transEmptyNodeValue: '',
+    transSupportBasicHtmlNodes: true,
+    transKeepBasicHtmlNodesFor: ['br', 'strong', 'i'],
   },
 
   // Detection options

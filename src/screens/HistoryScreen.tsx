@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Dimensions,
   StatusBar,
+  Animated,
 } from 'react-native';
 import { Logger } from '../services/LoggerService';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,15 +19,21 @@ import { StackNavigationProp } from '@react-navigation/stack';
 
 // Services & Types
 import { HistoryService } from '../services/historyService';
+import { FavoritesService } from '../services/FavoritesService';
 import {
   AIRequestHistory,
   HistoryStats,
   HistoryFilter,
 } from '../types/History';
+import { Recipe } from '../types/Recipe';
 
 // UI Components
 import { Text, Card, Button } from '../components/ui';
+import { FavoriteButton } from '../components/ui/FavoriteButton';
 import { useThemedStyles } from '../hooks/useThemedStyles';
+import { usePremium } from '../contexts/PremiumContext';
+import { usePremiumGuard } from '../hooks/usePremiumGuard';
+import { useToast } from '../contexts/ToastContext';
 import { spacing, borderRadius, shadows } from '../theme/design-tokens';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -51,18 +58,61 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     }>
   >([]);
 
+  // Animation values
+  const fadeAnim = useState(() => new Animated.Value(0))[0];
+  const slideAnim = useState(() => new Animated.Value(50))[0];
+
   const { colors } = useThemedStyles();
+  const { isPremium, showPaywall } = usePremium();
+  const { showSuccess, showError } = useToast();
+
+  // Premium guard for history access
+  const historyGuard = usePremiumGuard({
+    feature: 'unlimitedRecipes',
+    title: 'Geçmiş özelliği premium kullanıcılar içindir',
+  });
+
+  // Convert history recipe to full Recipe type
+  const convertToFullRecipe = (historyRecipe: any): Recipe => ({
+    id: historyRecipe.id,
+    name: historyRecipe.name,
+    ingredients: [], // History doesn't store ingredients
+    instructions: [], // History doesn't store instructions
+    difficulty: historyRecipe.difficulty || 'kolay',
+    cookingTime: historyRecipe.cookingTime,
+    source: 'ai' as const,
+  });
 
   useEffect(() => {
+    if (!historyGuard.hasAccess) {
+      historyGuard.requirePremium();
+      return;
+    }
     loadHistoryData();
   }, [filter]);
+
+  useEffect(() => {
+    // Start entrance animation
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   const loadHistoryData = async () => {
     try {
       setIsLoading(true);
       const [historyData, statsData, popularData] = await Promise.all([
         HistoryService.getHistory(filter),
-        HistoryService.getStats(),
+        HistoryService.getStats(historyGuard.hasAccess), // Premium istatistikler dahil
         HistoryService.getPopularCombinations(5),
       ]);
 
@@ -95,6 +145,25 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     },
     [navigation]
   );
+
+  // Favorileme fonksiyonu - premium kontrolü ile
+  const handleAddToFavorites = async (recipe: any) => {
+    if (!isPremium) {
+      showPaywall();
+      return;
+    }
+
+    try {
+      const result = await FavoritesService.addToFavorites(convertToFullRecipe(recipe));
+      if (result.success) {
+        showSuccess(result.message || 'Tarif favorilerinize eklendi!');
+      } else {
+        showError(result.message || 'Favorilere eklenirken hata oluştu.');
+      }
+    } catch (error) {
+      showError('Favorilere eklenirken hata oluştu.');
+    }
+  };
 
   const handleDeleteItem = useCallback(async (id: string) => {
     Alert.alert(
@@ -150,13 +219,18 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   };
 
   const renderHistoryItem = ({ item }: { item: AIRequestHistory }) => (
-    <Card variant='elevated' size='lg' style={styles.historyItem}>
-      <View style={styles.historyItemHeader}>
-        <View style={styles.historyItemInfo}>
-          <View style={styles.statusContainer}>
+    <Animated.View
+      style={{
+        opacity: fadeAnim,
+        transform: [{ translateY: slideAnim }],
+      }}
+    >
+      <Card variant='elevated' size='lg' style={styles.historyItem}>
+        <View style={styles.historyItemHeader}>
+          <View style={styles.statusBadge}>
             <View
               style={[
-                styles.statusDot,
+                styles.statusIndicator,
                 {
                   backgroundColor: item.success
                     ? colors.success[500]
@@ -164,171 +238,354 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 },
               ]}
             />
-            <Text variant='labelSmall' color='secondary'>
+            <Text variant='labelSmall' weight='medium' color='secondary'>
               {formatDate(item.timestamp)}
             </Text>
           </View>
-          <Text variant='bodyLarge' weight='semibold' color='primary'>
-            {item.results.count} tarif {item.success ? 'bulundu' : 'bulunamadı'}
-          </Text>
+
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDeleteItem(item.id)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name='trash-outline'
+              size={16}
+              color={colors.error[400]}
+            />
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteItem(item.id)}
-        >
-          <Ionicons name='trash-outline' size={18} color={colors.error[500]} />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.ingredientsList}>
-        {item.ingredients.map((ingredient, index) => (
-          <View
-            key={index}
-            style={[
-              styles.ingredientChip,
-              { backgroundColor: colors.primary[50] },
-            ]}
-          >
-            <Text
-              variant='bodySmall'
-              weight='medium'
-              style={{ color: colors.primary[700] }}
+        <View style={styles.historyContent}>
+          <View style={styles.resultSummary}>
+            <View
+              style={[
+                styles.resultBadge,
+                {
+                  backgroundColor: item.success
+                    ? colors.success[50]
+                    : colors.error[50],
+                  borderColor: item.success
+                    ? colors.success[200]
+                    : colors.error[200],
+                },
+              ]}
             >
-              {ingredient}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      {item.success && item.results.recipes.length > 0 && (
-        <View style={styles.recipesPreview}>
-          <Text
-            variant='bodySmall'
-            color='secondary'
-            style={styles.recipesTitle}
-          >
-            Bulunan tarifler:
-          </Text>
-          <View style={styles.recipesList}>
-            {item.results.recipes.slice(0, 3).map((recipe, index) => (
-              <Text key={recipe.id} variant='labelSmall' color='primary'>
-                • {recipe.name}
+              <Ionicons
+                name={item.success ? 'checkmark-circle' : 'close-circle'}
+                size={16}
+                color={item.success ? colors.success[600] : colors.error[600]}
+              />
+              <Text
+                variant='bodySmall'
+                weight='semibold'
+                style={{
+                  color: item.success ? colors.success[700] : colors.error[700],
+                }}
+              >
+                {item.results.count} tarif{' '}
+                {item.success ? 'bulundu' : 'bulunamadı'}
               </Text>
+            </View>
+          </View>
+
+          <View style={styles.ingredientsList}>
+            {item.ingredients.slice(0, 4).map((ingredient, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.ingredientChip,
+                  {
+                    backgroundColor: colors.primary[50],
+                    borderColor: colors.primary[100],
+                  },
+                ]}
+              >
+                <Text
+                  variant='labelSmall'
+                  weight='medium'
+                  style={{ color: colors.primary[700] }}
+                >
+                  {ingredient}
+                </Text>
+              </View>
             ))}
-            {item.results.recipes.length > 3 && (
-              <Text variant='labelSmall' color='secondary'>
-                +{item.results.recipes.length - 3} daha fazla
-              </Text>
+            {item.ingredients.length > 4 && (
+              <View
+                style={[
+                  styles.ingredientChip,
+                  styles.moreChip,
+                  { backgroundColor: colors.neutral[100] },
+                ]}
+              >
+                <Text
+                  variant='labelSmall'
+                  weight='medium'
+                  style={{ color: colors.neutral[600] }}
+                >
+                  +{item.ingredients.length - 4}
+                </Text>
+              </View>
             )}
           </View>
-        </View>
-      )}
 
-      <View style={styles.historyItemActions}>
-        <Button
-          variant={item.success ? 'primary' : 'outline'}
-          size='sm'
-          onPress={() => handleViewResults(item)}
-          leftIcon={
-            <Ionicons name={item.success ? 'eye' : 'refresh'} size={16} />
-          }
-          style={styles.repeatButton}
-        >
-          {item.success ? 'Sonuçları Gör' : 'Tekrar Dene'}
-        </Button>
-
-        {item.preferences && (
-          <View style={styles.preferencesInfo}>
-            {item.preferences.difficulty && (
-              <View style={styles.preferenceTag}>
+          {item.success && item.results.recipes.length > 0 && (
+            <View style={styles.recipesPreview}>
+              <View style={styles.recipePreviewHeader}>
                 <Ionicons
-                  name='bar-chart'
-                  size={12}
-                  color={colors.neutral[500]}
+                  name='restaurant'
+                  size={14}
+                  color={colors.primary[500]}
                 />
-                <Text variant='labelSmall' color='secondary'>
-                  {item.preferences.difficulty}
+                <Text variant='bodySmall' weight='medium' color='primary'>
+                  Bulunan tarifler
                 </Text>
               </View>
-            )}
-            {item.preferences.cookingTime && (
-              <View style={styles.preferenceTag}>
-                <Ionicons name='time' size={12} color={colors.neutral[500]} />
-                <Text variant='labelSmall' color='secondary'>
-                  {item.preferences.cookingTime}dk
-                </Text>
+              <View style={styles.recipesList}>
+                {item.results.recipes.slice(0, 2).map((recipe, index) => (
+                  <View key={recipe.id} style={styles.recipeListItem}>
+                    <TouchableOpacity
+                      style={styles.recipeNameButton}
+                      onPress={() => navigation.navigate('RecipeDetail', {
+                        recipeId: recipe.id,
+                        recipeName: recipe.name,
+                        recipe: convertToFullRecipe(recipe),
+                      })}
+                    >
+                      <Text variant='labelSmall' color='secondary'>
+                        • {recipe.name}
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    {isPremium ? (
+                      <FavoriteButton
+                        recipe={convertToFullRecipe(recipe)}
+                        size='small'
+                        style={styles.historyFavoriteButton}
+                      />
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => handleAddToFavorites(recipe)}
+                        style={styles.premiumFavoriteButton}
+                      >
+                        <Ionicons name='heart-outline' size={12} color={colors.neutral[400]} />
+                        <Ionicons name='star' size={8} color={colors.warning[500]} style={styles.premiumIcon} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+                {item.results.recipes.length > 2 && (
+                  <Text variant='labelSmall' color='primary' weight='medium'>
+                    +{item.results.recipes.length - 2} tarif daha
+                  </Text>
+                )}
               </View>
-            )}
-          </View>
-        )}
-      </View>
-    </Card>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.historyItemFooter}>
+          <Button
+            variant={item.success ? 'primary' : 'outline'}
+            size='sm'
+            onPress={() => handleViewResults(item)}
+            leftIcon={
+              <Ionicons
+                name={item.success ? 'eye' : 'refresh'}
+                size={14}
+                color={item.success ? 'white' : colors.primary[600]}
+              />
+            }
+            style={styles.actionButton}
+          >
+            {item.success ? 'Sonuçları Gör' : 'Tekrar Dene'}
+          </Button>
+
+          {item.preferences && (
+            <View style={styles.preferencesInfo}>
+              {item.preferences.difficulty && (
+                <View style={styles.preferenceTag}>
+                  <Ionicons
+                    name='speedometer'
+                    size={10}
+                    color={colors.neutral[400]}
+                  />
+                  <Text variant='labelSmall' color='secondary'>
+                    {item.preferences.difficulty}
+                  </Text>
+                </View>
+              )}
+              {item.preferences.cookingTime && (
+                <View style={styles.preferenceTag}>
+                  <Ionicons name='time' size={10} color={colors.neutral[400]} />
+                  <Text variant='labelSmall' color='secondary'>
+                    {item.preferences.cookingTime}dk
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+      </Card>
+    </Animated.View>
   );
 
   const renderStatsView = () => {
     if (!stats) return null;
 
+    const successRate =
+      stats.totalRequests > 0
+        ? (stats.successfulRequests / stats.totalRequests) * 100
+        : 0;
+
     return (
-      <View style={styles.statsContainer}>
-        {/* Stats Cards */}
-        <View style={styles.statsGrid}>
-          <Card variant='elevated' size='lg' style={styles.statCard}>
+      <Animated.View
+        style={[
+          styles.statsContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
+      >
+        {/* Stats Overview */}
+        <Card variant='elevated' size='lg' style={styles.statsOverview}>
+          <View style={styles.statsOverviewHeader}>
+            <LinearGradient
+              colors={[colors.primary[500], colors.primary[600]]}
+              style={styles.statsOverviewIcon}
+            >
+              <Ionicons name='analytics' size={24} color='white' />
+            </LinearGradient>
+            <View>
+              <Text variant='headlineSmall' weight='bold' color='primary'>
+                Arama İstatistiklerin
+              </Text>
+              <Text variant='bodySmall' color='secondary'>
+                Toplam aktivite özeti
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.statsOverviewGrid}>
+            <View style={styles.statItem}>
+              <Text variant='headlineLarge' weight='bold' color='primary'>
+                {stats.totalRequests}
+              </Text>
+              <Text variant='labelSmall' color='secondary' align='center'>
+                Toplam Arama
+              </Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text variant='headlineLarge' weight='bold' color='success'>
+                {stats.successfulRequests}
+              </Text>
+              <Text variant='labelSmall' color='secondary' align='center'>
+                Başarılı
+              </Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text variant='headlineLarge' weight='bold' color='warning'>
+                {stats.totalRecipesGenerated}
+              </Text>
+              <Text variant='labelSmall' color='secondary' align='center'>
+                Tarif Bulundu
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.successRateContainer}>
+            <View style={styles.successRateInfo}>
+              <Text variant='bodySmall' color='secondary'>
+                Başarı Oranı
+              </Text>
+              <Text variant='headlineSmall' weight='bold' color='primary'>
+                %{Math.round(successRate)}
+              </Text>
+            </View>
+            <View style={styles.successRateBar}>
+              <View
+                style={[
+                  styles.successRateFill,
+                  {
+                    width: `${successRate}%`,
+                    backgroundColor:
+                      successRate >= 70
+                        ? colors.success[500]
+                        : successRate >= 40
+                          ? colors.warning[500]
+                          : colors.error[500],
+                  },
+                ]}
+              />
+            </View>
+          </View>
+        </Card>
+
+        {/* Quick Stats Grid */}
+        <View style={styles.quickStatsGrid}>
+          <Card variant='elevated' size='md' style={styles.quickStatCard}>
             <View
               style={[
-                styles.statIcon,
-                { backgroundColor: colors.primary[100] },
+                styles.quickStatIcon,
+                { backgroundColor: colors.primary[50] },
               ]}
             >
-              <Ionicons name='search' size={24} color={colors.primary[600]} />
+              <Ionicons name='search' size={20} color={colors.primary[600]} />
             </View>
-            <Text variant='headlineMedium' weight='bold' color='primary'>
+            <Text variant='bodyMedium' weight='bold' color='primary'>
               {stats.totalRequests}
             </Text>
-            <Text variant='bodySmall' color='secondary' align='center'>
+            <Text variant='labelSmall' color='secondary' align='center'>
               Toplam Arama
             </Text>
           </Card>
 
-          <Card variant='elevated' size='lg' style={styles.statCard}>
+          <Card variant='elevated' size='md' style={styles.quickStatCard}>
             <View
               style={[
-                styles.statIcon,
-                { backgroundColor: colors.success[100] },
+                styles.quickStatIcon,
+                { backgroundColor: colors.success[50] },
               ]}
             >
               <Ionicons
                 name='checkmark-circle'
-                size={24}
+                size={20}
                 color={colors.success[600]}
               />
             </View>
-            <Text variant='headlineMedium' weight='bold' color='success'>
+            <Text variant='bodyMedium' weight='bold' color='success'>
               {stats.successfulRequests}
             </Text>
-            <Text variant='bodySmall' color='secondary' align='center'>
-              Başarılı Arama
+            <Text variant='labelSmall' color='secondary' align='center'>
+              Başarılı
             </Text>
           </Card>
 
-          <Card variant='elevated' size='lg' style={styles.statCard}>
+          <Card variant='elevated' size='md' style={styles.quickStatCard}>
             <View
               style={[
-                styles.statIcon,
-                { backgroundColor: colors.warning[100] },
+                styles.quickStatIcon,
+                { backgroundColor: colors.warning[50] },
               ]}
             >
               <Ionicons
                 name='restaurant'
-                size={24}
+                size={20}
                 color={colors.warning[600]}
               />
             </View>
-            <Text variant='headlineMedium' weight='bold' color='warning'>
+            <Text variant='bodyMedium' weight='bold' color='warning'>
               {stats.totalRecipesGenerated}
             </Text>
-            <Text variant='bodySmall' color='secondary' align='center'>
-              Tarif Bulundu
+            <Text variant='labelSmall' color='secondary' align='center'>
+              Tarif
             </Text>
           </Card>
         </View>
@@ -337,46 +594,74 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
         {stats.mostUsedIngredients.length > 0 && (
           <Card variant='elevated' size='lg' style={styles.statsSection}>
             <View style={styles.statsSectionHeader}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: colors.primary[100] },
-                ]}
+              <LinearGradient
+                colors={[colors.primary[500], colors.primary[600]]}
+                style={styles.sectionIcon}
               >
-                <Ionicons name='star' size={20} color={colors.primary[600]} />
+                <Ionicons name='star' size={18} color='white' />
+              </LinearGradient>
+              <View>
+                <Text variant='headlineSmall' weight='bold' color='primary'>
+                  En Çok Kullanılan
+                </Text>
+                <Text variant='bodySmall' color='secondary'>
+                  Favori malzemeleriniz
+                </Text>
               </View>
-              <Text variant='headlineSmall' weight='bold' color='primary'>
-                En Çok Kullanılan Malzemeler
-              </Text>
             </View>
 
             <View style={styles.ingredientsStats}>
-              {stats.mostUsedIngredients.slice(0, 5).map((item, index) => (
-                <View key={item.ingredient} style={styles.ingredientStat}>
-                  <View style={styles.ingredientStatInfo}>
-                    <Text variant='bodyMedium' weight='medium' color='primary'>
-                      {item.ingredient}
-                    </Text>
-                    <Text variant='bodySmall' color='secondary'>
-                      {item.count} kez kullanıldı
-                    </Text>
+              {stats.mostUsedIngredients.slice(0, 5).map((item, index) => {
+                const maxCount = Math.max(
+                  ...stats.mostUsedIngredients.map(i => i.count)
+                );
+                const percentage = (item.count / maxCount) * 100;
+
+                return (
+                  <View key={item.ingredient} style={styles.ingredientStat}>
+                    <View style={styles.ingredientStatContent}>
+                      <View style={styles.ingredientStatInfo}>
+                        <Text
+                          variant='bodyMedium'
+                          weight='semibold'
+                          color='primary'
+                        >
+                          {item.ingredient}
+                        </Text>
+                        <Text variant='labelSmall' color='secondary'>
+                          {item.count} kez kullanıldı
+                        </Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.ingredientStatBadge,
+                          { backgroundColor: colors.primary[500] },
+                        ]}
+                      >
+                        <Text
+                          variant='labelSmall'
+                          weight='bold'
+                          style={{ color: 'white' }}
+                        >
+                          {item.count}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.ingredientStatBar}>
+                      <View
+                        style={[
+                          styles.ingredientStatBarFill,
+                          {
+                            width: `${percentage}%`,
+                            backgroundColor: colors.primary[400],
+                          },
+                        ]}
+                      />
+                    </View>
                   </View>
-                  <View
-                    style={[
-                      styles.ingredientStatBadge,
-                      { backgroundColor: colors.primary[500] },
-                    ]}
-                  >
-                    <Text
-                      variant='labelSmall'
-                      weight='bold'
-                      style={{ color: 'white' }}
-                    >
-                      {item.count}
-                    </Text>
-                  </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           </Card>
         )}
@@ -385,21 +670,20 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
         {popularCombinations.length > 0 && (
           <Card variant='elevated' size='lg' style={styles.statsSection}>
             <View style={styles.statsSectionHeader}>
-              <View
-                style={[
-                  styles.sectionIcon,
-                  { backgroundColor: colors.success[100] },
-                ]}
+              <LinearGradient
+                colors={[colors.success[500], colors.success[600]]}
+                style={styles.sectionIcon}
               >
-                <Ionicons
-                  name='trending-up'
-                  size={20}
-                  color={colors.success[600]}
-                />
+                <Ionicons name='trending-up' size={18} color='white' />
+              </LinearGradient>
+              <View>
+                <Text variant='headlineSmall' weight='bold' color='primary'>
+                  Popüler Kombinasyonlar
+                </Text>
+                <Text variant='bodySmall' color='secondary'>
+                  Başarılı malzeme grupları
+                </Text>
               </View>
-              <Text variant='headlineSmall' weight='bold' color='primary'>
-                Popüler Kombinasyonlar
-              </Text>
             </View>
 
             <View style={styles.combinationsStats}>
@@ -413,34 +697,90 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                       params: { prefillIngredients: combo.ingredients },
                     })
                   }
+                  activeOpacity={0.7}
                 >
+                  <View style={styles.combinationHeader}>
+                    <View style={styles.combinationRank}>
+                      <Text
+                        variant='labelSmall'
+                        weight='bold'
+                        style={{ color: colors.success[600] }}
+                      >
+                        #{index + 1}
+                      </Text>
+                    </View>
+                    <View style={styles.combinationStats}>
+                      <View style={styles.combinationStat}>
+                        <Text variant='labelSmall' color='secondary'>
+                          {combo.count} kez
+                        </Text>
+                      </View>
+                      <View style={styles.combinationStat}>
+                        <Text
+                          variant='labelSmall'
+                          weight='medium'
+                          style={{
+                            color:
+                              combo.successRate >= 0.7
+                                ? colors.success[600]
+                                : combo.successRate >= 0.4
+                                  ? colors.warning[600]
+                                  : colors.error[600],
+                          }}
+                        >
+                          %{Math.round(combo.successRate * 100)} başarı
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+
                   <View style={styles.combinationIngredients}>
-                    {combo.ingredients.map((ingredient, idx) => (
+                    {combo.ingredients.slice(0, 3).map((ingredient, idx) => (
                       <View
                         key={idx}
                         style={[
                           styles.miniChip,
-                          { backgroundColor: colors.success[50] },
+                          {
+                            backgroundColor: colors.success[50],
+                            borderColor: colors.success[200],
+                          },
                         ]}
                       >
                         <Text
                           variant='labelSmall'
+                          weight='medium'
                           style={{ color: colors.success[700] }}
                         >
                           {ingredient}
                         </Text>
                       </View>
                     ))}
+                    {combo.ingredients.length > 3 && (
+                      <View
+                        style={[
+                          styles.miniChip,
+                          { backgroundColor: colors.neutral[100] },
+                        ]}
+                      >
+                        <Text
+                          variant='labelSmall'
+                          weight='medium'
+                          style={{ color: colors.neutral[600] }}
+                        >
+                          +{combo.ingredients.length - 3}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                  <View style={styles.combinationStats}>
-                    <Text variant='bodySmall' color='secondary'>
-                      {combo.count} kez • %{Math.round(combo.successRate * 100)}{' '}
-                      başarı
+
+                  <View style={styles.combinationAction}>
+                    <Text variant='labelSmall' color='secondary'>
+                      Tekrar dene
                     </Text>
                     <Ionicons
                       name='chevron-forward'
-                      size={16}
-                      color={colors.neutral[400]}
+                      size={14}
+                      color={colors.success[500]}
                     />
                   </View>
                 </TouchableOpacity>
@@ -448,57 +788,270 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             </View>
           </Card>
         )}
-      </View>
+
+        {/* Premium Analytics */}
+        {historyGuard.hasAccess && stats?.totalTokensUsed !== undefined && (
+          <Card variant='elevated' size='lg' style={styles.statsSection}>
+            <View style={styles.statsSectionHeader}>
+              <LinearGradient
+                colors={['#FFD700', '#FFA500']}
+                style={styles.sectionIcon}
+              >
+                <Ionicons name='analytics' size={18} color='white' />
+              </LinearGradient>
+              <View>
+                <Text variant='headlineSmall' weight='bold' color='primary'>
+                  Premium Analitik
+                </Text>
+                <Text variant='bodySmall' color='secondary'>
+                  Detaylı kullanım istatistikleri
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.premiumAnalytics}>
+              {/* Token Usage */}
+              <View style={styles.analyticsRow}>
+                <View style={styles.analyticsItem}>
+                  <Text variant='bodySmall' color='secondary'>
+                    Toplam Token
+                  </Text>
+                  <Text variant='headlineSmall' weight='bold' color='primary'>
+                    {stats.totalTokensUsed?.toLocaleString() || '0'}
+                  </Text>
+                </View>
+                <View style={styles.analyticsItem}>
+                  <Text variant='bodySmall' color='secondary'>
+                    Ort. Yanıt Süresi
+                  </Text>
+                  <Text variant='headlineSmall' weight='bold' color='primary'>
+                    {Math.round(stats.averageResponseTime || 0)}ms
+                  </Text>
+                </View>
+              </View>
+
+              {/* Weekly Activity */}
+              {stats.weeklyActivity && stats.weeklyActivity.length > 0 && (
+                <View style={styles.weeklyActivityContainer}>
+                  <Text variant='bodyMedium' weight='semibold' color='primary'>
+                    Haftalık Aktivite
+                  </Text>
+                  <View style={styles.weeklyActivity}>
+                    {['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'].map((day, index) => {
+                      const dayData = stats.weeklyActivity?.find(d => d.day === index);
+                      const count = dayData?.count || 0;
+                      const maxCount = Math.max(...(stats.weeklyActivity?.map(d => d.count) || [1]));
+                      const height = Math.max(4, (count / maxCount) * 40);
+                      
+                      return (
+                        <View key={day} style={styles.weeklyActivityItem}>
+                          <View
+                            style={[
+                              styles.weeklyActivityBar,
+                              {
+                                height,
+                                backgroundColor: count > 0 ? colors.primary[500] : colors.neutral[200]
+                              }
+                            ]}
+                          />
+                          <Text variant='labelSmall' color='secondary'>
+                            {day}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+
+              {/* Monthly Trends */}
+              {stats.monthlyTrends && stats.monthlyTrends.length > 0 && (
+                <View style={styles.monthlyTrendsContainer}>
+                  <Text variant='bodyMedium' weight='semibold' color='primary'>
+                    Aylık Trend (Son 6 Ay)
+                  </Text>
+                  <View style={styles.monthlyTrends}>
+                    {stats.monthlyTrends.map((month, index) => (
+                      <View key={index} style={styles.monthlyTrendItem}>
+                        <Text variant='labelSmall' color='secondary'>
+                          {month.month}
+                        </Text>
+                        <Text variant='bodyMedium' weight='semibold' color='primary'>
+                          {month.requests}
+                        </Text>
+                        <Text variant='labelSmall' style={{ 
+                          color: month.success > month.requests * 0.7 
+                            ? colors.success[600] 
+                            : colors.warning[600] 
+                        }}>
+                          %{Math.round((month.success / (month.requests || 1)) * 100)} başarı
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
+            </View>
+          </Card>
+        )}
+      </Animated.View>
     );
   };
 
   const renderFilterBar = () => (
-    <Card variant='default' size='md' style={styles.filterBar}>
-      <View style={styles.filterContent}>
-        <Text variant='bodySmall' weight='medium' color='secondary'>
-          Filtrele:
-        </Text>
-        <View style={styles.filterButtons}>
-          {[
-            { key: 'all', label: 'Tümü' },
-            { key: 'today', label: 'Bugün' },
-            { key: 'week', label: 'Bu Hafta' },
-            { key: 'month', label: 'Bu Ay' },
-          ].map(item => (
-            <TouchableOpacity
-              key={item.key}
-              style={[
-                styles.filterButton,
-                filter.dateRange === item.key && styles.filterButtonActive,
-                {
-                  backgroundColor:
-                    filter.dateRange === item.key
-                      ? colors.primary[500]
-                      : colors.neutral[100],
-                },
-              ]}
-              onPress={() =>
-                setFilter({ ...filter, dateRange: item.key as any })
-              }
-            >
-              <Text
-                variant='labelSmall'
-                weight='medium'
-                style={{
-                  color:
+    <Animated.View
+      style={{
+        opacity: fadeAnim,
+        transform: [{ translateY: slideAnim }],
+      }}
+    >
+      <Card variant='elevated' size='md' style={styles.filterBar}>
+        <View style={styles.filterContent}>
+          <View style={styles.filterHeader}>
+            <Ionicons name='funnel' size={16} color={colors.primary[500]} />
+            <Text variant='bodySmall' weight='semibold' color='primary'>
+              Zaman Filtresi
+            </Text>
+          </View>
+          <View style={styles.filterButtons}>
+            {[
+              { key: 'all', label: 'Tümü', icon: 'infinite' },
+              { key: 'today', label: 'Bugün', icon: 'today' },
+              { key: 'week', label: 'Bu Hafta', icon: 'calendar' },
+              { key: 'month', label: 'Bu Ay', icon: 'calendar-outline' },
+            ].map(item => (
+              <TouchableOpacity
+                key={item.key}
+                style={[
+                  styles.filterButton,
+                  {
+                    backgroundColor:
+                      filter.dateRange === item.key
+                        ? colors.primary[500]
+                        : colors.neutral[50],
+                    borderColor:
+                      filter.dateRange === item.key
+                        ? colors.primary[500]
+                        : colors.neutral[200],
+                  },
+                ]}
+                onPress={() =>
+                  setFilter({ ...filter, dateRange: item.key as any })
+                }
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  name={item.icon as any}
+                  size={12}
+                  color={
                     filter.dateRange === item.key
                       ? 'white'
-                      : colors.neutral[600],
-                }}
+                      : colors.neutral[600]
+                  }
+                />
+                <Text
+                  variant='labelSmall'
+                  weight='medium'
+                  style={{
+                    color:
+                      filter.dateRange === item.key
+                        ? 'white'
+                        : colors.neutral[700],
+                  }}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Card>
+    </Animated.View>
+  );
+
+  // Premium olmayan kullanıcılar için paywall
+  if (!historyGuard.hasAccess) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
+        <StatusBar barStyle='light-content' backgroundColor={colors.primary[600]} />
+        
+        {/* Header */}
+        <LinearGradient
+          colors={[colors.primary[600], colors.primary[700]]}
+          style={styles.compactHeader}
+        >
+          <SafeAreaView>
+            <View style={styles.headerContainer}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
               >
-                {item.label}
+                <Ionicons name='chevron-back' size={24} color='white' />
+              </TouchableOpacity>
+              
+              <View style={styles.headerCenter}>
+                <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
+                  Arama Geçmişi
+                </Text>
+              </View>
+              
+              <View style={styles.headerActions} />
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+
+        {/* Premium Required Content */}
+        <View style={styles.premiumRequiredContainer}>
+          <LinearGradient
+            colors={['#FFD700', '#FFA500']}
+            style={styles.premiumMainIcon}
+          >
+            <Ionicons name='star' size={40} color='white' />
+          </LinearGradient>
+          
+          <Text variant='displaySmall' weight='bold' color='primary' align='center'>
+            Premium Özellik
+          </Text>
+          
+          <Text variant='bodyLarge' color='secondary' align='center' style={styles.premiumDescription}>
+            Arama geçmişinizi görmek ve detaylı istatistikler almak için Premium'a geçin
+          </Text>
+          
+          <View style={styles.premiumFeaturesList}>
+            {[
+              'Sınırsız geçmiş kaydı',
+              'Detaylı arama istatistikleri', 
+              'Popüler kombinasyonlar',
+              'Tarif başarı oranları',
+              'En çok kullanılan malzemeler'
+            ].map((feature, index) => (
+              <View key={index} style={styles.premiumFeatureItem}>
+                <Ionicons name='checkmark-circle' size={20} color={colors.success[500]} />
+                <Text variant='bodyMedium' style={{ flex: 1, marginLeft: 12 }}>
+                  {feature}
+                </Text>
+              </View>
+            ))}
+          </View>
+          
+          <LinearGradient
+            colors={['#FFD700', '#FFA500']}
+            style={styles.premiumButton}
+          >
+            <TouchableOpacity
+              style={styles.premiumButtonContent}
+              onPress={() => historyGuard.requirePremium()}
+            >
+              <Ionicons name='star' size={20} color='white' />
+              <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
+                Premium'a Geç
               </Text>
             </TouchableOpacity>
-          ))}
+          </LinearGradient>
         </View>
       </View>
-    </Card>
-  );
+    );
+  }
 
   if (isLoading) {
     return (
@@ -596,43 +1149,62 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
         backgroundColor={colors.primary[600]}
       />
 
-      {/* Modern Header with Back Button */}
+      {/* Compact Modern Header */}
       <LinearGradient
-        colors={[colors.primary[500], colors.primary[600], colors.primary[700]]}
-        style={styles.heroHeader}
+        colors={[colors.primary[600], colors.primary[700]]}
+        style={styles.compactHeader}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
         <SafeAreaView>
           <View style={styles.headerContainer}>
-            <View style={styles.headerLeft}>
-              <View style={styles.heroIcon}>
-                <Ionicons name='time' size={24} color='white' />
-              </View>
-              <View>
-                <Text
-                  variant='headlineMedium'
-                  weight='bold'
-                  style={{ color: 'white' }}
-                >
-                  Arama Geçmişi
-                </Text>
-                <Text
-                  variant='bodySmall'
-                  style={{ color: 'rgba(255,255,255,0.8)' }}
-                >
-                  {stats ? `${stats.totalRequests} arama` : 'Geçmiş aramaların'}
-                </Text>
-              </View>
-            </View>
-
             <TouchableOpacity
               style={styles.backButton}
               onPress={() => navigation.goBack()}
               activeOpacity={0.8}
             >
-              <Ionicons name='arrow-back' size={24} color='white' />
+              <Ionicons name='chevron-back' size={24} color='white' />
             </TouchableOpacity>
+
+            <View style={styles.headerCenter}>
+              <View style={styles.headerTitleContainer}>
+                <View style={styles.headerIcon}>
+                  <Ionicons name='time' size={16} color='white' />
+                </View>
+                <Text
+                  variant='headlineSmall'
+                  weight='bold'
+                  style={{ color: 'white' }}
+                >
+                  Arama Geçmişi
+                </Text>
+              </View>
+              {stats && (
+                <Text
+                  variant='labelSmall'
+                  style={{ color: 'rgba(255,255,255,0.8)' }}
+                >
+                  {stats.totalRequests} arama • {stats.successfulRequests}{' '}
+                  başarılı
+                </Text>
+              )}
+            </View>
+
+            <View style={styles.headerActions}>
+              {history.length > 0 && (
+                <TouchableOpacity
+                  style={styles.headerActionButton}
+                  onPress={handleClearHistory}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name='refresh'
+                    size={18}
+                    color='rgba(255,255,255,0.8)'
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
         </SafeAreaView>
       </LinearGradient>
@@ -733,44 +1305,92 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             {renderFilterBar()}
 
             {history.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <LinearGradient
-                  colors={[colors.primary[100], colors.primary[200]]}
-                  style={styles.emptyIcon}
-                >
-                  <Ionicons
-                    name='time-outline'
-                    size={48}
-                    color={colors.primary[400]}
-                  />
-                </LinearGradient>
-                <Text
-                  variant='headlineMedium'
-                  weight='bold'
-                  color='primary'
-                  align='center'
-                >
-                  Henüz Arama Geçmişi Yok
-                </Text>
-                <Text
-                  variant='bodyMedium'
-                  color='secondary'
-                  align='center'
-                  style={styles.emptyDescription}
-                >
-                  AI ile tarif aramaya başladığınızda geçmişiniz burada
-                  görünecek
-                </Text>
-                <Button
-                  variant='primary'
-                  size='lg'
-                  onPress={() => navigation.getParent()?.navigate('HomeTab')}
-                  leftIcon={<Ionicons name='search' size={20} />}
-                  style={styles.startSearchButton}
-                >
-                  İlk Aramayı Yap
-                </Button>
-              </View>
+              <Animated.View
+                style={[
+                  styles.emptyContainer,
+                  {
+                    opacity: fadeAnim,
+                    transform: [{ translateY: slideAnim }],
+                  },
+                ]}
+              >
+                <View style={styles.emptyIllustration}>
+                  <LinearGradient
+                    colors={[colors.primary[100], colors.primary[200]]}
+                    style={styles.emptyIconContainer}
+                  >
+                    <Ionicons
+                      name='time-outline'
+                      size={40}
+                      color={colors.primary[500]}
+                    />
+                  </LinearGradient>
+                  <View style={styles.emptyDecorations}>
+                    <View
+                      style={[
+                        styles.emptyDot,
+                        { backgroundColor: colors.primary[300] },
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.emptyDot,
+                        styles.emptyDotLarge,
+                        { backgroundColor: colors.primary[200] },
+                      ]}
+                    />
+                    <View
+                      style={[
+                        styles.emptyDot,
+                        { backgroundColor: colors.primary[400] },
+                      ]}
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.emptyContent}>
+                  <Text
+                    variant='headlineMedium'
+                    weight='bold'
+                    color='primary'
+                    align='center'
+                  >
+                    Henüz Arama Geçmişi Yok
+                  </Text>
+                  <Text
+                    variant='bodyMedium'
+                    color='secondary'
+                    align='center'
+                    style={styles.emptyDescription}
+                  >
+                    AI ile tarif aramaya başladığınızda{'\n'}geçmişiniz burada
+                    görünecek
+                  </Text>
+                </View>
+
+                <View style={styles.emptyActions}>
+                  <Button
+                    variant='primary'
+                    size='lg'
+                    onPress={() => navigation.getParent()?.navigate('HomeTab')}
+                    leftIcon={
+                      <Ionicons name='search' size={18} color='white' />
+                    }
+                    style={styles.startSearchButton}
+                  >
+                    İlk Aramayı Yap
+                  </Button>
+
+                  <TouchableOpacity
+                    style={styles.emptySecondaryAction}
+                    onPress={() => navigation.goBack()}
+                  >
+                    <Text variant='bodySmall' color='primary' weight='medium'>
+                      Geri Dön
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </Animated.View>
             ) : (
               <View style={styles.historyList}>
                 {history.map(item => (
@@ -794,37 +1414,53 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Hero Header
-  heroHeader: {
-    paddingBottom: spacing[4],
-    marginBottom: spacing[4],
+  // Compact Header
+  compactHeader: {
+    paddingBottom: spacing[3],
+    ...shadows.sm,
   },
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: spacing[4],
     paddingTop: spacing[2],
+    minHeight: 56,
   },
-  headerLeft: {
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing[0.5],
+  },
+  headerTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    gap: spacing[2],
   },
-  heroIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  headerIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: 'rgba(255,255,255,0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing[3],
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  headerActions: {
+    width: 36,
+    alignItems: 'flex-end',
+  },
+  headerActionButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -832,7 +1468,7 @@ const styles = StyleSheet.create({
   // Controls
   controlsCard: {
     marginHorizontal: spacing[4],
-    marginBottom: spacing[4],
+    marginBottom: spacing[3],
   },
   viewModeContainer: {
     flexDirection: 'row',
@@ -841,17 +1477,17 @@ const styles = StyleSheet.create({
   },
   viewModeToggle: {
     flexDirection: 'row',
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     padding: spacing[1],
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(0,0,0,0.04)',
   },
   viewModeButton: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
-    borderRadius: borderRadius.md,
-    marginHorizontal: spacing[0.5],
+    borderRadius: borderRadius.lg,
+    gap: spacing[1],
   },
   viewModeButtonActive: {
     ...shadows.sm,
@@ -861,7 +1497,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     gap: spacing[1],
   },
 
@@ -871,24 +1507,29 @@ const styles = StyleSheet.create({
     marginBottom: spacing[4],
   },
   filterContent: {
+    gap: spacing[3],
+  },
+  filterHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[3],
+    gap: spacing[2],
+    marginBottom: spacing[2],
   },
   filterButtons: {
     flexDirection: 'row',
     gap: spacing[2],
-    flex: 1,
   },
   filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     flex: 1,
-    alignItems: 'center',
-  },
-  filterButtonActive: {
-    ...shadows.sm,
+    justifyContent: 'center',
+    gap: spacing[1],
+    borderWidth: 1,
+    ...shadows.xs,
   },
 
   // History Items
@@ -896,74 +1537,87 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 100,
   },
-  listContent: {
-    paddingHorizontal: spacing[4],
-    paddingBottom: spacing[8],
-    gap: spacing[4],
-  },
   historyList: {
     paddingHorizontal: spacing[4],
-    gap: spacing[4],
   },
   historyItem: {
-    marginBottom: spacing[0],
+    ...shadows.md,
   },
   historyItemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: spacing[3],
   },
-  historyItemInfo: {
-    flex: 1,
-    gap: spacing[1],
-  },
-  statusContainer: {
+  statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[2],
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  statusIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   deleteButton: {
     padding: spacing[2],
-    borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    borderRadius: borderRadius.lg,
+    backgroundColor: 'rgba(239, 68, 68, 0.08)',
+  },
+  historyContent: {
+    gap: spacing[3],
+  },
+  resultSummary: {
+    marginBottom: spacing[2],
+  },
+  resultBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.full,
+    gap: spacing[2],
+    alignSelf: 'flex-start',
+    borderWidth: 1,
   },
   ingredientsList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing[2],
-    marginBottom: spacing[3],
+    gap: spacing[1.5],
   },
   ingredientChip: {
     paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
+    paddingVertical: spacing[1.5],
     borderRadius: borderRadius.full,
     borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  moreChip: {
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)',
   },
   recipesPreview: {
-    marginBottom: spacing[3],
     padding: spacing[3],
     backgroundColor: 'rgba(0,0,0,0.02)',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.04)',
   },
-  recipesTitle: {
+  recipePreviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[2],
     marginBottom: spacing[2],
   },
   recipesList: {
     gap: spacing[1],
   },
-  historyItemActions: {
+  historyItemFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: spacing[2],
   },
-  repeatButton: {
+  actionButton: {
     paddingHorizontal: spacing[4],
   },
   preferencesInfo: {
@@ -974,29 +1628,89 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing[1],
+    backgroundColor: 'rgba(0,0,0,0.04)',
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[1],
+    borderRadius: borderRadius.sm,
   },
 
   // Stats View
   statsContainer: {
     paddingHorizontal: spacing[4],
+    gap: spacing[5],
+  },
+
+  // Stats Overview
+  statsOverview: {
     gap: spacing[4],
   },
-  statsGrid: {
+  statsOverviewHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing[3],
   },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-    gap: spacing[2],
-  },
-  statIcon: {
+  statsOverviewIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  statsOverviewGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  statItem: {
+    alignItems: 'center',
+    gap: spacing[1],
+    flex: 1,
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    marginHorizontal: spacing[2],
+  },
+  successRateContainer: {
+    gap: spacing[2],
+  },
+  successRateInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  successRateBar: {
+    height: 6,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  successRateFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+
+  // Quick Stats
+  quickStatsGrid: {
+    flexDirection: 'row',
+    gap: spacing[3],
+  },
+  quickStatCard: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing[2],
+    paddingVertical: spacing[4],
+  },
+  quickStatIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Stats Sections
   statsSection: {
     gap: spacing[4],
   },
@@ -1006,55 +1720,99 @@ const styles = StyleSheet.create({
     gap: spacing[3],
   },
   sectionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  // Ingredients Stats
   ingredientsStats: {
-    gap: spacing[3],
+    gap: spacing[4],
   },
   ingredientStat: {
+    gap: spacing[2],
+  },
+  ingredientStatContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   ingredientStatInfo: {
     flex: 1,
+    gap: spacing[0.5],
   },
   ingredientStatBadge: {
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1],
-    borderRadius: borderRadius.md,
-    minWidth: 32,
+    paddingHorizontal: spacing[2.5],
+    paddingVertical: spacing[1.5],
+    borderRadius: borderRadius.full,
+    minWidth: 36,
     alignItems: 'center',
+    ...shadows.xs,
   },
+  ingredientStatBar: {
+    height: 4,
+    backgroundColor: 'rgba(0,0,0,0.06)',
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  ingredientStatBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+
+  // Combinations
   combinationsStats: {
     gap: spacing[3],
   },
   combinationItem: {
     gap: spacing[3],
-    padding: spacing[3],
+    padding: spacing[4],
     backgroundColor: 'rgba(0,0,0,0.02)',
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.xl,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)',
+    borderColor: 'rgba(0,0,0,0.06)',
+    ...shadows.xs,
+  },
+  combinationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  combinationRank: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  combinationStats: {
+    flexDirection: 'row',
+    gap: spacing[3],
+  },
+  combinationStat: {
+    alignItems: 'flex-end',
   },
   combinationIngredients: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing[1],
+    gap: spacing[1.5],
   },
   miniChip: {
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[1],
-    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing[2.5],
+    paddingVertical: spacing[1.5],
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
   },
-  combinationStats: {
+  combinationAction: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: spacing[2],
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.06)',
   },
 
   // Loading & Empty States
@@ -1075,27 +1833,212 @@ const styles = StyleSheet.create({
   loadingSubtext: {
     marginTop: spacing[2],
   },
+
+  // Empty State
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing[6],
-    gap: spacing[4],
+    paddingVertical: spacing[8],
   },
-  emptyIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+  emptyIllustration: {
+    position: 'relative',
+    marginBottom: spacing[6],
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.lg,
+  },
+  emptyDecorations: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    flexDirection: 'row',
+    gap: spacing[1],
+  },
+  emptyDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  emptyDotLarge: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  emptyContent: {
+    alignItems: 'center',
+    gap: spacing[3],
+    marginBottom: spacing[6],
   },
   emptyDescription: {
-    maxWidth: 280,
+    maxWidth: 260,
     lineHeight: 22,
+    textAlign: 'center',
+  },
+  emptyActions: {
+    alignItems: 'center',
+    gap: spacing[3],
+    width: '100%',
   },
   startSearchButton: {
+    paddingHorizontal: spacing[8],
+    ...shadows.md,
+  },
+  emptySecondaryAction: {
+    paddingVertical: spacing[2],
+  },
+
+  // Hero Header (for loading state)
+  heroHeader: {
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[3],
+    paddingBottom: spacing[5],
+    ...shadows.md,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  heroIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing[3],
+  },
+
+  // Recipe list favorites
+  recipeListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing[1],
+  },
+  recipeNameButton: {
+    flex: 1,
+  },
+  historyFavoriteButton: {
+    marginLeft: spacing[2],
+  },
+  premiumFavoriteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing[1],
+    borderRadius: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    position: 'relative',
+  },
+  premiumIcon: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+  },
+
+  // Premium Required Styles
+  premiumRequiredContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: spacing[6],
-    marginTop: spacing[4],
+    gap: spacing[6],
+  },
+  premiumMainIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...shadows.lg,
+  },
+  premiumDescription: {
+    maxWidth: 300,
+    lineHeight: 24,
+    marginVertical: spacing[2],
+  },
+  premiumFeaturesList: {
+    width: '100%',
+    gap: spacing[3],
+    marginVertical: spacing[4],
+  },
+  premiumFeatureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    padding: spacing[4],
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
+  },
+  premiumButton: {
+    borderRadius: borderRadius.xl,
+    width: '100%',
+    ...shadows.lg,
+  },
+  premiumButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing[5],
+    gap: spacing[3],
+  },
+
+  // Premium Analytics Styles
+  premiumAnalytics: {
+    gap: spacing[5],
+  },
+  analyticsRow: {
+    flexDirection: 'row',
+    gap: spacing[4],
+  },
+  analyticsItem: {
+    flex: 1,
+    alignItems: 'center',
+    padding: spacing[4],
+    backgroundColor: '#F9FAFB',
+    borderRadius: borderRadius.lg,
+    gap: spacing[2],
+  },
+  weeklyActivityContainer: {
+    gap: spacing[3],
+  },
+  weeklyActivity: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingHorizontal: spacing[2],
+  },
+  weeklyActivityItem: {
+    alignItems: 'center',
+    gap: spacing[2],
+  },
+  weeklyActivityBar: {
+    width: 24,
+    borderRadius: 2,
+    minHeight: 4,
+  },
+  monthlyTrendsContainer: {
+    gap: spacing[3],
+  },
+  monthlyTrends: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  monthlyTrendItem: {
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing[1],
+    padding: spacing[2],
+    backgroundColor: '#F9FAFB',
+    borderRadius: borderRadius.sm,
+    marginHorizontal: spacing[0.5],
   },
 });
 

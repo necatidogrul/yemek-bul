@@ -73,24 +73,39 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       description: t('premium.features.unlimited_recipes_desc'),
     },
     {
-      icon: 'filter',
+      icon: 'filter-outline',
       title: t('premium.features.advanced_filters'),
       description: t('premium.features.advanced_filters_desc'),
     },
     {
-      icon: 'download',
+      icon: 'download-outline',
       title: t('premium.features.export_recipes'),
       description: t('premium.features.export_recipes_desc'),
     },
     {
-      icon: 'headset',
-      title: t('premium.features.priority_support'),
-      description: t('premium.features.priority_support_desc'),
-    },
-    {
-      icon: 'ban',
+      icon: 'close-circle-outline',
       title: t('premium.features.no_ads'),
       description: t('premium.features.no_ads_desc'),
+    },
+    {
+      icon: 'cloud-offline-outline',
+      title: t('premium.features.offline_mode'),
+      description: t('premium.features.offline_mode_desc'),
+    },
+    {
+      icon: 'restaurant-outline',
+      title: t('premium.features.custom_meal_plans'),
+      description: t('premium.features.custom_meal_plans_desc'),
+    },
+    {
+      icon: 'fitness-outline',
+      title: t('premium.features.nutrition_tracking'),
+      description: t('premium.features.nutrition_tracking_desc'),
+    },
+    {
+      icon: 'chatbubbles-outline',
+      title: t('premium.features.priority_support'),
+      description: t('premium.features.priority_support_desc'),
     },
   ];
 
@@ -316,28 +331,37 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
   const formatPrice = (packageItem: PurchasesPackage): string => {
     const { product } = packageItem;
+    const identifier = packageItem.identifier.toLowerCase();
 
     // Package type'a göre period belirle
-    if (
-      packageItem.identifier.includes('annual') ||
-      packageItem.identifier.includes('yearly')
-    ) {
+    if (identifier.includes('weekly')) {
+      return `${product.priceString}/${t('premium.period.week')}`;
+    } else if (identifier.includes('annual') || identifier.includes('yearly')) {
       return `${product.priceString}/${t('premium.period.year')}`;
-    } else if (packageItem.identifier.includes('lifetime')) {
-      return product.priceString;
+    } else if (identifier.includes('lifetime')) {
+      return `${product.priceString} ${t('premium.period.once')}`;
+    } else if (identifier.includes('three_month') || identifier.includes('3month')) {
+      return `${product.priceString}/3 ${t('premium.period.months')}`;
+    } else if (identifier.includes('six_month') || identifier.includes('6month')) {
+      return `${product.priceString}/6 ${t('premium.period.months')}`;
     }
 
     return `${product.priceString}/${t('premium.period.month')}`;
   };
 
   const getPackageTitle = (packageItem: PurchasesPackage): string => {
-    if (
-      packageItem.identifier.includes('annual') ||
-      packageItem.identifier.includes('yearly')
-    ) {
+    const identifier = packageItem.identifier.toLowerCase();
+    
+    if (identifier.includes('weekly')) {
+      return t('premium.weekly_trial');
+    } else if (identifier.includes('annual') || identifier.includes('yearly')) {
       return t('premium.yearly_subscription');
-    } else if (packageItem.identifier.includes('lifetime')) {
+    } else if (identifier.includes('lifetime')) {
       return t('premium.lifetime_purchase');
+    } else if (identifier.includes('three_month') || identifier.includes('3month')) {
+      return t('premium.three_month_subscription');
+    } else if (identifier.includes('six_month') || identifier.includes('6month')) {
+      return t('premium.six_month_subscription');
     }
 
     return t('premium.monthly_subscription');
@@ -357,10 +381,13 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
   return (
     <Modal
       isVisible={isVisible}
-      onBackdropPress={onClose}
       onBackButtonPress={onClose}
       style={styles.modal}
-      propagateSwipe
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0.5}
+      useNativeDriver={true}
+      hideModalContentWhileAnimating={true}
     >
       <View style={styles.container}>
         {/* Header */}
@@ -374,9 +401,24 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Hero Section */}
+          <View style={styles.heroSection}>
+            <View style={styles.premiumBadge}>
+              <Ionicons name="star" size={20} color="#FFD700" />
+              <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+            </View>
+            <Text style={styles.heroTitle}>
+              {title || t('premium.upgrade_to_premium')}
+            </Text>
+            <Text style={styles.heroSubtitle}>
+              {t('premium.unlock_all_features')}
+            </Text>
+          </View>
+
           {/* Özellik vurgusu */}
           {feature && (
             <View style={styles.featureHighlight}>
+              <Ionicons name="sparkles" size={20} color={designColors.primary[600]} />
               <Text style={styles.featureText}>
                 {t('premium.feature_unlock', { feature })}
               </Text>
@@ -385,13 +427,16 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
           {/* Premium özellikler listesi */}
           <View style={styles.featuresContainer}>
+            <Text style={styles.featuresTitle}>
+              {t('premium.what_you_get')}
+            </Text>
             {premiumFeatures.map((premiumFeature, index) => (
               <View key={index} style={styles.featureItem}>
                 <View style={styles.featureIcon}>
                   <Ionicons
                     name={premiumFeature.icon as any}
-                    size={24}
-                    color={designColors.primary[500]}
+                    size={22}
+                    color={designColors.primary[600]}
                   />
                 </View>
                 <View style={styles.featureContent}>
@@ -401,6 +446,13 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                   <Text style={styles.featureDescription}>
                     {premiumFeature.description}
                   </Text>
+                </View>
+                <View style={styles.checkmark}>
+                  <Ionicons
+                    name="checkmark"
+                    size={16}
+                    color={designColors.success[600]}
+                  />
                 </View>
               </View>
             ))}
@@ -413,33 +465,63 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 <Text style={styles.sectionTitle}>
                   {t('premium.choose_plan')}
                 </Text>
-                {offerings[0].availablePackages.map(packageItem => (
-                  <TouchableOpacity
-                    key={packageItem.identifier}
-                    style={[
-                      styles.packageItem,
-                      selectedPackage?.identifier === packageItem.identifier &&
-                        styles.selectedPackage,
-                    ]}
-                    onPress={() => setSelectedPackage(packageItem)}
-                  >
-                    <View style={styles.packageInfo}>
-                      <Text style={styles.packageTitle}>
-                        {getPackageTitle(packageItem)}
-                      </Text>
-                      <Text style={styles.packagePrice}>
-                        {formatPrice(packageItem)}
-                      </Text>
-                    </View>
-                    {selectedPackage?.identifier === packageItem.identifier && (
-                      <Ionicons
-                        name='checkmark-circle'
-                        size={24}
-                        color={designColors.primary[500]}
-                      />
-                    )}
-                  </TouchableOpacity>
-                ))}
+                {offerings[0].availablePackages.map((packageItem, index) => {
+                  const isSelected = selectedPackage?.identifier === packageItem.identifier;
+                  const identifier = packageItem.identifier.toLowerCase();
+                  const isPopular = identifier.includes('annual') || identifier.includes('yearly') || identifier.includes('six_month');
+                  const isBestValue = identifier.includes('annual') || identifier.includes('yearly');
+                  
+                  return (
+                    <TouchableOpacity
+                      key={packageItem.identifier}
+                      style={[
+                        styles.packageItem,
+                        isSelected && styles.selectedPackage,
+                        isPopular && styles.popularPackage,
+                      ]}
+                      onPress={() => setSelectedPackage(packageItem)}
+                    >
+                      {isPopular && (
+                        <View style={styles.popularBadge}>
+                          <Text style={styles.popularBadgeText}>
+                            {isBestValue ? 'EN İYİ DEĞER' : 'POPÜLER'}
+                          </Text>
+                        </View>
+                      )}
+                      
+                      <View style={styles.packageContent}>
+                        <View style={styles.packageInfo}>
+                          <Text style={styles.packageTitle}>
+                            {getPackageTitle(packageItem)}
+                          </Text>
+                          <Text style={styles.packagePrice}>
+                            {formatPrice(packageItem)}
+                          </Text>
+                          {isPopular && (
+                            <Text style={styles.savingsText}>
+                              {t('premium.save_percentage', { percentage: '60' })}
+                            </Text>
+                          )}
+                        </View>
+                        
+                        <View style={[
+                          styles.selectionIndicator,
+                          isSelected && styles.selectionIndicatorSelected
+                        ]}>
+                          {isSelected ? (
+                            <Ionicons
+                              name='checkmark-circle'
+                              size={24}
+                              color={designColors.primary[600]}
+                            />
+                          ) : (
+                            <View style={styles.selectionCircle} />
+                          )}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             )}
 
@@ -502,79 +584,148 @@ const createStyles = () =>
   StyleSheet.create({
     modal: {
       margin: 0,
-      justifyContent: 'flex-end',
+      justifyContent: 'center',
     },
     container: {
       backgroundColor: '#FFFFFF',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      maxHeight: '90%',
-      minHeight: '60%',
+      flex: 1,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.25,
+      shadowRadius: 10,
+      elevation: 10,
     },
     loadingContainer: {
       backgroundColor: '#FFFFFF',
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      padding: 40,
+      flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
+      padding: 40,
     },
     loadingText: {
       marginTop: 16,
       color: '#666666',
+      fontSize: 16,
     },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 20,
+      paddingHorizontal: 20,
+      paddingTop: 60,
+      paddingBottom: 20,
       borderBottomWidth: 1,
-      borderBottomColor: '#EEEEEE',
+      borderBottomColor: '#F0F0F0',
       position: 'relative',
+      backgroundColor: '#FFFFFF',
     },
     closeButton: {
       position: 'absolute',
       right: 20,
-      padding: 4,
+      top: 60,
+      padding: 8,
+      borderRadius: 20,
+      backgroundColor: '#F5F5F5',
+      zIndex: 1,
     },
     title: {
-      fontWeight: '600',
-      fontSize: 18,
+      fontWeight: '700',
+      fontSize: 20,
       color: '#1A1A1A',
     },
     content: {
       flex: 1,
-      padding: 20,
+      paddingHorizontal: 20,
     },
+    
+    // Hero Section
+    heroSection: {
+      alignItems: 'center',
+      paddingVertical: 24,
+      marginBottom: 8,
+    },
+    premiumBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255, 215, 0, 0.1)',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 215, 0, 0.3)',
+    },
+    premiumBadgeText: {
+      marginLeft: 6,
+      fontWeight: '700',
+      fontSize: 12,
+      color: '#B8860B',
+      letterSpacing: 1,
+    },
+    heroTitle: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: '#1A1A1A',
+      textAlign: 'center',
+      marginBottom: 8,
+      lineHeight: 34,
+    },
+    heroSubtitle: {
+      fontSize: 16,
+      color: '#666666',
+      textAlign: 'center',
+      lineHeight: 22,
+    },
+
+    // Feature Highlight
     featureHighlight: {
       backgroundColor: designColors.primary[50],
-      padding: 16,
-      borderRadius: 12,
+      padding: 18,
+      borderRadius: 16,
       marginBottom: 24,
       borderWidth: 1,
       borderColor: designColors.primary[200],
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     featureText: {
       textAlign: 'center',
-      fontWeight: '500',
+      fontWeight: '600',
       color: designColors.primary[700],
+      fontSize: 15,
+      marginLeft: 8,
     },
+
+    // Features Section
     featuresContainer: {
       marginBottom: 32,
+    },
+    featuresTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: '#1A1A1A',
+      marginBottom: 20,
+      textAlign: 'center',
     },
     featureItem: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 20,
+      marginBottom: 18,
+      backgroundColor: '#FAFAFA',
+      padding: 16,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: '#F0F0F0',
     },
     featureIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      backgroundColor: designColors.primary[50],
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: designColors.primary[100],
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 16,
+      marginRight: 14,
     },
     featureContent: {
       flex: 1,
@@ -584,53 +735,127 @@ const createStyles = () =>
       marginBottom: 4,
       fontSize: 16,
       color: '#1A1A1A',
+      lineHeight: 22,
     },
     featureDescription: {
       lineHeight: 20,
       color: '#666666',
       fontSize: 14,
     },
+    checkmark: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: designColors.success[100],
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    // Packages Section
     packagesContainer: {
       marginBottom: 20,
     },
     sectionTitle: {
-      marginBottom: 16,
-      fontWeight: '600',
-      fontSize: 16,
+      marginBottom: 20,
+      fontWeight: '700',
+      fontSize: 20,
       color: '#1A1A1A',
+      textAlign: 'center',
     },
     packageItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: 16,
-      borderRadius: 12,
+      borderRadius: 16,
       borderWidth: 2,
-      borderColor: '#EEEEEE',
-      marginBottom: 12,
+      borderColor: '#E0E0E0',
+      marginBottom: 16,
+      overflow: 'hidden',
+      position: 'relative',
+      backgroundColor: '#FFFFFF',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+      elevation: 2,
     },
     selectedPackage: {
       borderColor: designColors.primary[500],
       backgroundColor: designColors.primary[50],
+      shadowColor: designColors.primary[500],
+      shadowOpacity: 0.15,
+    },
+    popularPackage: {
+      borderColor: '#FFD700',
+      backgroundColor: '#FFFDF0',
+      shadowColor: '#FFD700',
+      shadowOpacity: 0.2,
+    },
+    popularBadge: {
+      position: 'absolute',
+      top: 0,
+      right: 0,
+      backgroundColor: '#FFD700',
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderBottomLeftRadius: 12,
+      zIndex: 1,
+    },
+    popularBadgeText: {
+      fontSize: 10,
+      fontWeight: '800',
+      color: '#B8860B',
+      letterSpacing: 0.5,
+    },
+    packageContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: 20,
     },
     packageInfo: {
       flex: 1,
     },
     packageTitle: {
       fontWeight: '600',
-      marginBottom: 4,
-      fontSize: 16,
+      marginBottom: 6,
+      fontSize: 18,
       color: '#1A1A1A',
     },
     packagePrice: {
-      fontWeight: '700',
-      fontSize: 18,
+      fontWeight: '800',
+      fontSize: 22,
       color: designColors.primary[600],
+      marginBottom: 4,
+    },
+    savingsText: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: designColors.success[600],
+      backgroundColor: designColors.success[50],
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      borderRadius: 6,
+      alignSelf: 'flex-start',
+      marginTop: 4,
+    },
+    selectionIndicator: {
+      marginLeft: 16,
+    },
+    selectionIndicatorSelected: {
+      // No additional styles needed
+    },
+    selectionCircle: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: '#CCCCCC',
+      backgroundColor: 'transparent',
     },
     footer: {
       padding: 20,
+      paddingBottom: 40,
       borderTopWidth: 1,
       borderTopColor: '#EEEEEE',
+      backgroundColor: '#FFFFFF',
     },
     purchaseButton: {
       marginBottom: 16,

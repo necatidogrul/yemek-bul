@@ -21,7 +21,7 @@ import { LanguageSelector } from '../components/ui';
 import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { useHaptics } from '../hooks/useHaptics';
-import { useTranslation } from '../hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
@@ -69,8 +69,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
   const onboardingSteps: OnboardingStep[] = [
     {
       id: 0,
-      title: 'Hoş Geldin! 👋',
-      subtitle: 'AI destekli yemek bulucu ile tanış',
+      title: t('onboarding.steps.welcome.title'),
+      subtitle: t('onboarding.steps.welcome.subtitle'),
       icon: 'restaurant',
       color: '#6366f1',
       gradient: ['#6366f1', '#8b5cf6'],
@@ -78,8 +78,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
     },
     {
       id: 1,
-      title: 'Akıllı Özellikler',
-      subtitle: 'Sesli komutlar ve AI arama ile kolay kullanım',
+      title: t('onboarding.steps.features.title'),
+      subtitle: t('onboarding.steps.features.subtitle'),
       icon: 'flash',
       color: '#ec4899',
       gradient: ['#ec4899', '#f97316'],
@@ -87,8 +87,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
     },
     {
       id: 2,
-      title: 'Tercihlerinizi Belirleyin',
-      subtitle: 'Size özel tarif deneyimi',
+      title: t('onboarding.steps.preferences.title'),
+      subtitle: t('onboarding.steps.preferences.subtitle'),
       icon: 'heart',
       color: '#06b6d4',
       gradient: ['#06b6d4', '#10b981'],
@@ -96,8 +96,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
     },
     {
       id: 3,
-      title: 'Her Şey Hazır! 🎉',
-      subtitle: 'Mutfak maceran başlasın',
+      title: t('onboarding.steps.ready.title'),
+      subtitle: t('onboarding.steps.ready.subtitle'),
       icon: 'rocket',
       color: '#f59e0b',
       gradient: ['#f59e0b', '#ef4444'],
@@ -107,18 +107,18 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
 
   // Compact preference options
   const cuisinePreferences = [
-    { id: 'turkish', emoji: '🇹🇷', label: 'Türk' },
-    { id: 'italian', emoji: '🍝', label: 'İtalyan' },
-    { id: 'asian', emoji: '🍜', label: 'Asya' },
-    { id: 'healthy', emoji: '🥗', label: 'Sağlıklı' },
-    { id: 'dessert', emoji: '🍰', label: 'Tatlı' },
-    { id: 'fast', emoji: '⚡', label: 'Hızlı' },
+    { id: 'turkish', emoji: '🇹🇷', label: t('onboarding.categoriesLabels.turkish') },
+    { id: 'italian', emoji: '🍝', label: t('onboarding.categoriesLabels.italian') },
+    { id: 'asian', emoji: '🍜', label: t('onboarding.categoriesLabels.asian') },
+    { id: 'healthy', emoji: '🥗', label: t('onboarding.categoriesLabels.healthy') },
+    { id: 'dessert', emoji: '🍰', label: t('onboarding.categoriesLabels.dessert') },
+    { id: 'fast', emoji: '⚡', label: t('onboarding.categoriesLabels.fast') },
   ];
 
   const skillLevels = [
-    { id: 'beginner', emoji: '🐣', label: 'Başlangıç' },
-    { id: 'intermediate', emoji: '👨‍🍳', label: 'Orta' },
-    { id: 'advanced', emoji: '⭐', label: 'İleri' },
+    { id: 'beginner', emoji: '🐣', label: t('onboarding.levelLabels.beginner') },
+    { id: 'intermediate', emoji: '👨‍🍳', label: t('onboarding.levelLabels.intermediate') },
+    { id: 'advanced', emoji: '⭐', label: t('onboarding.levelLabels.advanced') },
   ];
 
   // Pulse animation for interactive elements

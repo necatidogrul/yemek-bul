@@ -131,6 +131,19 @@ export const en = {
       advanced: 'Advanced',
       expert: 'Expert',
     },
+    categoriesLabels: {
+      turkish: 'Turkish',
+      italian: 'Italian',
+      asian: 'Asian',
+      healthy: 'Healthy',
+      dessert: 'Dessert',
+      fast: 'Quick'
+    },
+    levelLabels: {
+      beginner: 'Beginner',
+      intermediate: 'Intermediate',
+      advanced: 'Advanced'
+    },
     dietaryRestrictions: 'Dietary Preferences',
     favoriteCategories: 'Favorite Cuisines',
     cookingLevel: 'Cooking Experience',
@@ -156,6 +169,34 @@ export const en = {
     discoverRecipes: 'Discover 500+ recipes',
     favorites: 'Favorites',
     likedRecipes: 'Your favorite recipes',
+    suggestions: {
+      breakfast: {
+        name: 'Breakfast',
+        subtitle: 'Quick start',
+        ingredients: ['egg', 'cheese', 'tomato']
+      },
+      lunch: {
+        name: 'Lunch',
+        subtitle: 'Filling',
+        ingredients: ['chicken', 'rice', 'vegetables']
+      },
+      dinner: {
+        name: 'Dinner',
+        subtitle: 'Delicious',
+        ingredients: ['meat', 'potato', 'onion']
+      },
+      snack: {
+        name: 'Quick',
+        subtitle: '15 minutes',
+        ingredients: ['pasta', 'tomato', 'cheese']
+      }
+    },
+    welcomeTitle: 'What would you like to cook?',
+    welcomeSubtitle: 'Get AI recipe suggestions with one tap',
+    customCreate: {
+      title: 'Create with Your Ingredients',
+      subtitle: 'Select your ingredients, let AI find personalized recipes for you'
+    }
   },
 
   // Recipe
@@ -217,6 +258,20 @@ export const en = {
     questionAnswerFailed: 'Error occurred while answering question',
   },
 
+  // Messages
+  messages: {
+    ingredientsSelected: 'Ingredients selected, searching for recipes...',
+    ingredientsFromHistory: 'Ingredients added from history',
+    recipesReady: 'Recipes Ready!',
+    recipesGenerated: '{{count}} AI recipe suggestions generated',
+    noRecipeFound: 'No Recipe Found',
+    noRecipeFoundDescription: 'No recipes could be generated for these ingredients',
+    aiError: 'AI Error',
+    aiErrorDescription: 'An error occurred while generating recipes',
+    ingredientRequired: 'Ingredients Required',
+    ingredientRequiredDescription: 'Please add at least one ingredient',
+  },
+
   // Success Messages
   success: {
     saved: 'Saved!',
@@ -240,6 +295,108 @@ export const en = {
     // Onboarding specific
     onboardingWelcome: 'Welcome! 🎉',
     notificationPermissionGranted: 'Notifications enabled! 🔔',
+  },
+
+  // Settings Screen
+  settings: {
+    title: 'Settings',
+    account: 'Account',
+    profile: {
+      title: 'Profile',
+      subtitle: 'Manage your profile information'
+    },
+    notifications: {
+      title: 'Notifications',
+      subtitle: 'Push notifications and alerts'
+    },
+    language: {
+      title: 'Language',
+      turkish: 'Türkçe',
+      english: 'English'
+    },
+    appSettings: 'App Settings',
+    theme: {
+      title: 'Theme',
+      light: 'Light mode',
+      dark: 'Dark mode'
+    },
+    soundEffects: {
+      title: 'Sound Effects',
+      subtitle: 'App sounds and feedback'
+    },
+    hapticFeedback: {
+      title: 'Haptic Feedback',
+      subtitle: 'Vibration feedback'
+    },
+    premiumFeatures: 'Premium Features',
+    advancedRecipes: {
+      title: 'Advanced Recipe Suggestions',
+      subtitle: 'AI-powered personalized recipes'
+    },
+    unlimitedSearch: {
+      title: 'Unlimited Recipe Search',
+      subtitle: 'Unlimited access without daily limits'
+    },
+    premiumSupport: {
+      title: 'Priority Support',
+      subtitle: '24/7 customer support'
+    },
+    offlineRecipes: {
+      title: 'Offline Recipes',
+      subtitle: 'Access recipes without internet connection'
+    },
+    support: 'Support',
+    helpCenter: {
+      title: 'Help Center',
+      subtitle: 'FAQ and user guide'
+    },
+    contactUs: {
+      title: 'Contact Us',
+      subtitle: 'Reach out for your questions'
+    },
+    supportContact: {
+      title: 'Contact Support',
+      subtitle: 'Get help from our team'
+    },
+    shareApp: {
+      title: 'Share App',
+      subtitle: 'Share with your friends'
+    },
+    rateApp: {
+      title: 'Rate App',
+      subtitle: 'Rate us on the App Store'
+    },
+    about: 'About',
+    legal: 'Legal',
+    developerTools: 'Developer Tools',
+    developmentMode: {
+      title: 'Development Mode',
+      subtitle: 'Environment: {{environment}}'
+    },
+    debugLogs: {
+      title: 'Debug Logs',
+      subtitle: 'View application debug information'
+    },
+    debugInfo: 'Debug Information',
+    privacyPolicy: {
+      title: 'Privacy Policy',
+      subtitle: 'Data protection and privacy'
+    },
+    termsOfService: {
+      title: 'Terms of Service',
+      subtitle: 'App usage terms'
+    },
+    version: 'Version',
+    developerOptions: 'Developer Options',
+    clearCache: 'Clear Cache',
+    resetApp: 'Reset App',
+    showDebugInfo: 'Show Debug Info',
+    premiumRequired: 'This feature requires Premium membership',
+    languageChanged: 'Language changed',
+    themeChanged: 'Theme changed',
+    debugEnabled: 'Debug mode enabled',
+    cacheCleared: 'Cache cleared',
+    environment: 'Environment'
   },
 
   // Warnings
@@ -489,11 +646,20 @@ export const en = {
   // Premium
   premium: {
     upgrade_to_premium: 'Upgrade to Premium',
+    unlock_all_features: 'Unlock all premium features',
+    what_you_get: 'What You\'ll Get',
     upgrade_for_feature: 'Upgrade to Premium for {{feature}}',
     feature_unlock: 'Unlock {{feature}} with Premium',
     start_free_trial: '7 Days Free Trial',
+    start_subscription: 'Start Subscription',
     monthly_subscription: 'Monthly Subscription',
+    yearly_subscription: 'Yearly Subscription',
+    weekly_trial: 'Weekly Trial',
+    three_month_subscription: '3 Month Subscription',
+    six_month_subscription: '6 Month Subscription',
+    lifetime_purchase: 'Lifetime Purchase',
     choose_plan: 'Choose Your Plan',
+    save_percentage: 'Save {{percentage}}%',
     purchasing: 'Purchasing...',
     restoring: 'Restoring...',
     restore_purchases: 'Restore Purchases',
@@ -502,27 +668,30 @@ export const en = {
     // Features
     features: {
       unlimited_recipes: 'Unlimited Recipes',
-      unlimited_recipes_desc: 'Access to thousands of recipes',
+      unlimited_recipes_desc: 'Access thousands of recipes without daily limits',
       advanced_filters: 'Advanced Filters',
-      advanced_filters_desc: 'Detailed search and filtering',
+      advanced_filters_desc: 'Detailed search and smart filtering options',
       export_recipes: 'Export Recipes',
-      export_recipes_desc: 'Save your recipes as PDF',
-      priority_support: 'Priority Support',
-      priority_support_desc: '24/7 priority customer support',
+      export_recipes_desc: 'Save and share your recipes as PDF',
       no_ads: 'Ad-Free Experience',
-      no_ads_desc: 'Use without any ads',
+      no_ads_desc: 'Uninterrupted usage without any advertisements',
+      priority_support: 'Priority Support',
+      priority_support_desc: 'Priority customer support within 24 hours',
       offline_mode: 'Offline Mode',
-      offline_mode_desc: 'Use even without internet',
+      offline_mode_desc: 'Access recipes without internet connection',
       custom_meal_plans: 'Custom Meal Plans',
-      custom_meal_plans_desc: 'Personalized weekly menus',
+      custom_meal_plans_desc: 'AI-powered personalized weekly menu suggestions',
       nutrition_tracking: 'Nutrition Tracking',
-      nutrition_tracking_desc: 'Track calories and nutritional values',
+      nutrition_tracking_desc: 'Detailed calorie and nutritional value analysis',
     },
 
     // Period
     period: {
+      week: 'week',
       month: 'month',
+      months: 'months',
       year: 'year',
+      once: 'one-time',
     },
 
     // Messages
@@ -543,27 +712,6 @@ export const en = {
     // Legal
     terms_agreement:
       'By continuing, you agree to the Terms of Service and Privacy Policy',
-  },
-
-  // Settings Screen
-  settings: {
-    title: 'Settings',
-    debugInfo: 'Debug Info',
-    debugInfoDesc: 'App version and environment information',
-    notifications: 'Notifications',
-    sound: 'Sound',
-    hapticFeedback: 'Haptic Feedback',
-    language: 'Language',
-    theme: 'Theme',
-    darkMode: 'Dark Mode',
-    privacy: 'Privacy Policy',
-    terms: 'Terms of Service',
-    support: 'Support',
-    version: 'Version',
-    environment: 'Environment',
-    build: 'Build',
-    developerOptions: 'Developer Options',
-    debugTools: 'Debug Tools',
   },
 
   // Additional onboarding content moved to main onboarding object above
