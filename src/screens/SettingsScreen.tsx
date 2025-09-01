@@ -23,7 +23,12 @@ import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../contexts/LanguageContext';
 import { RevenueCatService } from '../services/RevenueCatService';
-import { typography, spacing, borderRadius, shadows } from '../theme/design-tokens';
+import {
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../theme/design-tokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -132,15 +137,17 @@ Build: ${
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL('https://your-domain.com/privacy-policy');
+    Linking.openURL('https://necatidogrul.dev/yemek-bulucu/privacy-policy');
   };
 
   const openTermsOfService = () => {
-    Linking.openURL('https://your-domain.com/terms-of-service');
+    Linking.openURL('https://necatidogrul.dev/yemek-bulucu/terms-of-service');
   };
 
   const handleContactSupport = () => {
-    Linking.openURL('mailto:support@yemekbulucu.com?subject=Support Request');
+    Linking.openURL(
+      'mailto:necatidogrul7@gmail.com?subject=Yemek Bulucu Support Request'
+    );
   };
 
   const SettingItem = ({
@@ -211,12 +218,13 @@ Build: ${
               style={[
                 styles.iconContainer,
                 {
-                  backgroundColor: iconBackground || 
+                  backgroundColor:
+                    iconBackground ||
                     (isDanger
                       ? colors.neutral[200]
                       : isPremiumFeature
-                      ? colors.primary[100]
-                      : colors.neutral[100]),
+                        ? colors.primary[100]
+                        : colors.neutral[100]),
                 },
               ]}
             >
@@ -228,8 +236,8 @@ Build: ${
                   (isDanger
                     ? colors.primary[700]
                     : isPremiumFeature
-                    ? colors.primary[600]
-                    : colors.text.secondary)
+                      ? colors.primary[600]
+                      : colors.text.secondary)
                 }
               />
             </View>
@@ -239,7 +247,9 @@ Build: ${
                   style={[
                     styles.settingTitle,
                     {
-                      color: isDanger ? colors.primary[700] : colors.text.primary,
+                      color: isDanger
+                        ? colors.primary[700]
+                        : colors.text.primary,
                     },
                   ]}
                 >
@@ -253,7 +263,10 @@ Build: ${
               </View>
               {subtitle && (
                 <Text
-                  style={[styles.settingSubtitle, { color: colors.text.secondary }]}
+                  style={[
+                    styles.settingSubtitle,
+                    { color: colors.text.secondary },
+                  ]}
                 >
                   {subtitle}
                 </Text>
@@ -284,19 +297,22 @@ Build: ${
   );
 
   const UserProfileHeader = () => (
-    <View style={[styles.profileHeader, { backgroundColor: colors.current.surface }]}>
+    <View
+      style={[
+        styles.profileHeader,
+        { backgroundColor: colors.current.surface },
+      ]}
+    >
       <LinearGradient
-        colors={[
-          colors.primary[500],
-          colors.primary[600],
-          colors.primary[700],
-        ]}
+        colors={[colors.primary[500], colors.primary[600], colors.primary[700]]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.profileGradient}
       >
         <View style={styles.avatarContainer}>
-          <View style={[styles.avatar, { backgroundColor: colors.current.surface }]}>
+          <View
+            style={[styles.avatar, { backgroundColor: colors.current.surface }]}
+          >
             <Ionicons name='person' size={32} color={colors.primary[600]} />
           </View>
         </View>
@@ -313,7 +329,12 @@ Build: ${
                 </Text>
               </View>
             ) : (
-              <Text style={[styles.statusText, { color: colors.neutral[0], opacity: 0.8 }]}>
+              <Text
+                style={[
+                  styles.statusText,
+                  { color: colors.neutral[0], opacity: 0.8 },
+                ]}
+              >
                 Ücretsiz Kullanıcı
               </Text>
             )}
@@ -325,7 +346,7 @@ Build: ${
 
   const PremiumCard = () => {
     if (isPremiumUser) return null;
-    
+
     return (
       <TouchableOpacity style={styles.premiumCardContainer} activeOpacity={0.8}>
         <LinearGradient
@@ -343,14 +364,25 @@ Build: ${
               <Ionicons name='diamond' size={24} color={colors.neutral[0]} />
             </View>
             <View style={styles.premiumCardText}>
-              <Text style={[styles.premiumCardTitle, { color: colors.neutral[0] }]}>
+              <Text
+                style={[styles.premiumCardTitle, { color: colors.neutral[0] }]}
+              >
                 Premium'a Yükselt
               </Text>
-              <Text style={[styles.premiumCardSubtitle, { color: colors.neutral[0] }]}>
+              <Text
+                style={[
+                  styles.premiumCardSubtitle,
+                  { color: colors.neutral[0] },
+                ]}
+              >
                 Sınırsız tarif ve özel özellikler
               </Text>
             </View>
-            <Ionicons name='arrow-forward' size={20} color={colors.neutral[0]} />
+            <Ionicons
+              name='arrow-forward'
+              size={20}
+              color={colors.neutral[0]}
+            />
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -362,13 +394,26 @@ Build: ${
       style={[styles.container, { backgroundColor: colors.current.background }]}
     >
       {/* Modern Header */}
-      <View style={[styles.header, { backgroundColor: colors.current.surface, borderBottomColor: colors.border.light }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.current.surface,
+            borderBottomColor: colors.border.light,
+          },
+        ]}
+      >
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
         >
-          <View style={[styles.backButtonContainer, { backgroundColor: colors.neutral[100] }]}>
+          <View
+            style={[
+              styles.backButtonContainer,
+              { backgroundColor: colors.neutral[100] },
+            ]}
+          >
             <Ionicons name='arrow-back' size={22} color={colors.text.primary} />
           </View>
         </TouchableOpacity>
@@ -378,15 +423,15 @@ Build: ${
         <View style={styles.headerRight} />
       </View>
 
-      <Animated.ScrollView 
+      <Animated.ScrollView
         style={[
-          styles.content, 
-          { 
+          styles.content,
+          {
             backgroundColor: colors.current.background,
             opacity: fadeAnim,
-            transform: [{ translateY: slideAnim }]
-          }
-        ]} 
+            transform: [{ translateY: slideAnim }],
+          },
+        ]}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
@@ -435,7 +480,11 @@ Build: ${
           <SettingItem
             icon='globe-outline'
             title={t('settings.language.title')}
-            subtitle={currentLanguage === 'tr' ? t('settings.language.turkish') : t('settings.language.english')}
+            subtitle={
+              currentLanguage === 'tr'
+                ? t('settings.language.turkish')
+                : t('settings.language.english')
+            }
             iconColor={colors.secondary[600]}
             iconBackground={colors.primary[100]}
             onPress={() => {
@@ -452,22 +501,22 @@ Build: ${
           <SettingItem
             icon={isDark ? 'moon' : 'sunny'}
             title={t('settings.theme.title')}
-            subtitle={isDark ? t('settings.theme.dark') : t('settings.theme.light')}
+            subtitle={
+              isDark ? t('settings.theme.dark') : t('settings.theme.light')
+            }
             iconColor={isDark ? colors.info[600] : colors.warning[600]}
             iconBackground={isDark ? colors.info[100] : colors.warning[100]}
             rightElement={
               <Switch
                 value={isDark}
-                onValueChange={(value) => {
+                onValueChange={value => {
                   setThemeMode(value ? 'dark' : 'light');
                 }}
                 trackColor={{
                   false: colors.neutral[300],
                   true: colors.primary[300],
                 }}
-                thumbColor={
-                  isDark ? colors.primary[600] : colors.neutral[400]
-                }
+                thumbColor={isDark ? colors.primary[600] : colors.neutral[400]}
                 ios_backgroundColor={colors.neutral[300]}
               />
             }
@@ -565,7 +614,10 @@ Build: ${
               <SettingItem
                 icon='code-outline'
                 title={t('settings.developmentMode.title')}
-                subtitle={t('settings.developmentMode.subtitle', { environment: process.env.EXPO_PUBLIC_ENVIRONMENT || 'development' })}
+                subtitle={t('settings.developmentMode.subtitle', {
+                  environment:
+                    process.env.EXPO_PUBLIC_ENVIRONMENT || 'development',
+                })}
                 onPress={() => showSuccess(t('success.debugToolsActivated'))}
               />
               <SettingItem
@@ -651,8 +703,8 @@ Build: ${
           <TouchableOpacity
             style={[
               styles.settingItem,
-              { 
-                backgroundColor: colors.current.surface, 
+              {
+                backgroundColor: colors.current.surface,
                 borderBottomWidth: 0,
                 borderRadius: borderRadius.lg,
               },
