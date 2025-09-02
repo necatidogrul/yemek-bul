@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { Logger } from '../../services/LoggerService';
 import {
   View,
   StyleSheet,

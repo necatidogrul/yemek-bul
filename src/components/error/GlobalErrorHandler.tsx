@@ -36,10 +36,10 @@ export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({
           }
         });
       } else {
-        console.warn('ErrorUtils is not available in this environment');
+        Logger.warn('ErrorUtils is not available in this environment');
       }
     } catch (error) {
-      console.warn('Failed to set up global error handler:', error);
+      Logger.warn('Failed to set up global error handler:', error);
     }
 
     // Handle unhandled promise rejections (only for web platforms)
@@ -70,7 +70,7 @@ export const GlobalErrorHandler: React.FC<GlobalErrorHandlerProps> = ({
           ErrorUtils.setGlobalHandler(originalHandler);
         }
       } catch (error) {
-        console.warn('Failed to restore original error handler:', error);
+        Logger.warn('Failed to restore original error handler:', error);
       }
 
       if (typeof window !== 'undefined' && window.removeEventListener) {

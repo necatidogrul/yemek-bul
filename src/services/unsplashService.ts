@@ -1,3 +1,5 @@
+import { Logger } from './LoggerService';
+
 export interface UnsplashImage {
   id: string;
   width: number;
@@ -34,12 +36,12 @@ export class UnsplashService {
   static async searchFoodImage(searchTerm: string): Promise<string | null> {
     try {
       if (!this.ACCESS_KEY) {
-        console.warn('⚠️ Unsplash API key bulunamadı');
+        Logger.warn('⚠️ Unsplash API key bulunamadı');
         // Temporary fallback for testing
         return 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop';
       }
 
-      console.log('🔍 Unsplash: Fotoğraf aranıyor:', searchTerm);
+      Logger.info('🔍 Unsplash: Fotoğraf aranıyor:', searchTerm);
 
       const response = await fetch(
         `${this.API_URL}/search/photos?query=${encodeURIComponent(searchTerm)}&page=1&per_page=1&orientation=landscape`,
@@ -58,15 +60,15 @@ export class UnsplashService {
 
       if (data.results && data.results.length > 0) {
         const image = data.results[0];
-        console.log('✅ Unsplash: Fotoğraf bulundu:', image.urls.regular);
+        Logger.info('✅ Unsplash: Fotoğraf bulundu:', image.urls.regular);
         return image.urls.regular;
       }
 
-      console.log('❌ Unsplash: Fotoğraf bulunamadı:', searchTerm);
+      Logger.info('❌ Unsplash: Fotoğraf bulunamadı:', searchTerm);
       // Fallback image when no results
       return this.getFallbackFoodImage(searchTerm);
     } catch (error) {
-      console.error('❌ Unsplash API Error:', error);
+      Logger.error('❌ Unsplash API Error:', error);
       // Fallback image on error
       return this.getFallbackFoodImage(searchTerm);
     }
@@ -80,7 +82,7 @@ export class UnsplashService {
   ): Promise<string | null> {
     try {
       if (!this.ACCESS_KEY) {
-        console.warn('⚠️ Unsplash API key bulunamadı');
+        Logger.warn('⚠️ Unsplash API key bulunamadı');
         return null;
       }
 
@@ -100,7 +102,7 @@ export class UnsplashService {
       const image: UnsplashImage = await response.json();
       return image.urls.regular;
     } catch (error) {
-      console.error('❌ Unsplash Random API Error:', error);
+      Logger.error('❌ Unsplash Random API Error:', error);
       return null;
     }
   }
@@ -114,7 +116,7 @@ export class UnsplashService {
   ): Promise<string[]> {
     try {
       if (!this.ACCESS_KEY) {
-        console.warn('⚠️ Unsplash API key bulunamadı');
+        Logger.warn('⚠️ Unsplash API key bulunamadı');
         return [];
       }
 
@@ -134,7 +136,7 @@ export class UnsplashService {
       const data: UnsplashSearchResponse = await response.json();
       return data.results.map(image => image.urls.regular);
     } catch (error) {
-      console.error('❌ Unsplash Multiple API Error:', error);
+      Logger.error('❌ Unsplash Multiple API Error:', error);
       return [];
     }
   }
@@ -181,7 +183,7 @@ export class UnsplashService {
 
       return response.ok;
     } catch (error) {
-      console.error('❌ Unsplash API status check failed:', error);
+      Logger.error('❌ Unsplash API status check failed:', error);
       return false;
     }
   }

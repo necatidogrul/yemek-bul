@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Device from 'expo-device';
 import { Recipe } from '../types/Recipe';
 import { RevenueCatService } from './RevenueCatService';
+import { Logger } from '../services/LoggerService';
 
 const FAVORITES_KEY = 'user_favorites';
 const FREE_FAVORITES_LIMIT = 3; // Ücretsiz kullanıcılar için limit

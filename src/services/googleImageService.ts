@@ -1,3 +1,5 @@
+import { Logger } from './LoggerService';
+
 export interface GoogleImageItem {
   link: string;
   image?: {
@@ -29,7 +31,7 @@ export class GoogleImageService {
   static async searchImageUrl(query: string): Promise<string | null> {
     try {
       if (!this.API_KEY || !this.CSE_ID) {
-        console.warn(
+        Logger.warn(
           '⚠️ Google CSE yapılandırması eksik (API_KEY veya CSE_ID).'
         );
         return null;
@@ -58,7 +60,7 @@ export class GoogleImageService {
 
       return null;
     } catch (error) {
-      console.error('❌ GoogleImageService Error:', error);
+      Logger.error('❌ GoogleImageService Error:', error);
       return null;
     }
   }
@@ -72,7 +74,7 @@ export class GoogleImageService {
   ): Promise<string[]> {
     try {
       if (!this.API_KEY || !this.CSE_ID) {
-        console.warn(
+        Logger.warn(
           '⚠️ Google CSE yapılandırması eksik (API_KEY veya CSE_ID).'
         );
         return [];
@@ -98,7 +100,7 @@ export class GoogleImageService {
       const data: GoogleImageSearchResponse = await response.json();
       return (data.items || []).map(item => item.link).filter(Boolean);
     } catch (error) {
-      console.error('❌ GoogleImageService (multiple) Error:', error);
+      Logger.error('❌ GoogleImageService (multiple) Error:', error);
       return [];
     }
   }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Logger } from '../services/LoggerService';
 import {
   View,
   FlatList,

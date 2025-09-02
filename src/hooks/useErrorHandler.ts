@@ -34,7 +34,7 @@ export const useErrorHandler = () => {
 
       // Log error to console (and external services in production)
       if (logError) {
-        console.error(`${contextInfo}Error:`, error);
+        Logger.error(`${contextInfo}Error:`, error);
 
         // TODO: In production, send to crash reporting service
         // Example: Crashlytics.recordError(error);

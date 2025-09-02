@@ -18,6 +18,10 @@ export interface UserProperties {
   appVersion?: string;
   deviceType?: string;
   language?: string;
+  // ASO tracking
+  installSource?: string;
+  firstSessionKeywords?: string[];
+  organicInstall?: boolean;
 }
 
 export interface AnalyticsEvent {
@@ -57,10 +61,10 @@ class AnalyticsServiceClass {
       this.isEnabled = !__DEV__ || false; // Disable in development
 
       if (__DEV__) {
-        console.log('📊 Analytics initialized (development mode)');
+        Logger.info('📊 Analytics initialized (development mode)');
       }
     } catch (error) {
-      console.warn('Analytics initialization failed:', error);
+      Logger.warn('Analytics initialization failed:', error);
     }
   }
 
@@ -79,7 +83,7 @@ class AnalyticsServiceClass {
         this.logDebug('User ID set', { userId });
       }
     } catch (error) {
-      console.warn('Failed to set user ID:', error);
+      Logger.warn('Failed to set user ID:', error);
     }
   }
 
@@ -97,7 +101,7 @@ class AnalyticsServiceClass {
         this.logDebug('User properties updated', properties);
       }
     } catch (error) {
-      console.warn('Failed to set user properties:', error);
+      Logger.warn('Failed to set user properties:', error);
     }
   }
 
@@ -127,12 +131,12 @@ class AnalyticsServiceClass {
 
       // Store locally for debugging
       if (__DEV__) {
-        console.log(`📊 Event: ${eventName}`, eventData.parameters);
+        Logger.info(`📊 Event: ${eventName}`, eventData.parameters);
       }
 
       this.addBreadcrumb(`Event: ${eventName}`);
     } catch (error) {
-      console.warn('Failed to track event:', error);
+      Logger.warn('Failed to track event:', error);
     }
   }
 
@@ -219,6 +223,23 @@ class AnalyticsServiceClass {
     await this.trackEvent('search_history', { action });
   }
 
+  // ASO Keyword Tracking
+  async trackKeywordUsage(keywords: string[], resultCount: number, successful: boolean) {
+    await this.trackEvent('aso_keyword_usage', {
+      keywords: keywords.join(','),
+      result_count: resultCount,
+      successful,
+      search_method: 'ingredient_input'
+    });
+  }
+
+  async trackPopularSearchTerms(term: string, frequency: number) {
+    await this.trackEvent('popular_search_terms', {
+      search_term: term,
+      frequency
+    });
+  }
+
   async trackVoiceCommand(success: boolean, command?: string) {
     await this.trackEvent('voice_command', {
       success,
@@ -257,7 +278,7 @@ class AnalyticsServiceClass {
 
       // Development logging
       if (__DEV__) {
-        console.error('🚨 Error reported:', {
+        Logger.error('🚨 Error reported:', {
           message: error.message,
           stack: error.stack,
           context: crashData.context,
@@ -266,7 +287,7 @@ class AnalyticsServiceClass {
 
       this.addBreadcrumb(`Error: ${error.message}`);
     } catch (reportError) {
-      console.warn('Failed to report error:', reportError);
+      Logger.warn('Failed to report error:', reportError);
     }
   }
 
@@ -340,7 +361,7 @@ class AnalyticsServiceClass {
         language: Platform.OS === 'ios' ? 'tr' : 'tr', // Default to Turkish
       };
     } catch (error) {
-      console.warn('Failed to get device info:', error);
+      Logger.warn('Failed to get device info:', error);
       return {};
     }
   }
@@ -357,7 +378,7 @@ class AnalyticsServiceClass {
 
       return defaultValue;
     } catch (error) {
-      console.warn('Failed to get remote config:', error);
+      Logger.warn('Failed to get remote config:', error);
       return defaultValue;
     }
   }
@@ -368,7 +389,7 @@ class AnalyticsServiceClass {
 
   private logDebug(message: string, data?: any) {
     if (__DEV__) {
-      console.log(`📊 Analytics: ${message}`, data || '');
+      Logger.info(`📊 Analytics: ${message}`, data || '');
     }
   }
 

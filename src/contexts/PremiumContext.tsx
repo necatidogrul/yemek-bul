@@ -18,11 +18,12 @@ import {
 } from '../services/RevenueCatService';
 import { PremiumFeature } from '../config/revenueCat';
 import { PaywallModal } from '../components/premium/PaywallModal';
+import { Logger } from '../services/LoggerService';
 
 // Debug helper
 const debugLog = (message: string, data?: any) => {
   if (__DEV__) {
-    console.log(message, data || '');
+    Logger.info(message, data || '');
   }
 };
 
@@ -103,7 +104,7 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
       // Premium durumunu kontrol et
       await refreshPremiumStatus();
     } catch (error) {
-      console.error('Premium initialization failed:', error);
+      Logger.error('Premium initialization failed:', error);
 
       // Hata olsa bile uygulamanın çalışmasına devam et
       setPremiumStatus({
@@ -126,7 +127,7 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
 
       debugLog('Premium status updated:', status);
     } catch (error) {
-      console.error('Failed to refresh premium status:', error);
+      Logger.error('Failed to refresh premium status:', error);
 
       // Hata durumunda premium'u false yap
       setPremiumStatus({
@@ -141,7 +142,7 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
       try {
         return await RevenueCatService.hasFeatureAccess(feature);
       } catch (error) {
-        console.error('Failed to check feature access:', error);
+        Logger.error('Failed to check feature access:', error);
         return false;
       }
     },

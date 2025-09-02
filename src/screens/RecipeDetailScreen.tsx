@@ -151,7 +151,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
             setRecipe(mockRecipe);
           }
         } catch (error) {
-          console.error('Failed to load recipe:', error);
+          Logger.error('Failed to load recipe:', error);
           showError('Tarif detayları yüklenemedi');
         } finally {
           setIsLoadingRecipe(false);

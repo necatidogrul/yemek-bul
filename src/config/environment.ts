@@ -5,6 +5,8 @@
  * güvenli bir configuration sistemi sağlar.
  */
 
+import { Logger } from '../services/LoggerService';
+
 export type Environment = 'development' | 'testing' | 'production';
 
 // Current environment detection
@@ -62,11 +64,11 @@ export const isProduction = () => ENV === 'production';
 // Debug logging helper
 export const debugLog = (message: string, ...args: any[]) => {
   if (CURRENT_CONFIG.enableDebugLogs) {
-    console.log(`[${ENV.toUpperCase()}] ${message}`, ...args);
+    Logger.info(`[${ENV.toUpperCase()}] ${message}`, ...args);
   }
 };
 
 export const shouldUseMockServices = () => CURRENT_CONFIG.mockServices;
 
-console.log(`🌍 Environment: ${ENV}`);
-console.log(`⚙️ Config:`, CURRENT_CONFIG);
+Logger.info(`🌍 Environment: ${ENV}`);
+Logger.info(`⚙️ Config:`, CURRENT_CONFIG);

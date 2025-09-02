@@ -33,7 +33,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { FavoriteButton } from '../components/ui/FavoriteButton';
 import { useThemedStyles } from '../hooks/useThemedStyles';
 import { usePremium } from '../contexts/PremiumContext';
-import { usePremiumGuard } from '../hooks/usePremiumGuard';
+// import { usePremiumGuard } from '../hooks/usePremiumGuard';
 import { useToast } from '../contexts/ToastContext';
 import { spacing, borderRadius, shadows } from '../theme/design-tokens';
 
@@ -67,11 +67,11 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const { isPremium, showPaywall } = usePremium();
   const { showSuccess, showError } = useToast();
 
-  // Premium guard for history access
-  const historyGuard = usePremiumGuard({
-    feature: 'unlimitedRecipes',
-    title: 'Geçmiş özelliği premium kullanıcılar içindir',
-  });
+  // Premium guard for history access - removed to allow free users to see history
+  // const historyGuard = usePremiumGuard({
+  //   feature: 'unlimitedRecipes',
+  //   title: 'Geçmiş özelliği premium kullanıcılar içindir',
+  // });
 
   // Convert history recipe to full Recipe type
   const convertToFullRecipe = (historyRecipe: any): Recipe => ({
@@ -85,10 +85,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   });
 
   useEffect(() => {
-    if (!historyGuard.hasAccess) {
-      historyGuard.requirePremium();
-      return;
-    }
+    // Allow all users to see history
     loadHistoryData();
   }, [filter]);
 
@@ -113,7 +110,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
       setIsLoading(true);
       const [historyData, statsData, popularData] = await Promise.all([
         HistoryService.getHistory(filter),
-        HistoryService.getStats(historyGuard.hasAccess), // Premium istatistikler dahil
+        HistoryService.getStats(isPremium), // Premium istatistikler dahil
         HistoryService.getPopularCombinations(5),
       ]);
 
@@ -121,7 +118,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
       setStats(statsData);
       setPopularCombinations(popularData);
     } catch (error) {
-      console.error('History loading error:', error);
+      Logger.error('History loading error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -804,7 +801,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
         )}
 
         {/* Premium Analytics */}
-        {historyGuard.hasAccess && stats?.totalTokensUsed !== undefined && (
+        {isPremium && stats?.totalTokensUsed !== undefined && (
           <Card variant='elevated' size='lg' style={styles.statsSection}>
             <View style={styles.statsSectionHeader}>
               <LinearGradient
@@ -1004,129 +1001,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     </Animated.View>
   );
 
-  // Premium olmayan kullanıcılar için paywall
-  if (!historyGuard.hasAccess) {
-    return (
-      <View
-        style={[
-          styles.container,
-          { backgroundColor: colors.background.primary },
-        ]}
-      >
-        <StatusBar
-          barStyle='light-content'
-          backgroundColor={colors.primary[600]}
-        />
-
-        {/* Header */}
-        <LinearGradient
-          colors={[colors.primary[600], colors.primary[700]]}
-          style={styles.compactHeader}
-        >
-          <SafeAreaView>
-            <View style={styles.headerContainer}>
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Ionicons name='chevron-back' size={24} color='white' />
-              </TouchableOpacity>
-
-              <View style={styles.headerCenter}>
-                <Text
-                  variant='headlineSmall'
-                  weight='bold'
-                  style={{ color: 'white' }}
-                >
-                  Arama Geçmişi
-                </Text>
-              </View>
-
-              <View style={styles.headerActions} />
-            </View>
-          </SafeAreaView>
-        </LinearGradient>
-
-        {/* Scrollable Premium Required Content */}
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.premiumScrollContent}
-          bounces={true}
-        >
-          <View style={styles.premiumRequiredContainer}>
-            <LinearGradient
-              colors={['#FFD700', '#FFA500']}
-              style={styles.premiumMainIcon}
-            >
-              <Ionicons name='star' size={40} color='white' />
-            </LinearGradient>
-
-            <Text
-              variant='displaySmall'
-              weight='bold'
-              color='primary'
-              align='center'
-            >
-              Premium Özellik
-            </Text>
-
-            <Text
-              variant='bodyLarge'
-              color='secondary'
-              align='center'
-              style={styles.premiumDescription}
-            >
-              Arama geçmişinizi görmek ve detaylı istatistikler almak için
-              Premium'a geçin
-            </Text>
-
-            <View style={styles.premiumFeaturesList}>
-              {[
-                'Sınırsız geçmiş kaydı',
-                'Detaylı arama istatistikleri',
-                'Popüler kombinasyonlar',
-                'Tarif başarı oranları',
-                'En çok kullanılan malzemeler',
-              ].map((feature, index) => (
-                <View key={index} style={styles.premiumFeatureItem}>
-                  <Ionicons
-                    name='checkmark-circle'
-                    size={20}
-                    color={colors.success[500]}
-                  />
-                  <Text
-                    variant='bodyMedium'
-                    style={{ flex: 1, marginLeft: 12 }}
-                  >
-                    {feature}
-                  </Text>
-                </View>
-              ))}
-            </View>
-
-            <LinearGradient
-              colors={['#FFD700', '#FFA500']}
-              style={styles.premiumButton}
-            >
-              <TouchableOpacity
-                style={styles.premiumButtonContent}
-                onPress={() => historyGuard.requirePremium()}
-              >
-                <Ionicons name='star' size={20} color='white' />
-                <Text
-                  variant='headlineSmall'
-                  weight='bold'
-                  style={{ color: 'white' }}
-                >
-                  Premium'a Geç
-                </Text>
-              </TouchableOpacity>
-            </LinearGradient>
-          </View>
-        </ScrollView>
-      </View>
-    );
-  }
+  // Premium olmayan kullanıcılar için paywall - kaldırıldı, artık herkes görebilir
 
   if (isLoading) {
     return (

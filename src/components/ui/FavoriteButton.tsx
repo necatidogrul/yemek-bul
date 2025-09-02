@@ -40,7 +40,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       const favoriteStatus = await FavoritesService.isFavorite(recipe.id);
       setIsFavorite(favoriteStatus);
     } catch (error) {
-      console.error('Error checking favorite status:', error);
+      Logger.error('Error checking favorite status:', error);
     }
   };
 
@@ -69,7 +69,7 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         }
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      Logger.error('Error toggling favorite:', error);
       showError('Favorileme işlemi başarısız oldu.');
     } finally {
       setIsLoading(false);

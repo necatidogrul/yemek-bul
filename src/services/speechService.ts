@@ -19,10 +19,10 @@ export class SpeechService {
   static async initialize(): Promise<boolean> {
     try {
       this.speechState.isAvailable = true;
-      console.log('🎤 Speech service initialized: Text-to-speech available');
+      Logger.info('🎤 Speech service initialized: Text-to-speech available');
       return true;
     } catch (error) {
-      console.error('❌ Speech service initialization failed:', error);
+      Logger.error('❌ Speech service initialization failed:', error);
       return false;
     }
   }
@@ -32,7 +32,7 @@ export class SpeechService {
    */
   static async startListening(): Promise<void> {
     this.speechState.isListening = true;
-    console.log('🎤 Speech listening UI started (text-to-speech only)');
+    Logger.info('🎤 Speech listening UI started (text-to-speech only)');
   }
 
   /**
@@ -40,7 +40,7 @@ export class SpeechService {
    */
   static async stopListening(): Promise<void> {
     this.speechState.isListening = false;
-    console.log('🛑 Speech listening UI stopped');
+    Logger.info('🛑 Speech listening UI stopped');
   }
 
   /**
@@ -48,7 +48,7 @@ export class SpeechService {
    */
   static async cancelListening(): Promise<void> {
     this.speechState.isListening = false;
-    console.log('❌ Speech listening cancelled');
+    Logger.info('❌ Speech listening cancelled');
   }
 
   /**
@@ -288,7 +288,7 @@ export class SpeechService {
     });
 
     const result = Array.from(foundIngredients);
-    console.log('🔍 Extracted ingredients from speech:', result);
+    Logger.info('🔍 Extracted ingredients from speech:', result);
     return result;
   }
 
@@ -327,9 +327,9 @@ export class SpeechService {
       if (this.speechState.isListening) {
         await this.stopListening();
       }
-      console.log('🧹 Speech service cleaned up');
+      Logger.info('🧹 Speech service cleaned up');
     } catch (error) {
-      console.error('❌ Speech cleanup error:', error);
+      Logger.error('❌ Speech cleanup error:', error);
     }
   }
 }

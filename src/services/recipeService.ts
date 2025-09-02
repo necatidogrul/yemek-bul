@@ -72,7 +72,7 @@ class PremiumLimitsService {
 
   static async recordCommunityUsage(userId: string): Promise<void> {
     // Premium kullanıcılar için kullanım kaydı
-    console.log('Community usage recorded for premium user:', userId);
+    Logger.info('Community usage recorded for premium user:', userId);
   }
 
   static async canUseAI(userId: string): Promise<boolean> {
@@ -82,7 +82,7 @@ class PremiumLimitsService {
 
   static async recordAIUsage(userId: string): Promise<void> {
     // Premium kullanıcılar için AI kullanım kaydı
-    console.log('AI usage recorded for premium user:', userId);
+    Logger.info('AI usage recorded for premium user:', userId);
   }
 }
 
@@ -135,7 +135,7 @@ export class RecipeService {
       } = request;
 
       const isOnline = await MobileStorageService.isOnline();
-      console.log('🔍 Recipe search started:', {
+      Logger.info('🔍 Recipe search started:', {
         ingredients,
         useAI,
         offline: !isOnline,
@@ -145,7 +145,7 @@ export class RecipeService {
       const cachedResult =
         await MobileStorageService.getCachedSearchResult(ingredients);
       if (cachedResult) {
-        console.log('⚡ Found in mobile cache:', cachedResult.metadata.source);
+        Logger.info('⚡ Found in mobile cache:', cachedResult.metadata.source);
         isCachedResult = true;
         isStaleResult = cachedResult.metadata.isStale || false;
 
@@ -168,7 +168,7 @@ export class RecipeService {
         }
 
         // Stale ise background'da güncelle (stale-while-revalidate pattern)
-        console.log('🔄 Cached result is stale, updating in background...');
+        Logger.info('🔄 Cached result is stale, updating in background...');
         this.updateCacheInBackground(request, cachedResult);
 
         return {
@@ -180,7 +180,7 @@ export class RecipeService {
 
       // Offline durumunda cached sonuç yoksa mock data kullan
       if (!isOnline) {
-        console.log('📱 Mobile offline mode: Using mock recipes');
+        Logger.info('📱 Mobile offline mode: Using mock recipes');
         const mockResult = this.searchInMockRecipes(
           ingredients,
           maxMissingIngredients
@@ -205,7 +205,7 @@ export class RecipeService {
         return { ...mockResult, isCached: false, isStale: false };
       }
 
-      console.log('🌐 Online mode: Fetching fresh data...');
+      Logger.info('🌐 Online mode: Fetching fresh data...');
 
       // 1. Community AI recipes pool'da ara
       try {
@@ -217,7 +217,7 @@ export class RecipeService {
           communityResults.exactMatches.length > 0 ||
           communityResults.nearMatches.length > 0
         ) {
-          console.log('✅ Found results in community AI recipe pool');
+          Logger.info('✅ Found results in community AI recipe pool');
           resultType = 'community_pool';
           const result = communityResults;
 
@@ -258,7 +258,7 @@ export class RecipeService {
           return { ...result, isCached: false, isStale: false };
         }
       } catch (communityError) {
-        console.warn('⚠️ Community search failed:', communityError);
+        Logger.warn('⚠️ Community search failed:', communityError);
       }
 
       // 2. Cache'den ara (kısa vadeli AI cache)
@@ -268,7 +268,7 @@ export class RecipeService {
           cachedResults.exactMatches.length > 0 ||
           cachedResults.nearMatches.length > 0
         ) {
-          console.log('✅ Found results in AI cache');
+          Logger.info('✅ Found results in AI cache');
           resultType = 'ai_cache';
           const result = cachedResults;
 
@@ -309,7 +309,7 @@ export class RecipeService {
           return { ...result, isCached: false, isStale: false };
         }
       } catch (cacheError) {
-        console.warn('⚠️ Cache search failed:', cacheError);
+        Logger.warn('⚠️ Cache search failed:', cacheError);
       }
 
       // 3. Eğer AI kullanımı istenmişse ve kullanıcı ID'si varsa
@@ -352,7 +352,7 @@ export class RecipeService {
 
           return { ...aiResult, isCached: false, isStale: false };
         } catch (aiError) {
-          console.warn(
+          Logger.warn(
             '⚠️ AI search failed, falling back to mock data:',
             aiError
           );
@@ -360,7 +360,7 @@ export class RecipeService {
       }
 
       // Fallback 2: Mock verileri kullan
-      console.log('📦 Using mock recipe data');
+      Logger.info('📦 Using mock recipe data');
       const recipes = MOCK_RECIPES;
 
       const exactMatches: Recipe[] = [];
@@ -503,7 +503,7 @@ export class RecipeService {
 
       return { ...result, isCached: false, isStale: false };
     } catch (error) {
-      console.error('Recipe search error:', error);
+      Logger.error('Recipe search error:', error);
 
       // Hata durumu için de history kaydet
       if (request.userId && request.ingredients) {
@@ -522,7 +522,7 @@ export class RecipeService {
             sessionId: request.sessionId,
           });
         } catch (historyError) {
-          console.warn(
+          Logger.warn(
             '⚠️ Failed to record error search history:',
             historyError
           );
@@ -541,20 +541,20 @@ export class RecipeService {
     userId?: string
   ): Promise<RecipeSearchResult> {
     try {
-      console.log('🔍 Searching in community AI recipes pool...');
+      Logger.info('🔍 Searching in community AI recipes pool...');
 
       // Premium kullanıcılar için community pool limit kontrolü
       if (userId) {
         const communityCheck =
           await PremiumLimitsService.canUseCommunityPool(userId);
         if (!communityCheck) {
-          console.log(`⚠️ Premium community pool limit exceeded`);
+          Logger.info(`⚠️ Premium community pool limit exceeded`);
           return { exactMatches: [], nearMatches: [] };
         }
 
         // Community pool kullanımını kaydet
         await PremiumLimitsService.recordCommunityUsage(userId);
-        console.log(`👥 Premium community pool used`);
+        Logger.info(`👥 Premium community pool used`);
       }
 
       const sortedIngredients = ingredients
@@ -571,7 +571,7 @@ export class RecipeService {
         .limit(5);
 
       if (exactError) {
-        console.warn('⚠️ Exact match search failed:', exactError);
+        Logger.warn('⚠️ Exact match search failed:', exactError);
       }
 
       // 2. Kısmi eşleşmeler ara (en az %60 eşleşme)
@@ -584,7 +584,7 @@ export class RecipeService {
         .limit(50);
 
       if (allError) {
-        console.warn('⚠️ Community search failed:', allError);
+        Logger.warn('⚠️ Community search failed:', allError);
         return { exactMatches: [], nearMatches: [] };
       }
 
@@ -640,7 +640,7 @@ export class RecipeService {
 
       const totalResults = exactResults.length + nearResults.length;
       if (totalResults > 0) {
-        console.log(
+        Logger.info(
           `✅ Found ${totalResults} community AI recipes (${exactResults.length} exact, ${nearResults.length} near)`
         );
       }
@@ -650,7 +650,7 @@ export class RecipeService {
         nearMatches: nearResults,
       };
     } catch (error) {
-      console.error('❌ Community AI search error:', error);
+      Logger.error('❌ Community AI search error:', error);
       return { exactMatches: [], nearMatches: [] };
     }
   }
@@ -665,7 +665,7 @@ export class RecipeService {
     tokensUsed: number = 0
   ): Promise<void> {
     try {
-      console.log('💾 Saving AI recipes to community pool...');
+      Logger.info('💾 Saving AI recipes to community pool...');
 
       const sortedIngredients = originalIngredients
         .map(ing => ing.toLowerCase().trim())
@@ -704,11 +704,11 @@ export class RecipeService {
         throw error;
       }
 
-      console.log(
+      Logger.info(
         `✅ Successfully saved ${recipes.length} AI recipes to community pool`
       );
     } catch (error) {
-      console.error('❌ Failed to save recipes to community pool:', error);
+      Logger.error('❌ Failed to save recipes to community pool:', error);
     }
   }
 
@@ -727,7 +727,7 @@ export class RecipeService {
         });
       }
     } catch (error) {
-      console.warn('⚠️ Failed to increment popularity score:', error);
+      Logger.warn('⚠️ Failed to increment popularity score:', error);
     }
   }
 
@@ -813,7 +813,7 @@ export class RecipeService {
         aiResponse.totalTokensUsed
       );
 
-      console.log(`🎯 Premium AI generation used`);
+      Logger.info(`🎯 Premium AI generation used`);
 
       return {
         exactMatches: aiResponse.recipes,
@@ -868,7 +868,7 @@ export class RecipeService {
         aiResponse.totalTokensUsed
       );
 
-      console.log(`💎 Credit AI generation completed`);
+      Logger.info(`💎 Credit AI generation completed`);
 
       return {
         exactMatches: aiResponse.recipes,
@@ -926,9 +926,9 @@ export class RecipeService {
       };
 
       await supabase.from('ai_recipe_cache').insert(cacheData);
-      console.log('✅ AI recipes cached successfully');
+      Logger.info('✅ AI recipes cached successfully');
     } catch (error) {
-      console.warn('⚠️ Failed to cache AI recipes:', error);
+      Logger.warn('⚠️ Failed to cache AI recipes:', error);
     }
   }
 
@@ -954,9 +954,9 @@ export class RecipeService {
       }));
 
       await supabase.from('user_recipe_history').insert(historyEntries);
-      console.log('✅ Recipe history recorded successfully');
+      Logger.info('✅ Recipe history recorded successfully');
     } catch (error) {
-      console.warn('⚠️ Failed to record user history:', error);
+      Logger.warn('⚠️ Failed to record user history:', error);
     }
   }
 
@@ -1005,7 +1005,7 @@ export class RecipeService {
       // Önce mock verilerden ara
       const mockRecipe = MOCK_RECIPES.find(recipe => recipe.id === id);
       if (mockRecipe) {
-        console.log('✅ Recipe found in mock data:', mockRecipe.name);
+        Logger.info('✅ Recipe found in mock data:', mockRecipe.name);
         return mockRecipe;
       }
 
@@ -1017,7 +1017,7 @@ export class RecipeService {
         .single();
 
       if (error) {
-        console.warn('⚠️ Supabase getRecipeById failed:', error);
+        Logger.warn('⚠️ Supabase getRecipeById failed:', error);
         return null;
       }
 
@@ -1038,7 +1038,7 @@ export class RecipeService {
         imageUrl: data.image_url || undefined,
       };
     } catch (error) {
-      console.error('Get recipe error:', error);
+      Logger.error('Get recipe error:', error);
       return null;
     }
   }
@@ -1058,7 +1058,7 @@ export class RecipeService {
 
       return data?.map(item => item.name) || [];
     } catch (error) {
-      console.error('Get ingredients error:', error);
+      Logger.error('Get ingredients error:', error);
       // Güvenli fallback: Temel malzemeler
       return [
         'Domates',
@@ -1134,7 +1134,7 @@ export class RecipeService {
         .sort((a, b) => b.priority - a.priority)
         .slice(0, 10); // En önemli 10 öneri
     } catch (error) {
-      console.error('Get suggestions error:', error);
+      Logger.error('Get suggestions error:', error);
       return [];
     }
   }
@@ -1167,7 +1167,7 @@ export class RecipeService {
         })) || []
       );
     } catch (error) {
-      console.error('Get recipes by category error:', error);
+      Logger.error('Get recipes by category error:', error);
       return [];
     }
   }
@@ -1190,7 +1190,7 @@ export class RecipeService {
       const paginatedRecipes = allRecipes.slice(offset, offset + limit);
 
       if (paginatedRecipes.length > 0) {
-        console.log(
+        Logger.info(
           '✅ Using mock recipes for getAllRecipes:',
           paginatedRecipes.length
         );
@@ -1236,7 +1236,7 @@ export class RecipeService {
         hasMore: (count || 0) > offset + limit,
       };
     } catch (error) {
-      console.error('Get all recipes error:', error);
+      Logger.error('Get all recipes error:', error);
       // Son fallback: Mock veriler
       const allRecipes = MOCK_RECIPES;
       const totalCount = allRecipes.length;
@@ -1303,7 +1303,7 @@ export class RecipeService {
         hasMore: (count || 0) > offset + limit,
       };
     } catch (error) {
-      console.error('Search recipes by name error:', error);
+      Logger.error('Search recipes by name error:', error);
       return {
         recipes: [],
         totalCount: 0,
@@ -1376,7 +1376,7 @@ export class RecipeService {
         hasMore: (count || 0) > offset + limit,
       };
     } catch (error) {
-      console.error('Get recipes by filter error:', error);
+      Logger.error('Get recipes by filter error:', error);
       return {
         recipes: [],
         totalCount: 0,
@@ -1405,10 +1405,10 @@ export class RecipeService {
       const { error } = await supabase.from('recipes').select('id').limit(1);
       results.supabase = !error;
     } catch (error) {
-      console.warn('Supabase health check failed:', error);
+      Logger.warn('Supabase health check failed:', error);
     }
 
-    console.log('🏥 API Health Status:', results);
+    Logger.info('🏥 API Health Status:', results);
     return results;
   }
 
@@ -1442,7 +1442,7 @@ export class RecipeService {
 
       return [...exactMatches, ...partialMatches].slice(0, limit);
     } catch (error) {
-      console.warn(
+      Logger.warn(
         '⚠️ getIngredientSuggestions failed, falling back to mobile storage:',
         error
       );
@@ -1483,7 +1483,7 @@ export class RecipeService {
         })) || []
       );
     } catch (error) {
-      console.error('Get popular combinations error:', error);
+      Logger.error('Get popular combinations error:', error);
       return [];
     }
   }
@@ -1516,7 +1516,7 @@ export class RecipeService {
         latestRecipeDate: data?.latest_recipe_date || '',
       };
     } catch (error) {
-      console.error('Get AI recipe stats error:', error);
+      Logger.error('Get AI recipe stats error:', error);
       return {
         totalAIRecipes: 0,
         uniqueContributors: 0,
@@ -1549,7 +1549,7 @@ export class RecipeService {
 
       return data?.map(recipe => this.mapDatabaseRecipeToRecipe(recipe)) || [];
     } catch (error) {
-      console.error('Get user AI recipes error:', error);
+      Logger.error('Get user AI recipes error:', error);
       return [];
     }
   }
@@ -1572,7 +1572,7 @@ export class RecipeService {
 
       return data?.map(recipe => this.mapDatabaseRecipeToRecipe(recipe)) || [];
     } catch (error) {
-      console.error('Get popular AI recipes error:', error);
+      Logger.error('Get popular AI recipes error:', error);
       return [];
     }
   }
@@ -1601,12 +1601,12 @@ export class RecipeService {
       });
 
       if (error) {
-        console.warn('⚠️ Failed to record search history:', error);
+        Logger.warn('⚠️ Failed to record search history:', error);
       } else {
-        console.log('📝 Search history recorded successfully');
+        Logger.info('📝 Search history recorded successfully');
       }
     } catch (error) {
-      console.warn('⚠️ Search history recording error:', error);
+      Logger.warn('⚠️ Search history recording error:', error);
     }
   }
 
@@ -1649,7 +1649,7 @@ export class RecipeService {
         })) || []
       );
     } catch (error) {
-      console.error('Get user search history error:', error);
+      Logger.error('Get user search history error:', error);
       return [];
     }
   }
@@ -1685,7 +1685,7 @@ export class RecipeService {
           }
         : null;
     } catch (error) {
-      console.error('Get user search stats error:', error);
+      Logger.error('Get user search stats error:', error);
       return null;
     }
   }
@@ -1716,7 +1716,7 @@ export class RecipeService {
         })) || []
       );
     } catch (error) {
-      console.error('Get popular search ingredients error:', error);
+      Logger.error('Get popular search ingredients error:', error);
       return [];
     }
   }
@@ -1758,7 +1758,7 @@ export class RecipeService {
         })) || []
       );
     } catch (error) {
-      console.error('Get search analytics error:', error);
+      Logger.error('Get search analytics error:', error);
       return [];
     }
   }
@@ -1804,7 +1804,7 @@ export class RecipeService {
         .slice(0, limit)
         .map(([ingredient]) => ingredient);
     } catch (error) {
-      console.error('Get user frequent ingredients error:', error);
+      Logger.error('Get user frequent ingredients error:', error);
       return [];
     }
   }
@@ -1823,7 +1823,7 @@ export class RecipeService {
     staleCache: any
   ): Promise<void> {
     try {
-      console.log('🔄 Updating stale cache in background...');
+      Logger.info('🔄 Updating stale cache in background...');
 
       // Background'da fresh data çek (ana akışı engelleme)
       setTimeout(async () => {
@@ -1853,14 +1853,14 @@ export class RecipeService {
               freshResult.responseTime
             );
 
-            console.log('✅ Background cache update completed');
+            Logger.info('✅ Background cache update completed');
           }
         } catch (error) {
-          console.warn('⚠️ Background cache update failed:', error);
+          Logger.warn('⚠️ Background cache update failed:', error);
         }
       }, 100); // 100ms gecikme ile background'da çalış
     } catch (error) {
-      console.warn('⚠️ Failed to start background update:', error);
+      Logger.warn('⚠️ Failed to start background update:', error);
     }
   }
 
@@ -1922,7 +1922,7 @@ export class RecipeService {
             responseTime: Date.now() - startTime,
           };
         } catch (aiError) {
-          console.warn('⚠️ AI search failed in fresh search:', aiError);
+          Logger.warn('⚠️ AI search failed in fresh search:', aiError);
         }
       }
 
@@ -1935,7 +1935,7 @@ export class RecipeService {
         responseTime: Date.now() - startTime,
       };
     } catch (error) {
-      console.warn('⚠️ Fresh search failed:', error);
+      Logger.warn('⚠️ Fresh search failed:', error);
       return null;
     }
   }
@@ -2077,12 +2077,12 @@ export class RecipeService {
    */
   static async syncLocalDataToServer(userId: string): Promise<void> {
     if (!(await MobileStorageService.isOnline())) {
-      console.log('📱 Offline: Cannot sync to server');
+      Logger.info('📱 Offline: Cannot sync to server');
       return;
     }
 
     try {
-      console.log('🔄 Syncing local data to server...');
+      Logger.info('🔄 Syncing local data to server...');
 
       // Local search history'yi server'a gönder
       const localHistory = (
@@ -2107,7 +2107,7 @@ export class RecipeService {
           // Mark as synced
           entry.isSynced = true;
         } catch (syncError) {
-          console.warn('⚠️ Failed to sync entry:', entry.id, syncError);
+          Logger.warn('⚠️ Failed to sync entry:', entry.id?.toString() || 'unknown', syncError?.toString());
         }
       }
 
@@ -2118,9 +2118,9 @@ export class RecipeService {
         JSON.stringify(updatedHistory)
       );
 
-      console.log('✅ Local data synced to server');
+      Logger.info('✅ Local data synced to server');
     } catch (error) {
-      console.error('❌ Failed to sync local data:', error);
+      Logger.error('❌ Failed to sync local data:', error);
     }
   }
 }

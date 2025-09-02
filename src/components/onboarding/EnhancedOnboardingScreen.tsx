@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Logger } from '../../services/LoggerService';
 import {
   View,
   StyleSheet,

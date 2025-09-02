@@ -64,7 +64,7 @@ class AccessibilityService {
       // Notify initial state
       this.notifyListeners();
     } catch (error) {
-      console.warn('Accessibility initialization failed:', error);
+      Logger.warn('Accessibility initialization failed:', error);
     }
   }
 
@@ -112,7 +112,7 @@ class AccessibilityService {
       try {
         listener(this.currentState);
       } catch (error) {
-        console.warn('Accessibility listener error:', error);
+        Logger.warn('Accessibility listener error:', error);
       }
     });
   }

@@ -1,4 +1,5 @@
 import React, { memo } from 'react';
+import { Logger } from '../../services/LoggerService';
 import {
   TouchableOpacity,
   View,

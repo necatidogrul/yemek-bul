@@ -101,7 +101,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
         }, 1500);
       }
     } catch (error) {
-      console.error('Error checking first time user status:', error);
+      Logger.error('Error checking first time user status:', error);
     }
   };
 
@@ -135,7 +135,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
         await UserPreferencesService.markFirstTimeTourCompleted();
         setIsFirstTimeUser(false);
       } catch (error) {
-        console.error('Error marking tour as completed:', error);
+        Logger.error('Error marking tour as completed:', error);
       }
     }
   };
@@ -150,7 +150,7 @@ export const TourProvider: React.FC<TourProviderProps> = ({ children }) => {
         await UserPreferencesService.markFirstTimeTourCompleted();
         setIsFirstTimeUser(false);
       } catch (error) {
-        console.error('Error marking tour as completed:', error);
+        Logger.error('Error marking tour as completed:', error);
       }
     }
   };

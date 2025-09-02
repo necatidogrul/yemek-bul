@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Logger } from '../services/LoggerService';
 
 export interface UserPreferences {
   dietaryRestrictions: string[];

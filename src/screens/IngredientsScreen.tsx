@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Logger } from '../services/LoggerService';
 import {
   View,
   SafeAreaView,
@@ -62,7 +63,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
   const [inputText, setInputText] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [remainingCredits, setRemainingCredits] = useState<number>(2);
+  const [remainingCredits, setRemainingCredits] = useState<{daily: number, monthly?: number}>({ daily: 1 });
   const { colors } = useThemedStyles();
   const haptics = useHaptics();
   const { showWarning } = useToast();
@@ -71,10 +72,8 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
   // Kredi durumunu kontrol et
   useEffect(() => {
     const checkCredits = async () => {
-      if (!isPremium) {
-        const remaining = await UsageLimitService.getRemainingRequests();
-        setRemainingCredits(remaining);
-      }
+      const remaining = await UsageLimitService.getRemainingRequests(isPremium);
+      setRemainingCredits(remaining);
     };
     checkCredits();
   }, [isPremium]);
@@ -114,7 +113,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
     }
 
     // Kredi kontrolü
-    if (!isPremium && remainingCredits <= 0) {
+    if (!isPremium && remainingCredits.daily <= 0) {
       showPaywall(
         'Tarif Arama',
         'Tarif aramak için premium üyelik gerekir veya günlük limitiniz dolmuş.'
@@ -131,20 +130,19 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
       timestamp: new Date().toISOString(),
     });
 
-    // Premium değilse kredi düşür
-    if (!isPremium) {
-      await UsageLimitService.useRequest();
-      const newRemainingCredits = await UsageLimitService.getRemainingRequests();
-      setRemainingCredits(newRemainingCredits);
-      
-      // Log kredi kullanımı
-      console.log('💳 Credit used for ingredients screen:', {
-        ingredients: ingredients,
-        ingredientCount: ingredients.length,
-        creditsRemaining: newRemainingCredits,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    // Tüm kullanıcılar için kullanımı güncelle
+    await UsageLimitService.useRequest(isPremium);
+    const newRemainingCredits = await UsageLimitService.getRemainingRequests(isPremium);
+    setRemainingCredits(newRemainingCredits);
+    
+    // Log kredi kullanımı
+    console.log('💳 Credit used for ingredients screen:', {
+      ingredients: ingredients,
+      ingredientCount: ingredients.length,
+      creditsRemaining: newRemainingCredits,
+      timestamp: new Date().toISOString(),
+      isPremium,
+    });
 
     haptics.success();
     // Navigation provides feedback, no need for toast
@@ -193,20 +191,19 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
           : await OpenAIService.analyzeIngredientImages(imageUris);
 
       if (detectedIngredients && detectedIngredients.length > 0) {
-        // Premium değilse kredi düşür
-        if (!isPremium) {
-          await UsageLimitService.useRequest();
-          const newRemainingCredits = await UsageLimitService.getRemainingRequests();
-          setRemainingCredits(newRemainingCredits);
-          
-          // Log kredi kullanımı
-          console.log('💳 Credit used for image analysis:', {
-            imageCount: imageUris.length,
-            detectedIngredients: detectedIngredients,
-            creditsRemaining: newRemainingCredits,
-            timestamp: new Date().toISOString(),
-          });
-        }
+        // Tüm kullanıcılar için kullanımı güncelle
+        await UsageLimitService.useRequest(isPremium);
+        const newRemainingCredits = await UsageLimitService.getRemainingRequests(isPremium);
+        setRemainingCredits(newRemainingCredits);
+        
+        // Log kredi kullanımı
+        console.log('💳 Credit used for image analysis:', {
+          imageCount: imageUris.length,
+          detectedIngredients: detectedIngredients,
+          creditsRemaining: newRemainingCredits,
+          timestamp: new Date().toISOString(),
+          isPremium,
+        });
 
         // Tespit edilen malzemeleri ekle
         const newIngredients = [...ingredients];
@@ -298,7 +295,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
 
   const showPhotoOptions = () => {
     // Kredi kontrolü
-    if (!isPremium && remainingCredits <= 0) {
+    if (!isPremium && remainingCredits.daily <= 0) {
       showPaywall(
         'Buzdolabı Fotoğrafı',
         'Buzdolabı fotoğrafı analizini kullanmak için premium üyelik gerekir.'
@@ -353,25 +350,34 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
             Evindeki malzemeleri ekle
           </Text>
         </View>
-        {!isPremium && (
-          <TouchableOpacity
-            style={[
-              styles.creditCounter,
-              { backgroundColor: colors.primary[100] },
-            ]}
-            onPress={() => showPaywall('Kredi Bilgisi', 'Premium üyelikle sınırsız kullanım')}
-            activeOpacity={0.7}
+        <TouchableOpacity
+          style={[
+            styles.creditCounter,
+            { backgroundColor: isPremium ? colors.success[100] : colors.primary[100] },
+          ]}
+          onPress={() => {
+            if (!isPremium) {
+              showPaywall('Kredi Bilgisi', 'Premium üyelikle sınırsız kullanım');
+            }
+          }}
+          activeOpacity={0.7}
+        >
+          <Ionicons 
+            name={isPremium ? 'star' : 'diamond'} 
+            size={14} 
+            color={isPremium ? colors.success[600] : colors.primary[600]} 
+          />
+          <Text
+            variant='labelMedium'
+            weight='600'
+            style={{ color: isPremium ? colors.success[600] : colors.primary[600], fontSize: 12 }}
           >
-            <Ionicons name='diamond' size={14} color={colors.primary[600]} />
-            <Text
-              variant='labelMedium'
-              weight='600'
-              style={{ color: colors.primary[600], fontSize: 12 }}
-            >
-              {remainingCredits}
-            </Text>
-          </TouchableOpacity>
-        )}
+            {isPremium ? 
+              `G: ${remainingCredits.daily} | A: ${remainingCredits.monthly || 0}` : 
+              remainingCredits.daily
+            }
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <KeyboardAvoidingView
@@ -428,21 +434,21 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
                 {
                   backgroundColor: colors.background.secondary,
                   borderColor: 
-                    !isPremium && remainingCredits <= 0
+                    !isPremium && remainingCredits.daily <= 0
                       ? colors.neutral[300]
                       : colors.primary[200],
                   opacity: 
-                    isAnalyzing || (!isPremium && remainingCredits <= 0)
+                    isAnalyzing || (!isPremium && remainingCredits.daily <= 0)
                       ? 0.6
                       : 1,
                 },
               ]}
               onPress={showPhotoOptions}
-              disabled={isAnalyzing || (!isPremium && remainingCredits <= 0)}
+              disabled={isAnalyzing || (!isPremium && remainingCredits.daily <= 0)}
             >
               <LinearGradient
                 colors={
-                  !isPremium && remainingCredits <= 0
+                  !isPremium && remainingCredits.daily <= 0
                     ? [colors.neutral[200], colors.neutral[100]]
                     : [colors.primary[100], colors.primary[50]]
                 }
@@ -453,13 +459,13 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
                     name={
                       isAnalyzing
                         ? 'hourglass'
-                        : !isPremium && remainingCredits <= 0
+                        : !isPremium && remainingCredits.daily <= 0
                         ? 'lock-closed'
                         : 'camera'
                     }
                     size={24}
                     color={
-                      !isPremium && remainingCredits <= 0
+                      !isPremium && remainingCredits.daily <= 0
                         ? colors.neutral[500]
                         : colors.primary[600]
                     }
@@ -471,21 +477,21 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
                     weight='600'
                     style={{
                       color:
-                        !isPremium && remainingCredits <= 0
+                        !isPremium && remainingCredits.daily <= 0
                           ? colors.neutral[600]
                           : colors.primary[700],
                     }}
                   >
                     {isAnalyzing
                       ? 'Fotoğraflar Analiz Ediliyor...'
-                      : !isPremium && remainingCredits <= 0
+                      : !isPremium && remainingCredits.daily <= 0
                       ? 'Premium Özellik - Kilit'
                       : selectedImages.length > 0
                       ? `${selectedImages.length} Fotoğraf Seçildi - Daha Ekle`
                       : 'Buzdolabının Fotoğrafını Çek'}
                   </Text>
                   <Text variant='bodySmall' color='secondary'>
-                    {!isPremium && remainingCredits <= 0
+                    {!isPremium && remainingCredits.daily <= 0
                       ? 'Premium üyelik ile kullanılabilir'
                       : 'AI ile otomatik malzeme tespit et'}
                   </Text>
@@ -494,7 +500,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
                   name='chevron-forward'
                   size={20}
                   color={
-                    !isPremium && remainingCredits <= 0
+                    !isPremium && remainingCredits.daily <= 0
                       ? colors.neutral[400]
                       : colors.primary[500]
                   }
@@ -657,12 +663,12 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
           style={styles.submitButton}
           onPress={handleSubmit}
           disabled={
-            ingredients.length === 0 || (!isPremium && remainingCredits <= 0)
+            ingredients.length === 0 || (!isPremium && remainingCredits.daily <= 0)
           }
         >
           <LinearGradient
             colors={
-              ingredients.length > 0 && (isPremium || remainingCredits > 0)
+              ingredients.length > 0 && (isPremium || remainingCredits.daily > 0)
                 ? [colors.primary[500], colors.primary[600]]
                 : [colors.neutral[300], colors.neutral[400]]
             }
@@ -672,13 +678,13 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
           >
             <Ionicons
               name={
-                !isPremium && remainingCredits <= 0 ? 'lock-closed' : 'sparkles'
+                !isPremium && remainingCredits.daily <= 0 ? 'lock-closed' : 'sparkles'
               }
               size={20}
               color='#fff'
             />
             <Text variant='bodyLarge' weight='600' style={{ color: '#fff' }}>
-              {!isPremium && remainingCredits <= 0
+              {!isPremium && remainingCredits.daily <= 0
                 ? 'Premium Gerekli'
                 : `Tarif Bul (${ingredients.length})`}
             </Text>

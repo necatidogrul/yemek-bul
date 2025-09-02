@@ -79,7 +79,21 @@ class LoggerServiceClass {
       const timestamp = entry.timestamp.toISOString().substr(11, 12);
       const userInfo = userId ? ` [${userId}]` : '';
 
-      console.log(`${emoji} ${timestamp}${userInfo} ${message}`, data || '');
+      // Use console directly to avoid infinite loop
+      switch (level) {
+        case LogLevel.DEBUG:
+          console.log(`${emoji} ${timestamp}${userInfo} ${message}`, data || '');
+          break;
+        case LogLevel.INFO:
+          console.info(`${emoji} ${timestamp}${userInfo} ${message}`, data || '');
+          break;
+        case LogLevel.WARN:
+          console.warn(`${emoji} ${timestamp}${userInfo} ${message}`, data || '');
+          break;
+        case LogLevel.ERROR:
+          console.error(`${emoji} ${timestamp}${userInfo} ${message}`, data || '');
+          break;
+      }
     }
   }
 
@@ -112,7 +126,7 @@ class LoggerServiceClass {
       };
 
       // In a real app, send to crash reporting service
-      console.error('🚨 Production Error Report:', errorReport);
+      Logger.error('🚨 Production Error Report:', errorReport);
     } catch (reportError) {
       // Silent fail for error reporting
     }

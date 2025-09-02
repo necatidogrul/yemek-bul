@@ -95,7 +95,7 @@ export const useOptimizedFlatList = <T = any>(
 
       // Debug için (production'da kaldırılabilir)
       if (__DEV__) {
-        console.log(
+        Logger.info(
           `Viewable items: ${viewableItems.length}, Changed: ${changed.length}`
         );
       }
@@ -109,7 +109,7 @@ export const useOptimizedFlatList = <T = any>(
   const onEndReached = useCallback((info: { distanceFromEnd: number }) => {
     // End reached logic here
     if (__DEV__) {
-      console.log('End reached:', info.distanceFromEnd);
+      Logger.info('End reached:', info.distanceFromEnd);
     }
   }, []);
 

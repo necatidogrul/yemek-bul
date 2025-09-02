@@ -2,6 +2,7 @@ import { Recipe } from '../types/Recipe';
 import { supabase } from './supabase';
 import { UnsplashService } from './unsplashService';
 import { GoogleImageService } from './googleImageService';
+import { Logger } from '../services/LoggerService';
 
 export interface RecipeGenerationRequest {
   ingredients: string[];

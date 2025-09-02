@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { changeLanguage, getCurrentLanguage } from '../locales';
 import * as Localization from 'expo-localization';
+import { Logger } from '../services/LoggerService';
 
 interface LanguageContextType {
   currentLanguage: string;

@@ -7,7 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "description": "Evdeki malzemelerinizle yapabileceğiniz yemekleri keşfetmenizi sağlayan akıllı tarif önerme uygulaması",
+    "description": "AI destekli yemek tarifi önerisi: Evdeki malzemelerle kolay tarifler bulun. Akıllı tarif önerme sistemi ile ev yemekleri hazırlayın. Malzeme fotoğrafı çekin, anında tarif alın!",
     "primaryColor": "#4CAF50",
     "splash": {
       "image": "./assets/splash-icon.png",

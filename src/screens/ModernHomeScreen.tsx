@@ -116,7 +116,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
     stage: 'analyzing',
     progress: 0,
   });
-  const [remainingRequests, setRemainingRequests] = useState<number>(2);
+  const [remainingRequests, setRemainingRequests] = useState<{daily: number, monthly?: number}>({ daily: 1 });
 
   // Hooks
   const { colors } = useThemedStyles();
@@ -143,16 +143,11 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   // Load remaining requests on mount
   React.useEffect(() => {
     const loadRemainingRequests = async () => {
-      console.log('🔋 Loading remaining requests, isPremium:', isPremium);
+      Logger.info('🔋 Loading remaining requests, isPremium:', isPremium);
 
-      if (!isPremium) {
-        const remaining = await UsageLimitService.getRemainingRequests();
-        console.log('🔋 Remaining requests from service:', remaining);
-        setRemainingRequests(remaining);
-      } else {
-        // Premium kullanıcı için unlimited
-        setRemainingRequests(999);
-      }
+      const remaining = await UsageLimitService.getRemainingRequests(isPremium);
+      Logger.info('🔋 Remaining requests from service:', remaining);
+      setRemainingRequests(remaining);
     };
     loadRemainingRequests();
   }, [isPremium]);
@@ -178,7 +173,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
     suggestion: ReturnType<typeof getSmartSuggestions>[0]
   ) => {
     // Log kategori tıklanması
-    console.log('📝 Smart suggestion selected:', {
+    Logger.info('📝 Smart suggestion selected:', {
       category: suggestion.id,
       mealTime: suggestion.mealTime,
       ingredients: suggestion.defaultIngredients,
@@ -198,13 +193,11 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   const generateAIRecipesWithSmartDefaults = async (
     suggestion: ReturnType<typeof getSmartSuggestions>[0]
   ) => {
-    // Check usage limit for non-premium users
-    if (!isPremium) {
-      const canMakeRequest = await UsageLimitService.canMakeRequest();
-      if (!canMakeRequest) {
-        showPaywall();
-        return;
-      }
+    // Check usage limit for all users
+    const canMakeRequest = await UsageLimitService.canMakeRequest(isPremium);
+    if (!canMakeRequest) {
+      showPaywall();
+      return;
     }
 
     // Start animations
@@ -269,20 +262,20 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
       if (aiResponse.recipes && aiResponse.recipes.length > 0) {
         // Use request for non-premium users and update remaining count
-        if (!isPremium) {
-          await UsageLimitService.useRequest();
-          const remaining = await UsageLimitService.getRemainingRequests();
-          setRemainingRequests(remaining);
-          
-          // Log kredi kullanımı
-          console.log('💳 Credit used for smart suggestion:', {
-            category: suggestion.id,
-            mealTime: suggestion.mealTime,
-            creditsRemaining: remaining,
-            recipesGenerated: aiResponse.recipes.length,
-            timestamp: new Date().toISOString(),
-          });
-        }
+        // Update usage for all users (free or premium)
+        await UsageLimitService.useRequest(isPremium);
+        const remaining = await UsageLimitService.getRemainingRequests(isPremium);
+        setRemainingRequests(remaining);
+        
+        // Log kredi kullanımı
+        Logger.info('💳 Credit used for smart suggestion:', {
+          category: suggestion.id,
+          mealTime: suggestion.mealTime,
+          creditsRemaining: remaining,
+          recipesGenerated: aiResponse.recipes.length,
+          timestamp: new Date().toISOString(),
+          isPremium,
+        });
 
         haptics.success();
         // Success feedback through navigation - no need for toast
@@ -357,7 +350,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
     }
 
     // Log normal AI recipe generation başlatması
-    console.log('📝 Normal AI recipe generation started:', {
+    Logger.info('📝 Normal AI recipe generation started:', {
       ingredients: useIngredients,
       ingredientCount: useIngredients.length,
       mealTime: useMealTime,
@@ -367,13 +360,11 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       timestamp: new Date().toISOString(),
     });
 
-    // Check usage limit for non-premium users
-    if (!isPremium) {
-      const canMakeRequest = await UsageLimitService.canMakeRequest();
-      if (!canMakeRequest) {
-        showPaywall();
-        return;
-      }
+    // Check usage limit for all users
+    const canMakeRequest = await UsageLimitService.canMakeRequest(isPremium);
+    if (!canMakeRequest) {
+      showPaywall();
+      return;
     }
 
     // Start animations
@@ -442,69 +433,73 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       setShowAIModal(false);
 
       if (aiResponse.recipes && aiResponse.recipes.length > 0) {
-        // Use request for non-premium users and update remaining count
-        if (!isPremium) {
-          await UsageLimitService.useRequest();
-          const remaining = await UsageLimitService.getRemainingRequests();
-          setRemainingRequests(remaining);
-          
-          // Log kredi kullanımı (ingredients screen'den gelenleri)
-          console.log('💳 Credit used for normal AI generation:', {
-            ingredients: useIngredients,
-            ingredientCount: useIngredients.length,
-            mealTime: useMealTime,
-            source: customIngredients ? 'ingredients-screen' : 'manual-input',
-            creditsRemaining: remaining,
-            recipesGenerated: aiResponse.recipes.length,
-            timestamp: new Date().toISOString(),
-          });
-        }
+        // Update usage for all users (free or premium)
+        await UsageLimitService.useRequest(isPremium);
+        const remaining = await UsageLimitService.getRemainingRequests(isPremium);
+        setRemainingRequests(remaining);
+        
+        // Log kredi kullanımı (ingredients screen'den gelenleri)
+        Logger.info('💳 Credit used for normal AI generation:', {
+          ingredients: useIngredients,
+          ingredientCount: useIngredients.length,
+          mealTime: useMealTime,
+          source: customIngredients ? 'ingredients-screen' : 'manual-input',
+          creditsRemaining: remaining,
+          recipesGenerated: aiResponse.recipes.length,
+          timestamp: new Date().toISOString(),
+          isPremium,
+        });
 
         haptics.success();
         // Success indicated by navigation - no toast needed
 
         // Save to history
         const startTime = Date.now();
-        await HistoryService.saveRequest(
-          {
-            ingredients: useIngredients,
-            preferences: {
-              difficulty: 'kolay',
-              servings: 2,
-              cookingTime: 30,
+        try {
+          await HistoryService.saveRequest(
+            {
+              ingredients: useIngredients,
+              preferences: {
+                difficulty: 'kolay',
+                servings: 2,
+                cookingTime: 30,
+              },
+              results: {
+                count: aiResponse.recipes.length,
+                recipes: aiResponse.recipes.map(recipe => ({
+                  id: recipe.id || `ai_${Date.now()}_${Math.random()}`,
+                  name: recipe.name,
+                  difficulty: recipe.difficulty,
+                  cookingTime: recipe.cookingTime,
+                  // Premium için ek bilgiler
+                  ...(isPremium && {
+                    servings: recipe.servings,
+                    ingredients: recipe.ingredients,
+                    instructions: recipe.instructions,
+                    imageUrl: recipe.imageUrl,
+                  }),
+                })),
+              },
+              success: true,
+              requestDetails: isPremium
+                ? {
+                    tokenUsed: aiResponse.totalTokensUsed || 0,
+                    responseTime: Date.now() - startTime,
+                    model: 'gpt-3.5-turbo',
+                    requestType: 'ai' as const,
+                  }
+                : undefined,
+              userContext: {
+                isPremium,
+                userId: 'user_' + Date.now(),
+              },
             },
-            results: {
-              count: aiResponse.recipes.length,
-              recipes: aiResponse.recipes.map(recipe => ({
-                id: recipe.id || `ai_${Date.now()}_${Math.random()}`,
-                name: recipe.name,
-                difficulty: recipe.difficulty,
-                cookingTime: recipe.cookingTime,
-                // Premium için ek bilgiler
-                ...(isPremium && {
-                  servings: recipe.servings,
-                  ingredients: recipe.ingredients,
-                  instructions: recipe.instructions,
-                  imageUrl: recipe.imageUrl,
-                }),
-              })),
-            },
-            success: true,
-            requestDetails: isPremium
-              ? {
-                  tokenUsed: aiResponse.totalTokensUsed || 0,
-                  responseTime: Date.now() - startTime,
-                  model: 'gpt-3.5-turbo',
-                  requestType: 'ai' as const,
-                }
-              : undefined,
-            userContext: {
-              isPremium,
-              userId: 'user_' + Date.now(),
-            },
-          },
-          isPremium
-        );
+            isPremium
+          );
+          console.log('✅ History saved successfully');
+        } catch (error) {
+          console.error('❌ Failed to save history:', error);
+        }
 
         // Navigate to results
         navigation.navigate('RecipeResults', {
@@ -518,29 +513,34 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
         );
 
         // Save failed attempt to history
-        await HistoryService.saveRequest(
-          {
-            ingredients: useIngredients,
-            preferences: {
-              difficulty: 'kolay',
-              servings: 2,
-              cookingTime: 30,
+        try {
+          await HistoryService.saveRequest(
+            {
+              ingredients: useIngredients,
+              preferences: {
+                difficulty: 'kolay',
+                servings: 2,
+                cookingTime: 30,
+              },
+              results: {
+                count: 0,
+                recipes: [],
+              },
+              success: false,
+              userContext: {
+                isPremium,
+                userId: 'user_' + Date.now(),
+              },
             },
-            results: {
-              count: 0,
-              recipes: [],
-            },
-            success: false,
-            userContext: {
-              isPremium,
-              userId: 'user_' + Date.now(),
-            },
-          },
-          isPremium
-        );
+            isPremium
+          );
+          console.log('✅ Failed attempt saved to history');
+        } catch (error) {
+          console.error('❌ Failed to save history:', error);
+        }
       }
     } catch (error: any) {
-      console.error('AI Generation Error:', error);
+      Logger.error('AI Generation Error:', error);
       setShowAIModal(false);
 
       // Improved error handling
@@ -584,27 +584,32 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       haptics.error();
 
       // Save error to history
-      await HistoryService.saveRequest(
-        {
-          ingredients: useIngredients,
-          preferences: {
-            difficulty: 'kolay',
-            servings: 2,
-            cookingTime: 30,
+      try {
+        await HistoryService.saveRequest(
+          {
+            ingredients: useIngredients,
+            preferences: {
+              difficulty: 'kolay',
+              servings: 2,
+              cookingTime: 30,
+            },
+            results: {
+              count: 0,
+              recipes: [],
+            },
+            success: false,
+            error: appError.message,
+            userContext: {
+              isPremium,
+              userId: 'user_' + Date.now(),
+            },
           },
-          results: {
-            count: 0,
-            recipes: [],
-          },
-          success: false,
-          error: appError.message,
-          userContext: {
-            isPremium,
-            userId: 'user_' + Date.now(),
-          },
-        },
-        isPremium
-      );
+          isPremium
+        );
+        console.log('✅ Error saved to history');
+      } catch (historyError) {
+        console.error('❌ Failed to save error to history:', historyError);
+      }
 
       // Fallback to normal search
       navigation.navigate('RecipeResults', { ingredients: useIngredients });
@@ -632,25 +637,34 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
           </View>
 
           {/* Credit Counter */}
-          {!isPremium && (
-            <TouchableOpacity
-              style={[
-                styles.creditCounter,
-                { backgroundColor: colors.primary[100] },
-              ]}
-              onPress={() => showPaywall()}
-              activeOpacity={0.7}
+          <TouchableOpacity
+            style={[
+              styles.creditCounter,
+              { backgroundColor: isPremium ? colors.success[100] : colors.primary[100] },
+            ]}
+            onPress={() => {
+              if (!isPremium) {
+                showPaywall();
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons 
+              name={isPremium ? "star" : "diamond"} 
+              size={14} 
+              color={isPremium ? colors.success[600] : colors.primary[600]} 
+            />
+            <Text
+              variant='labelSmall'
+              weight='600'
+              style={{ color: isPremium ? colors.success[600] : colors.primary[600], fontSize: 12 }}
             >
-              <Ionicons name='diamond' size={14} color={colors.primary[600]} />
-              <Text
-                variant='labelSmall'
-                weight='600'
-                style={{ color: colors.primary[600], fontSize: 12 }}
-              >
-                {remainingRequests}
-              </Text>
-            </TouchableOpacity>
-          )}
+              {isPremium ? 
+                `G: ${remainingRequests.daily} | A: ${remainingRequests.monthly || 0}` : 
+                remainingRequests.daily
+              }
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -744,7 +758,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
             <TouchableOpacity
               style={styles.customCreateButton}
               onPress={() => {
-                console.log('🔥 Kendi malzemelerinle oluştur pressed!');
+                Logger.info('🔥 Kendi malzemelerinle oluştur pressed!');
                 haptics.selection();
                 navigation.navigate('IngredientsSelect');
               }}

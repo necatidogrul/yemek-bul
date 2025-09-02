@@ -12,6 +12,7 @@ import Purchases, {
 } from 'react-native-purchases';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { Logger } from './LoggerService';
 import {
   REVENUECAT_CONFIG,
   PREMIUM_FEATURES,
@@ -22,7 +23,7 @@ import {
 const isProduction = () => !__DEV__;
 const debugLog = (message: string, data?: any) => {
   if (__DEV__) {
-    console.log(message, data || '');
+    Logger.info(message, data || '');
   }
 };
 
@@ -78,7 +79,7 @@ export class RevenueCatService {
       const isExpoGo = Constants.appOwnership === 'expo';
 
       if (isExpoGo) {
-        console.warn('📱 Expo Go detected - RevenueCat will use mock mode');
+        Logger.warn('📱 Expo Go detected - RevenueCat will use mock mode');
         this.isInitialized = true;
         this.currentCustomerInfo = null;
         return;
@@ -117,7 +118,7 @@ export class RevenueCatService {
             }
 
             // Son deneme başarısız
-            console.error(
+            Logger.error(
               '❌ RevenueCat SDK could not be accessed after retries'
             );
 
@@ -139,7 +140,7 @@ export class RevenueCatService {
         }
       }
     } catch (error) {
-      console.error('❌ RevenueCat initialization failed:', error);
+      Logger.error('❌ RevenueCat initialization failed:', error);
 
       // Development'ta mock mode'a geç
       if (__DEV__) {
@@ -179,7 +180,7 @@ export class RevenueCatService {
 
       return customerInfo;
     } catch (error) {
-      console.error('❌ Failed to refresh customer info:', error);
+      Logger.error('❌ Failed to refresh customer info:', error);
 
       if (__DEV__) {
         return null;
@@ -231,7 +232,7 @@ export class RevenueCatService {
         willRenew: premiumEntitlement.willRenew,
       };
     } catch (error) {
-      console.error('❌ Failed to get premium status:', error);
+      Logger.error('❌ Failed to get premium status:', error);
       return { isPremium: false, isActive: false };
     }
   }
@@ -320,7 +321,7 @@ export class RevenueCatService {
         debugLog(`✅ Found current offering: ${offerings.current.identifier}`);
         return [offerings.current];
       } catch (error: any) {
-        console.error(`❌ Attempt ${retryCount + 1} failed:`, error.message);
+        Logger.error(`❌ Attempt ${retryCount + 1} failed:`, error.message);
 
         if (retryCount < maxRetries - 1) {
           debugLog(`⏳ Retrying in ${retryDelay}ms...`);
@@ -413,7 +414,7 @@ export class RevenueCatService {
         customerInfo,
       };
     } catch (error: any) {
-      console.error('❌ Purchase failed:', error);
+      Logger.error('❌ Purchase failed:', error);
 
       // Kullanıcı iptal etti
       if (error.userCancelled) {
@@ -483,7 +484,7 @@ export class RevenueCatService {
         customerInfo,
       };
     } catch (error: any) {
-      console.error('❌ Restore failed:', error);
+      Logger.error('❌ Restore failed:', error);
       return {
         success: false,
         error: error.message || 'Satın almaları geri yükleme başarısız oldu',
@@ -504,7 +505,7 @@ export class RevenueCatService {
       await this.refreshCustomerInfo();
       debugLog('👤 User identified:', userId);
     } catch (error) {
-      console.error('❌ Failed to identify user:', error);
+      Logger.error('❌ Failed to identify user:', error);
       throw error;
     }
   }
@@ -522,7 +523,7 @@ export class RevenueCatService {
       this.currentCustomerInfo = null;
       debugLog('👋 User logged out');
     } catch (error) {
-      console.error('❌ Failed to logout user:', error);
+      Logger.error('❌ Failed to logout user:', error);
       throw error;
     }
   }

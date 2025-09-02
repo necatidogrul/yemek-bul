@@ -59,7 +59,7 @@ export const usePullToRefresh = (options: PullToRefreshOptions = {}) => {
 
       announceForAccessibility('Sayfa başarıyla yenilendi');
     } catch (error) {
-      console.error('Refresh error:', error);
+      Logger.error('Refresh error:', error);
 
       // Hata durumunda haptic feedback
       if (hapticFeedback) {

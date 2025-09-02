@@ -3,6 +3,7 @@ import { initReactI18next } from 'react-i18next';
 import * as Localization from 'expo-localization';
 import { tr } from './tr';
 import { en } from './en';
+import { Logger } from '../services/LoggerService';
 
 // Define translation resources
 const resources = {
