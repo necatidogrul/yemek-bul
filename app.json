@@ -44,7 +44,7 @@
         "backgroundColor": "#E8F5E8"
       },
       "edgeToEdgeEnabled": true,
-      "permissions": ["RECORD_AUDIO", "INTERNET", "ACCESS_NETWORK_STATE", "BILLING"],
+      "permissions": ["RECORD_AUDIO", "INTERNET", "ACCESS_NETWORK_STATE", "BILLING", "CAMERA", "READ_EXTERNAL_STORAGE"],
       "package": "com.yemekbulucu.app",
       "versionCode": 2
     },
@@ -52,11 +52,7 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": [
-      "expo-localization", 
-      "expo-font",
-      "expo-dev-client"
-    ],
+    "plugins": ["expo-localization", "expo-font", "expo-dev-client", "expo-camera", "expo-image-picker"],
     "owner": "shado7",
     "extra": {
       "eas": {

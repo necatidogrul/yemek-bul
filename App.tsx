@@ -104,7 +104,7 @@ export default function App(): React.ReactElement {
 
       // Configure RevenueCat - Önemli: Bu sadece bir kez çağrılmalı!
       console.log('⚙️ Configuring RevenueCat...');
-      
+
       // TestFlight ve Sandbox builds için özel yapılandırma
       const configuration = {
         apiKey: apiKey,
@@ -112,7 +112,7 @@ export default function App(): React.ReactElement {
         observerMode: false, // False = RevenueCat satın almaları yönetsin
         useAmazon: false,
       };
-      
+
       await Purchases.configure(configuration);
 
       console.log('✅ RevenueCat configured successfully');
@@ -176,11 +176,11 @@ export default function App(): React.ReactElement {
       if (rcInitialized) {
         // Service initialization için biraz bekle
         await new Promise(resolve => setTimeout(resolve, 500));
-        
+
         try {
           await RevenueCatService.initialize();
           console.log('✅ RevenueCat service layer initialized');
-          
+
           // Service hazır olduğunu doğrula
           const debugInfo = RevenueCatService.getDebugInfo();
           console.log('📊 RevenueCat Debug Info:', debugInfo);

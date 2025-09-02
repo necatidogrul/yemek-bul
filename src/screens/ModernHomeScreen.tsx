@@ -26,6 +26,7 @@ import { SpeechService } from '../services/speechService';
 import { HistoryService } from '../services/historyService';
 import { UserPreferencesService } from '../services/UserPreferencesService';
 import { UsageLimitService } from '../services/UsageLimitService';
+import { ErrorHandlingService } from '../services/ErrorHandlingService';
 import { getCurrentLanguage } from '../locales';
 import { useTranslation } from 'react-i18next';
 
@@ -119,7 +120,7 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
   // Hooks
   const { colors } = useThemedStyles();
-  const { showSuccess, showError, showWarning } = useToast();
+  const { showError, showWarning } = useToast();
   const haptics = useHaptics();
   const { isPremium, showPaywall } = usePremium();
 
@@ -163,11 +164,11 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
 
       if (route.params?.shouldGenerateRecipes) {
         // From IngredientsScreen - start recipe generation
-        showSuccess(t('messages.ingredientsSelected'));
+        haptics.success();
         generateAIRecipes(route.params.prefillIngredients);
       } else {
-        // From history
-        showSuccess(t('messages.ingredientsFromHistory'));
+        // From history - just haptic feedback
+        haptics.light();
       }
     }
   }, [route.params?.prefillIngredients, route.params?.shouldGenerateRecipes]);
@@ -176,6 +177,16 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
   const handleSmartSuggestion = async (
     suggestion: ReturnType<typeof getSmartSuggestions>[0]
   ) => {
+    // Log kategori tıklanması
+    console.log('📝 Smart suggestion selected:', {
+      category: suggestion.id,
+      mealTime: suggestion.mealTime,
+      ingredients: suggestion.defaultIngredients,
+      isPremium,
+      remainingRequests,
+      timestamp: new Date().toISOString(),
+    });
+
     // Set the ingredients for display
     setIngredients(suggestion.defaultIngredients);
 
@@ -262,20 +273,25 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
           await UsageLimitService.useRequest();
           const remaining = await UsageLimitService.getRemainingRequests();
           setRemainingRequests(remaining);
+          
+          // Log kredi kullanımı
+          console.log('💳 Credit used for smart suggestion:', {
+            category: suggestion.id,
+            mealTime: suggestion.mealTime,
+            creditsRemaining: remaining,
+            recipesGenerated: aiResponse.recipes.length,
+            timestamp: new Date().toISOString(),
+          });
         }
 
         haptics.success();
-        showSuccess(
-          t('messages.recipesReady'),
-          t('messages.recipesGenerated', { count: aiResponse.recipes.length })
-        );
-
-        // Navigate to results
+        // Success feedback through navigation - no need for toast
         navigation.navigate('RecipeResults', {
           ingredients: suggestion.defaultIngredients,
           aiRecipes: aiResponse.recipes,
         });
       } else {
+        // Show warning only for critical case where no recipes found
         showWarning(
           t('messages.noRecipeFound'),
           t('messages.noRecipeFoundDescription')
@@ -284,7 +300,42 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
     } catch (error: any) {
       setShowAIModal(false);
 
-      showError(t('messages.aiError'), t('messages.aiErrorDescription'));
+      // Improved error handling for smart suggestions
+      let appError;
+      if (
+        error.message?.includes('fetch') ||
+        error.message?.includes('network')
+      ) {
+        appError = ErrorHandlingService.getNetworkError(error);
+      } else if (error.message?.includes('API key')) {
+        appError = ErrorHandlingService.createError(
+          'auth',
+          'OpenAI API anahtarı bulunamadı'
+        );
+      } else if (
+        error.message?.includes('quota') ||
+        error.message?.includes('429')
+      ) {
+        appError = ErrorHandlingService.getAPIError(
+          { status: 429 } as Response,
+          error
+        );
+      } else {
+        appError = ErrorHandlingService.getGenericError(error);
+      }
+
+      showError(
+        ErrorHandlingService['errorMessages'][appError.type]?.title ||
+          t('messages.aiError'),
+        appError.userMessage || appError.message,
+        {
+          duration: 8000,
+          actionLabel: appError.retryable ? 'Tekrar Dene' : undefined,
+          onAction: appError.retryable
+            ? () => generateAIRecipesWithSmartDefaults(suggestion)
+            : undefined,
+        }
+      );
       haptics.error();
     }
   };
@@ -304,6 +355,17 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       );
       return;
     }
+
+    // Log normal AI recipe generation başlatması
+    console.log('📝 Normal AI recipe generation started:', {
+      ingredients: useIngredients,
+      ingredientCount: useIngredients.length,
+      mealTime: useMealTime,
+      source: customIngredients ? 'ingredients-screen' : 'manual-input',
+      isPremium,
+      remainingRequests,
+      timestamp: new Date().toISOString(),
+    });
 
     // Check usage limit for non-premium users
     if (!isPremium) {
@@ -385,51 +447,64 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
           await UsageLimitService.useRequest();
           const remaining = await UsageLimitService.getRemainingRequests();
           setRemainingRequests(remaining);
+          
+          // Log kredi kullanımı (ingredients screen'den gelenleri)
+          console.log('💳 Credit used for normal AI generation:', {
+            ingredients: useIngredients,
+            ingredientCount: useIngredients.length,
+            mealTime: useMealTime,
+            source: customIngredients ? 'ingredients-screen' : 'manual-input',
+            creditsRemaining: remaining,
+            recipesGenerated: aiResponse.recipes.length,
+            timestamp: new Date().toISOString(),
+          });
         }
 
         haptics.success();
-        showSuccess(
-          t('messages.recipesReady'),
-          t('messages.recipesGenerated', { count: aiResponse.recipes.length })
-        );
+        // Success indicated by navigation - no toast needed
 
         // Save to history
         const startTime = Date.now();
-        await HistoryService.saveRequest({
-          ingredients: useIngredients,
-          preferences: {
-            difficulty: 'kolay',
-            servings: 2,
-            cookingTime: 30,
+        await HistoryService.saveRequest(
+          {
+            ingredients: useIngredients,
+            preferences: {
+              difficulty: 'kolay',
+              servings: 2,
+              cookingTime: 30,
+            },
+            results: {
+              count: aiResponse.recipes.length,
+              recipes: aiResponse.recipes.map(recipe => ({
+                id: recipe.id || `ai_${Date.now()}_${Math.random()}`,
+                name: recipe.name,
+                difficulty: recipe.difficulty,
+                cookingTime: recipe.cookingTime,
+                // Premium için ek bilgiler
+                ...(isPremium && {
+                  servings: recipe.servings,
+                  ingredients: recipe.ingredients,
+                  instructions: recipe.instructions,
+                  imageUrl: recipe.imageUrl,
+                }),
+              })),
+            },
+            success: true,
+            requestDetails: isPremium
+              ? {
+                  tokenUsed: aiResponse.totalTokensUsed || 0,
+                  responseTime: Date.now() - startTime,
+                  model: 'gpt-3.5-turbo',
+                  requestType: 'ai' as const,
+                }
+              : undefined,
+            userContext: {
+              isPremium,
+              userId: 'user_' + Date.now(),
+            },
           },
-          results: {
-            count: aiResponse.recipes.length,
-            recipes: aiResponse.recipes.map(recipe => ({
-              id: recipe.id || `ai_${Date.now()}_${Math.random()}`,
-              name: recipe.name,
-              difficulty: recipe.difficulty,
-              cookingTime: recipe.cookingTime,
-              // Premium için ek bilgiler
-              ...(isPremium && {
-                servings: recipe.servings,
-                ingredients: recipe.ingredients,
-                instructions: recipe.instructions,
-                imageUrl: recipe.imageUrl,
-              }),
-            })),
-          },
-          success: true,
-          requestDetails: isPremium ? {
-            tokenUsed: aiResponse.totalTokensUsed || 0,
-            responseTime: Date.now() - startTime,
-            model: 'gpt-3.5-turbo',
-            requestType: 'ai' as const,
-          } : undefined,
-          userContext: {
-            isPremium,
-            userId: 'user_' + Date.now(),
-          },
-        }, isPremium);
+          isPremium
+        );
 
         // Navigate to results
         navigation.navigate('RecipeResults', {
@@ -443,7 +518,74 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
         );
 
         // Save failed attempt to history
-        await HistoryService.saveRequest({
+        await HistoryService.saveRequest(
+          {
+            ingredients: useIngredients,
+            preferences: {
+              difficulty: 'kolay',
+              servings: 2,
+              cookingTime: 30,
+            },
+            results: {
+              count: 0,
+              recipes: [],
+            },
+            success: false,
+            userContext: {
+              isPremium,
+              userId: 'user_' + Date.now(),
+            },
+          },
+          isPremium
+        );
+      }
+    } catch (error: any) {
+      console.error('AI Generation Error:', error);
+      setShowAIModal(false);
+
+      // Improved error handling
+      let appError;
+      if (
+        error.message?.includes('fetch') ||
+        error.message?.includes('network')
+      ) {
+        appError = ErrorHandlingService.getNetworkError(error);
+      } else if (error.message?.includes('API key')) {
+        appError = ErrorHandlingService.createError(
+          'auth',
+          'OpenAI API anahtarı bulunamadı'
+        );
+      } else if (
+        error.message?.includes('quota') ||
+        error.message?.includes('429')
+      ) {
+        appError = ErrorHandlingService.getAPIError(
+          { status: 429 } as Response,
+          error
+        );
+      } else if (error.message?.includes('timeout')) {
+        appError = ErrorHandlingService.getNetworkError(error);
+      } else {
+        appError = ErrorHandlingService.getGenericError(error);
+      }
+
+      showError(
+        ErrorHandlingService['errorMessages'][appError.type]?.title ||
+          'AI Hatası',
+        appError.userMessage || appError.message,
+        {
+          duration: 8000,
+          actionLabel: appError.retryable ? 'Tekrar Dene' : undefined,
+          onAction: appError.retryable
+            ? () => generateAIRecipes(useIngredients, useMealTime)
+            : undefined,
+        }
+      );
+      haptics.error();
+
+      // Save error to history
+      await HistoryService.saveRequest(
+        {
           ingredients: useIngredients,
           preferences: {
             difficulty: 'kolay',
@@ -455,45 +597,14 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
             recipes: [],
           },
           success: false,
+          error: appError.message,
           userContext: {
             isPremium,
             userId: 'user_' + Date.now(),
           },
-        }, isPremium);
-      }
-    } catch (error: any) {
-      console.error('AI Generation Error:', error);
-      setShowAIModal(false);
-
-      let errorMessage = 'Tarif üretilirken bir hata oluştu';
-      if (error.message?.includes('API key')) {
-        errorMessage = 'OpenAI API anahtarı bulunamadı';
-      } else if (error.message?.includes('quota')) {
-        errorMessage = 'API kotası doldu. Lütfen daha sonra tekrar deneyin';
-      }
-
-      showError('AI Hatası', errorMessage);
-      haptics.error();
-
-      // Save error to history
-      await HistoryService.saveRequest({
-        ingredients: useIngredients,
-        preferences: {
-          difficulty: 'kolay',
-          servings: 2,
-          cookingTime: 30,
         },
-        results: {
-          count: 0,
-          recipes: [],
-        },
-        success: false,
-        error: errorMessage,
-        userContext: {
-          isPremium,
-          userId: 'user_' + Date.now(),
-        },
-      }, isPremium);
+        isPremium
+      );
 
       // Fallback to normal search
       navigation.navigate('RecipeResults', { ingredients: useIngredients });

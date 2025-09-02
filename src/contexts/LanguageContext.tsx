@@ -92,19 +92,18 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleLanguageChange = async (language: string) => {
     try {
       setIsLoading(true);
-      
+
       // Change i18n language first
       await changeLanguage(language);
-      
+
       // Update our state
       setCurrentLanguage(language);
-      
+
       // Persist the choice
       await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, language);
-      
+
       // Force a small delay to ensure all components re-render
       await new Promise(resolve => setTimeout(resolve, 100));
-      
     } catch (error) {
       console.error('Failed to change language:', error);
     } finally {

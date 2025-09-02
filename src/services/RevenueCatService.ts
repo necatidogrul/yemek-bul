@@ -107,16 +107,20 @@ export class RevenueCatService {
             error.message?.includes('not configured')
           ) {
             retryCount++;
-            
+
             if (retryCount < maxRetries) {
-              debugLog(`⏳ Waiting for SDK configuration... (attempt ${retryCount}/${maxRetries})`);
+              debugLog(
+                `⏳ Waiting for SDK configuration... (attempt ${retryCount}/${maxRetries})`
+              );
               await new Promise(resolve => setTimeout(resolve, retryDelay));
               continue;
             }
-            
+
             // Son deneme başarısız
-            console.error('❌ RevenueCat SDK could not be accessed after retries');
-            
+            console.error(
+              '❌ RevenueCat SDK could not be accessed after retries'
+            );
+
             // Development'ta mock mode'a geç
             if (__DEV__) {
               debugLog('🔧 Development mode - using mock mode');
@@ -124,12 +128,12 @@ export class RevenueCatService {
               this.currentCustomerInfo = null;
               return;
             }
-            
+
             throw new Error(
               'RevenueCat SDK not ready. Please ensure Purchases.configure() is called in App.tsx'
             );
           }
-          
+
           // Başka bir hata
           throw error;
         }
@@ -202,13 +206,15 @@ export class RevenueCatService {
       const premiumEntitlement =
         this.currentCustomerInfo.entitlements.active[
           REVENUECAT_CONFIG.entitlements.premium
-        ] || 
+        ] ||
         this.currentCustomerInfo.entitlements.active['Premium Subscription'] ||
         this.currentCustomerInfo.entitlements.active['premium'];
 
       if (!premiumEntitlement) {
-        debugLog('No active premium entitlement found. Checking all entitlements:', 
-          Object.keys(this.currentCustomerInfo.entitlements.active));
+        debugLog(
+          'No active premium entitlement found. Checking all entitlements:',
+          Object.keys(this.currentCustomerInfo.entitlements.active)
+        );
         return { isPremium: false, isActive: false };
       }
 
@@ -278,10 +284,13 @@ export class RevenueCatService {
           debugLog('⚠️ No current offering, checking for Default offering...');
 
           // "Default" offering'i ara (büyük harfle başlıyor)
-          const defaultOffering = offerings.all['Default'] || offerings.all['default'];
-          
+          const defaultOffering =
+            offerings.all['Default'] || offerings.all['default'];
+
           if (defaultOffering) {
-            debugLog(`✅ Found Default offering: ${defaultOffering.identifier}`);
+            debugLog(
+              `✅ Found Default offering: ${defaultOffering.identifier}`
+            );
             return [defaultOffering];
           }
 

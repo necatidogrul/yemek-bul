@@ -137,12 +137,12 @@ export const en = {
       asian: 'Asian',
       healthy: 'Healthy',
       dessert: 'Dessert',
-      fast: 'Quick'
+      fast: 'Quick',
     },
     levelLabels: {
       beginner: 'Beginner',
       intermediate: 'Intermediate',
-      advanced: 'Advanced'
+      advanced: 'Advanced',
     },
     dietaryRestrictions: 'Dietary Preferences',
     favoriteCategories: 'Favorite Cuisines',
@@ -173,30 +173,31 @@ export const en = {
       breakfast: {
         name: 'Breakfast',
         subtitle: 'Quick start',
-        ingredients: ['egg', 'cheese', 'tomato']
+        ingredients: ['egg', 'cheese', 'tomato'],
       },
       lunch: {
         name: 'Lunch',
         subtitle: 'Filling',
-        ingredients: ['chicken', 'rice', 'vegetables']
+        ingredients: ['chicken', 'rice', 'vegetables'],
       },
       dinner: {
         name: 'Dinner',
         subtitle: 'Delicious',
-        ingredients: ['meat', 'potato', 'onion']
+        ingredients: ['meat', 'potato', 'onion'],
       },
       snack: {
         name: 'Quick',
         subtitle: '15 minutes',
-        ingredients: ['pasta', 'tomato', 'cheese']
-      }
+        ingredients: ['pasta', 'tomato', 'cheese'],
+      },
     },
     welcomeTitle: 'What would you like to cook?',
     welcomeSubtitle: 'Get AI recipe suggestions with one tap',
     customCreate: {
       title: 'Create with Your Ingredients',
-      subtitle: 'Select your ingredients, let AI find personalized recipes for you'
-    }
+      subtitle:
+        'Select your ingredients, let AI find personalized recipes for you',
+    },
   },
 
   // Recipe
@@ -252,8 +253,10 @@ export const en = {
     aiErrorDesc: 'An error occurred while generating recipe',
     recipesLoadFailed: 'Failed to load recipes',
     favoritesLoadFailed: 'Failed to load favorites',
-    recipeCorrupted: 'This recipe appears to be corrupted. Please restart the app.',
-    recipeCorruptedShort: 'This recipe appears to be corrupted. Try clearing favorites.',
+    recipeCorrupted:
+      'This recipe appears to be corrupted. Please restart the app.',
+    recipeCorruptedShort:
+      'This recipe appears to be corrupted. Try clearing favorites.',
     recipeRemoveFailed: 'Error occurred while removing recipe',
     questionAnswerFailed: 'Error occurred while answering question',
   },
@@ -265,7 +268,8 @@ export const en = {
     recipesReady: 'Recipes Ready!',
     recipesGenerated: '{{count}} AI recipe suggestions generated',
     noRecipeFound: 'No Recipe Found',
-    noRecipeFoundDescription: 'No recipes could be generated for these ingredients',
+    noRecipeFoundDescription:
+      'No recipes could be generated for these ingredients',
     aiError: 'AI Error',
     aiErrorDescription: 'An error occurred while generating recipes',
     ingredientRequired: 'Ingredients Required',
@@ -303,88 +307,88 @@ export const en = {
     account: 'Account',
     profile: {
       title: 'Profile',
-      subtitle: 'Manage your profile information'
+      subtitle: 'Manage your profile information',
     },
     notifications: {
       title: 'Notifications',
-      subtitle: 'Push notifications and alerts'
+      subtitle: 'Push notifications and alerts',
     },
     language: {
       title: 'Language',
       turkish: 'Türkçe',
-      english: 'English'
+      english: 'English',
     },
     appSettings: 'App Settings',
     theme: {
       title: 'Theme',
       light: 'Light mode',
-      dark: 'Dark mode'
+      dark: 'Dark mode',
     },
     soundEffects: {
       title: 'Sound Effects',
-      subtitle: 'App sounds and feedback'
+      subtitle: 'App sounds and feedback',
     },
     hapticFeedback: {
       title: 'Haptic Feedback',
-      subtitle: 'Vibration feedback'
+      subtitle: 'Vibration feedback',
     },
     premiumFeatures: 'Premium Features',
     advancedRecipes: {
       title: 'Advanced Recipe Suggestions',
-      subtitle: 'AI-powered personalized recipes'
+      subtitle: 'AI-powered personalized recipes',
     },
     unlimitedSearch: {
       title: 'Unlimited Recipe Search',
-      subtitle: 'Unlimited access without daily limits'
+      subtitle: 'Unlimited access without daily limits',
     },
     premiumSupport: {
       title: 'Priority Support',
-      subtitle: '24/7 customer support'
+      subtitle: '24/7 customer support',
     },
     offlineRecipes: {
       title: 'Offline Recipes',
-      subtitle: 'Access recipes without internet connection'
+      subtitle: 'Access recipes without internet connection',
     },
     support: 'Support',
     helpCenter: {
       title: 'Help Center',
-      subtitle: 'FAQ and user guide'
+      subtitle: 'FAQ and user guide',
     },
     contactUs: {
       title: 'Contact Us',
-      subtitle: 'Reach out for your questions'
+      subtitle: 'Reach out for your questions',
     },
     supportContact: {
       title: 'Contact Support',
-      subtitle: 'Get help from our team'
+      subtitle: 'Get help from our team',
     },
     shareApp: {
       title: 'Share App',
-      subtitle: 'Share with your friends'
+      subtitle: 'Share with your friends',
     },
     rateApp: {
       title: 'Rate App',
-      subtitle: 'Rate us on the App Store'
+      subtitle: 'Rate us on the App Store',
     },
     about: 'About',
     legal: 'Legal',
     developerTools: 'Developer Tools',
     developmentMode: {
       title: 'Development Mode',
-      subtitle: 'Environment: {{environment}}'
+      subtitle: 'Environment: {{environment}}',
     },
     debugLogs: {
       title: 'Debug Logs',
-      subtitle: 'View application debug information'
+      subtitle: 'View application debug information',
     },
     debugInfo: 'Debug Information',
     privacyPolicy: {
       title: 'Privacy Policy',
-      subtitle: 'Data protection and privacy'
+      subtitle: 'Data protection and privacy',
     },
     termsOfService: {
       title: 'Terms of Service',
-      subtitle: 'App usage terms'
+      subtitle: 'App usage terms',
     },
     version: 'Version',
     developerOptions: 'Developer Options',
@@ -396,7 +400,7 @@ export const en = {
     themeChanged: 'Theme changed',
     debugEnabled: 'Debug mode enabled',
     cacheCleared: 'Cache cleared',
-    environment: 'Environment'
+    environment: 'Environment',
   },
 
   // Warnings
@@ -647,7 +651,7 @@ export const en = {
   premium: {
     upgrade_to_premium: 'Upgrade to Premium',
     unlock_all_features: 'Unlock all premium features',
-    what_you_get: 'What You\'ll Get',
+    what_you_get: "What You'll Get",
     upgrade_for_feature: 'Upgrade to Premium for {{feature}}',
     feature_unlock: 'Unlock {{feature}} with Premium',
     start_free_trial: '7 Days Free Trial',
@@ -668,7 +672,8 @@ export const en = {
     // Features
     features: {
       unlimited_recipes: 'Unlimited Recipes',
-      unlimited_recipes_desc: 'Access thousands of recipes without daily limits',
+      unlimited_recipes_desc:
+        'Access thousands of recipes without daily limits',
       advanced_filters: 'Advanced Filters',
       advanced_filters_desc: 'Detailed search and smart filtering options',
       export_recipes: 'Export Recipes',
@@ -682,7 +687,8 @@ export const en = {
       custom_meal_plans: 'Custom Meal Plans',
       custom_meal_plans_desc: 'AI-powered personalized weekly menu suggestions',
       nutrition_tracking: 'Nutrition Tracking',
-      nutrition_tracking_desc: 'Detailed calorie and nutritional value analysis',
+      nutrition_tracking_desc:
+        'Detailed calorie and nutritional value analysis',
     },
 
     // Period

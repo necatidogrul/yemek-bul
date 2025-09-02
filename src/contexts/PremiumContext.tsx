@@ -78,7 +78,7 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
     const timer = setTimeout(() => {
       initializePremium();
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, []);
 

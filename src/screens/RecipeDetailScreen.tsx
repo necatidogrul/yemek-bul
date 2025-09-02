@@ -63,7 +63,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   const recipeName = route.params?.recipeName;
   const initialRecipe = route.params?.recipe as Recipe | undefined;
   const isAiGenerated = route.params?.isAiGenerated || false;
-  
+
   // Recipe state - başlangıçta route'dan gelen recipe'yi kullan
   const [recipe, setRecipe] = useState<Recipe | undefined>(initialRecipe);
   const [isLoadingRecipe, setIsLoadingRecipe] = useState(false);
@@ -128,7 +128,10 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   useEffect(() => {
     const loadRecipeDetails = async () => {
       // Eğer recipe eksik veya instructions/ingredients yoksa yükle
-      if (recipeId && (!recipe || !recipe.instructions || !recipe.ingredients)) {
+      if (
+        recipeId &&
+        (!recipe || !recipe.instructions || !recipe.ingredients)
+      ) {
         setIsLoadingRecipe(true);
         try {
           const fullRecipe = await RecipeService.getRecipeById(recipeId);
@@ -164,14 +167,14 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     if (recipe?.ingredients) {
       setCheckedIngredients(new Array(recipe.ingredients.length).fill(false));
     }
-    
+
     // Fade in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
       useNativeDriver: true,
     }).start();
-    
+
     // Shimmer animation
     Animated.loop(
       Animated.sequence([
@@ -351,8 +354,17 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     <Animated.View style={[styles.contentSection, { opacity: fadeAnim }]}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleContainer}>
-          <View style={[styles.sectionIcon, { backgroundColor: colors.primary[100] }]}>
-            <Ionicons name='restaurant-outline' size={24} color={colors.primary[600]} />
+          <View
+            style={[
+              styles.sectionIcon,
+              { backgroundColor: colors.primary[100] },
+            ]}
+          >
+            <Ionicons
+              name='restaurant-outline'
+              size={24}
+              color={colors.primary[600]}
+            />
           </View>
           <View>
             <Text variant='headlineSmall' weight='700'>
@@ -373,9 +385,9 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           <TouchableOpacity
             style={[
               styles.servingButton,
-              { 
+              {
                 backgroundColor: colors.primary[100],
-                opacity: servingSize > 1 ? 1 : 0.5 
+                opacity: servingSize > 1 ? 1 : 0.5,
               },
             ]}
             onPress={() => {
@@ -391,9 +403,9 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
 
           <Animated.View
             style={[
-              styles.servingDisplay, 
+              styles.servingDisplay,
               { backgroundColor: colors.surface },
-              { transform: [{ scale: fadeAnim }] }
+              { transform: [{ scale: fadeAnim }] },
             ]}
           >
             <Text
@@ -429,24 +441,32 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           return (
             <Animated.View
               key={index}
-              style={[{
-                transform: [{
-                  translateY: fadeAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [50, 0]
-                  })
-                }],
-                opacity: fadeAnim
-              }]}
+              style={[
+                {
+                  transform: [
+                    {
+                      translateY: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [50, 0],
+                      }),
+                    },
+                  ],
+                  opacity: fadeAnim,
+                },
+              ]}
             >
               <TouchableOpacity
                 style={[
-                  styles.ingredientItem, 
-                  { 
-                    backgroundColor: isChecked ? colors.primary[50] : colors.surface,
-                    borderColor: isChecked ? colors.primary[200] : colors.border.light,
+                  styles.ingredientItem,
+                  {
+                    backgroundColor: isChecked
+                      ? colors.primary[50]
+                      : colors.surface,
+                    borderColor: isChecked
+                      ? colors.primary[200]
+                      : colors.border.light,
                     borderWidth: 1,
-                  }
+                  },
                 ]}
                 onPress={() => toggleIngredient(index)}
                 activeOpacity={0.8}
@@ -454,27 +474,33 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 <View
                   style={[
                     styles.ingredientNumber,
-                    { 
-                      backgroundColor: isChecked ? colors.primary[200] : colors.neutral[100],
+                    {
+                      backgroundColor: isChecked
+                        ? colors.primary[200]
+                        : colors.neutral[100],
                     },
                   ]}
                 >
                   <Text
                     variant='labelMedium'
                     weight='600'
-                    style={{ 
-                      color: isChecked ? colors.primary[700] : colors.text.secondary,
+                    style={{
+                      color: isChecked
+                        ? colors.primary[700]
+                        : colors.text.secondary,
                     }}
                   >
                     {index + 1}
                   </Text>
                 </View>
-                <Text 
-                  variant='bodyMedium' 
-                  style={{ 
+                <Text
+                  variant='bodyMedium'
+                  style={{
                     flex: 1,
                     textDecorationLine: isChecked ? 'line-through' : 'none',
-                    color: isChecked ? colors.text.secondary : colors.text.primary,
+                    color: isChecked
+                      ? colors.text.secondary
+                      : colors.text.primary,
                   }}
                 >
                   {calculateScaledAmount(ingredient, recipe?.servings || 4)}
@@ -482,19 +508,19 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 <Animated.View
                   style={[
                     styles.ingredientCheck,
-                    { 
-                      backgroundColor: isChecked ? colors.primary[500] : 'transparent',
-                      borderColor: isChecked ? colors.primary[500] : colors.neutral[300],
-                      transform: [{ scale: isChecked ? 1.1 : 1 }]
+                    {
+                      backgroundColor: isChecked
+                        ? colors.primary[500]
+                        : 'transparent',
+                      borderColor: isChecked
+                        ? colors.primary[500]
+                        : colors.neutral[300],
+                      transform: [{ scale: isChecked ? 1.1 : 1 }],
                     },
                   ]}
                 >
                   {isChecked && (
-                    <Ionicons
-                      name='checkmark'
-                      size={16}
-                      color='white'
-                    />
+                    <Ionicons name='checkmark' size={16} color='white' />
                   )}
                 </Animated.View>
               </TouchableOpacity>
@@ -502,8 +528,10 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           );
         })}
       </View>
-      
-      <View style={[styles.progressContainer, { backgroundColor: colors.surface }]}>
+
+      <View
+        style={[styles.progressContainer, { backgroundColor: colors.surface }]}
+      >
         <View style={styles.progressHeader}>
           <Ionicons name='list-outline' size={20} color={colors.primary[500]} />
           <Text variant='labelMedium' weight='600'>
@@ -511,18 +539,19 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           </Text>
         </View>
         <View style={styles.progressBar}>
-          <Animated.View 
+          <Animated.View
             style={[
               styles.progressFill,
-              { 
+              {
                 backgroundColor: colors.primary[500],
-                width: `${(checkedIngredients.filter(Boolean).length / checkedIngredients.length) * 100}%`
-              }
-            ]} 
+                width: `${(checkedIngredients.filter(Boolean).length / checkedIngredients.length) * 100}%`,
+              },
+            ]}
           />
         </View>
         <Text variant='labelSmall' color='secondary'>
-          {checkedIngredients.filter(Boolean).length} / {checkedIngredients.length} malzeme hazırlandı
+          {checkedIngredients.filter(Boolean).length} /{' '}
+          {checkedIngredients.length} malzeme hazırlandı
         </Text>
       </View>
     </Animated.View>
@@ -532,7 +561,12 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     <Animated.View style={[styles.contentSection, { opacity: fadeAnim }]}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleContainer}>
-          <View style={[styles.sectionIcon, { backgroundColor: colors.primary[100] }]}>
+          <View
+            style={[
+              styles.sectionIcon,
+              { backgroundColor: colors.primary[100] },
+            ]}
+          >
             <Ionicons name='list' size={24} color={colors.primary[600]} />
           </View>
           <View>
@@ -548,8 +582,10 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           <TouchableOpacity
             style={[
               styles.controlButton,
-              { 
-                backgroundColor: isPlaying ? colors.primary[500] : colors.primary[100],
+              {
+                backgroundColor: isPlaying
+                  ? colors.primary[500]
+                  : colors.primary[100],
                 ...shadows.md,
               },
             ]}
@@ -570,39 +606,52 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
       </View>
 
       {/* Step Progress Indicator */}
-      <View style={[styles.stepProgressContainer, { backgroundColor: colors.surface }]}>
+      <View
+        style={[
+          styles.stepProgressContainer,
+          { backgroundColor: colors.surface },
+        ]}
+      >
         <View style={styles.stepProgressBar}>
-          {Array.from({ length: recipe?.instructions?.length || 0 }, (_, index) => (
-            <Animated.View
-              key={index}
-              style={[
-                styles.stepProgressDot,
-                {
-                  backgroundColor: index <= currentStep 
-                    ? colors.primary[500] 
-                    : colors.neutral[200],
-                  transform: [{ 
-                    scale: index === currentStep ? 1.2 : 1 
-                  }]
-                }
-              ]}
-            />
-          ))}
+          {Array.from(
+            { length: recipe?.instructions?.length || 0 },
+            (_, index) => (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.stepProgressDot,
+                  {
+                    backgroundColor:
+                      index <= currentStep
+                        ? colors.primary[500]
+                        : colors.neutral[200],
+                    transform: [
+                      {
+                        scale: index === currentStep ? 1.2 : 1,
+                      },
+                    ],
+                  },
+                ]}
+              />
+            )
+          )}
         </View>
       </View>
 
-      <Animated.View 
+      <Animated.View
         style={[
-          styles.stepCard, 
-          { 
+          styles.stepCard,
+          {
             backgroundColor: colors.surface,
-            transform: [{ 
-              translateY: fadeAnim.interpolate({
-                inputRange: [0, 1],
-                outputRange: [30, 0]
-              })
-            }]
-          }
+            transform: [
+              {
+                translateY: fadeAnim.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [30, 0],
+                }),
+              },
+            ],
+          },
         ]}
       >
         <View style={styles.stepHeader}>
@@ -626,8 +675,17 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
               {recipe?.instructions?.length || 0} adımdan {currentStep + 1}.
             </Text>
           </View>
-          <View style={[styles.timeEstimate, { backgroundColor: colors.warning[100] }]}>
-            <Ionicons name='time-outline' size={16} color={colors.warning[600]} />
+          <View
+            style={[
+              styles.timeEstimate,
+              { backgroundColor: colors.warning[100] },
+            ]}
+          >
+            <Ionicons
+              name='time-outline'
+              size={16}
+              color={colors.warning[600]}
+            />
             <Text variant='labelSmall' style={{ color: colors.warning[600] }}>
               ~5dk
             </Text>
@@ -649,9 +707,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
               styles.stepNavButton,
               {
                 backgroundColor:
-                  currentStep === 0
-                    ? colors.neutral[100]
-                    : colors.primary[100],
+                  currentStep === 0 ? colors.neutral[100] : colors.primary[100],
                 opacity: currentStep === 0 ? 0.5 : 1,
                 ...shadows.sm,
               },
@@ -671,9 +727,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
               weight='600'
               style={{
                 color:
-                  currentStep === 0
-                    ? colors.neutral[400]
-                    : colors.primary[600],
+                  currentStep === 0 ? colors.neutral[400] : colors.primary[600],
               }}
             >
               Önceki
@@ -741,10 +795,17 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 <Ionicons name='play' size={24} color='white' />
               </View>
               <View style={{ flex: 1 }}>
-                <Text variant='labelLarge' weight='700' style={{ color: 'white' }}>
+                <Text
+                  variant='labelLarge'
+                  weight='700'
+                  style={{ color: 'white' }}
+                >
                   Pişirmeye Başla
                 </Text>
-                <Text variant='bodySmall' style={{ color: 'rgba(255,255,255,0.8)' }}>
+                <Text
+                  variant='bodySmall'
+                  style={{ color: 'rgba(255,255,255,0.8)' }}
+                >
                   Sesli rehberlik ile adım adım ilerle
                 </Text>
               </View>
@@ -759,7 +820,9 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     <Animated.View style={[styles.contentSection, { opacity: fadeAnim }]}>
       <View style={styles.sectionHeader}>
         <View style={styles.sectionTitleContainer}>
-          <View style={[styles.sectionIcon, { backgroundColor: colors.info[100] }]}>
+          <View
+            style={[styles.sectionIcon, { backgroundColor: colors.info[100] }]}
+          >
             <Ionicons name='fitness' size={24} color={colors.info[600]} />
           </View>
           <View>
@@ -781,19 +844,24 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
               key={index}
               style={[
                 {
-                  transform: [{
-                    translateY: fadeAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [30, 0]
-                    })
-                  }],
-                  opacity: fadeAnim
-                }
+                  transform: [
+                    {
+                      translateY: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [30, 0],
+                      }),
+                    },
+                  ],
+                  opacity: fadeAnim,
+                },
               ]}
             >
               <LinearGradient
                 colors={[item.color + '10', item.color + '20']}
-                style={[styles.nutritionCard, { backgroundColor: colors.surface }]}
+                style={[
+                  styles.nutritionCard,
+                  { backgroundColor: colors.surface },
+                ]}
               >
                 <View style={styles.nutritionCardHeader}>
                   <LinearGradient
@@ -801,14 +869,17 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                     style={styles.nutritionIcon}
                   >
                     <View
-                      style={[styles.nutritionDot, { backgroundColor: item.color }]}
+                      style={[
+                        styles.nutritionDot,
+                        { backgroundColor: item.color },
+                      ]}
                     />
                   </LinearGradient>
                   <Text variant='labelMedium' weight='600' color='secondary'>
                     {item.label}
                   </Text>
                 </View>
-                
+
                 <View style={styles.nutritionValueContainer}>
                   <Text
                     variant='displaySmall'
@@ -817,28 +888,36 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                   >
                     {item.value}
                   </Text>
-                  <Text 
-                    variant='labelLarge' 
+                  <Text
+                    variant='labelLarge'
                     weight='600'
                     style={{ color: item.color, opacity: 0.8 }}
                   >
                     {item.unit}
                   </Text>
                 </View>
-                
+
                 {/* Progress Bar */}
                 <View style={styles.nutritionProgress}>
-                  <View style={[styles.nutritionProgressBar, { backgroundColor: item.color + '20' }]}>
-                    <Animated.View 
+                  <View
+                    style={[
+                      styles.nutritionProgressBar,
+                      { backgroundColor: item.color + '20' },
+                    ]}
+                  >
+                    <Animated.View
                       style={[
                         styles.nutritionProgressFill,
-                        { 
+                        {
                           backgroundColor: item.color,
                           width: fadeAnim.interpolate({
                             inputRange: [0, 1],
-                            outputRange: ['0%', `${Math.min(parseInt(item.value) / 100 * 80, 100)}%`]
-                          })
-                        }
+                            outputRange: [
+                              '0%',
+                              `${Math.min((parseInt(item.value) / 100) * 80, 100)}%`,
+                            ],
+                          }),
+                        },
                       ]}
                     />
                   </View>
@@ -850,7 +929,9 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
       </View>
 
       {/* Daily Values Summary */}
-      <View style={[styles.dailyValuesSummary, { backgroundColor: colors.surface }]}>
+      <View
+        style={[styles.dailyValuesSummary, { backgroundColor: colors.surface }]}
+      >
         <View style={styles.summaryHeader}>
           <Ionicons name='bar-chart' size={20} color={colors.primary[500]} />
           <Text variant='labelLarge' weight='600'>
@@ -859,20 +940,52 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
         </View>
         <View style={styles.summaryGrid}>
           <View style={styles.summaryItem}>
-            <Text variant='bodySmall' color='secondary'>Kalori</Text>
-            <Text variant='labelLarge' weight='600' style={{ color: colors.semantic.error }}>12%</Text>
+            <Text variant='bodySmall' color='secondary'>
+              Kalori
+            </Text>
+            <Text
+              variant='labelLarge'
+              weight='600'
+              style={{ color: colors.semantic.error }}
+            >
+              12%
+            </Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text variant='bodySmall' color='secondary'>Protein</Text>
-            <Text variant='labelLarge' weight='600' style={{ color: colors.primary[500] }}>30%</Text>
+            <Text variant='bodySmall' color='secondary'>
+              Protein
+            </Text>
+            <Text
+              variant='labelLarge'
+              weight='600'
+              style={{ color: colors.primary[500] }}
+            >
+              30%
+            </Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text variant='bodySmall' color='secondary'>Karb.</Text>
-            <Text variant='labelLarge' weight='600' style={{ color: colors.semantic.warning }}>15%</Text>
+            <Text variant='bodySmall' color='secondary'>
+              Karb.
+            </Text>
+            <Text
+              variant='labelLarge'
+              weight='600'
+              style={{ color: colors.semantic.warning }}
+            >
+              15%
+            </Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text variant='bodySmall' color='secondary'>Yağ</Text>
-            <Text variant='labelLarge' weight='600' style={{ color: colors.warning[500] }}>18%</Text>
+            <Text variant='bodySmall' color='secondary'>
+              Yağ
+            </Text>
+            <Text
+              variant='labelLarge'
+              weight='600'
+              style={{ color: colors.warning[500] }}
+            >
+              18%
+            </Text>
           </View>
         </View>
       </View>
@@ -888,7 +1001,11 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           />
         </View>
         <View style={{ flex: 1 }}>
-          <Text variant='labelMedium' weight='600' style={{ color: colors.info[700] }}>
+          <Text
+            variant='labelMedium'
+            weight='600'
+            style={{ color: colors.info[700] }}
+          >
             Besin Değerleri Hakkında
           </Text>
           <Text
@@ -896,7 +1013,8 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
             color='secondary'
             style={{ lineHeight: 20, marginTop: spacing[2] }}
           >
-            Bu değerler yaklaşık hesaplamalar olup, kullanılan malzemelerin markası ve özelliklerine göre değişebilir.
+            Bu değerler yaklaşık hesaplamalar olup, kullanılan malzemelerin
+            markası ve özelliklerine göre değişebilir.
           </Text>
         </View>
       </View>
@@ -906,17 +1024,28 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   // Recipe yoksa veya yükleniyorsa loading göster
   if (!recipe || isLoadingRecipe) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         <View style={styles.loadingContainer}>
           <TouchableOpacity
-            style={[styles.headerButton, { backgroundColor: colors.surface, marginBottom: 20 }]}
+            style={[
+              styles.headerButton,
+              { backgroundColor: colors.surface, marginBottom: 20 },
+            ]}
             onPress={() => navigation.goBack()}
           >
             <Ionicons name='arrow-back' size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <ActivityIndicator size='large' color={colors.primary[500]} />
-          <Text variant='bodyMedium' color='secondary' style={{ marginTop: 20 }}>
-            {isLoadingRecipe ? 'Tarif detayları yükleniyor...' : 'Tarif bilgisi eksik'}
+          <Text
+            variant='bodyMedium'
+            color='secondary'
+            style={{ marginTop: 20 }}
+          >
+            {isLoadingRecipe
+              ? 'Tarif detayları yükleniyor...'
+              : 'Tarif bilgisi eksik'}
           </Text>
         </View>
       </SafeAreaView>
@@ -955,12 +1084,12 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
         <View style={styles.headerButtons}>
           <TouchableOpacity
             style={[
-              styles.headerButton, 
-              { 
+              styles.headerButton,
+              {
                 backgroundColor: colors.surface,
                 borderWidth: !exportGuard.hasAccess ? 2 : 0,
                 borderColor: !exportGuard.hasAccess ? '#FFD700' : 'transparent',
-              }
+              },
             ]}
             onPress={handleExportToPDF}
           >
@@ -1011,11 +1140,11 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
         {/* Hero Image */}
         <Animated.View
           style={[
-            styles.heroImage, 
-            { 
+            styles.heroImage,
+            {
               transform: [{ scale: imageScale }],
               opacity: heroImageOpacity,
-            }
+            },
           ]}
         >
           {recipe?.imageUrl ? (
@@ -1037,7 +1166,11 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 </View>
               )}
               <LinearGradient
-                colors={['rgba(0,0,0,0.4)', 'rgba(0,0,0,0.1)', 'rgba(0,0,0,0.6)']}
+                colors={[
+                  'rgba(0,0,0,0.4)',
+                  'rgba(0,0,0,0.1)',
+                  'rgba(0,0,0,0.6)',
+                ]}
                 style={styles.imageGradientOverlay}
                 locations={[0, 0.5, 1]}
               />
@@ -1062,7 +1195,12 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
 
           {/* Enhanced Overlay Controls */}
           <View style={styles.imageOverlay}>
-            <View style={[styles.blurButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+            <View
+              style={[
+                styles.blurButton,
+                { backgroundColor: 'rgba(0,0,0,0.6)' },
+              ]}
+            >
               <TouchableOpacity
                 style={styles.overlayButton}
                 onPress={() => navigation.goBack()}
@@ -1071,13 +1209,18 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
               </TouchableOpacity>
             </View>
 
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.overlayActions,
-                { transform: [{ scale: floatingButtonsScale }] }
+                { transform: [{ scale: floatingButtonsScale }] },
               ]}
             >
-              <View style={[styles.blurButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+              <View
+                style={[
+                  styles.blurButton,
+                  { backgroundColor: 'rgba(0,0,0,0.6)' },
+                ]}
+              >
                 <TouchableOpacity
                   style={styles.overlayButton}
                   onPress={shareRecipe}
@@ -1086,7 +1229,12 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.blurButton, { backgroundColor: 'rgba(0,0,0,0.6)' }]}>
+              <View
+                style={[
+                  styles.blurButton,
+                  { backgroundColor: 'rgba(0,0,0,0.6)' },
+                ]}
+              >
                 <FavoriteButton
                   recipe={recipe || undefined}
                   size='large'
@@ -1098,13 +1246,13 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
 
           {/* Recipe Badge */}
           {recipe?.difficulty && (
-            <Animated.View 
-              style={[
-                styles.recipeBadge,
-                { opacity: fadeAnim }
-              ]}
-            >
-              <View style={[styles.badgeBlur, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+            <Animated.View style={[styles.recipeBadge, { opacity: fadeAnim }]}>
+              <View
+                style={[
+                  styles.badgeBlur,
+                  { backgroundColor: 'rgba(0,0,0,0.7)' },
+                ]}
+              >
                 <Ionicons
                   name={
                     recipe.difficulty === 'kolay'
@@ -1122,14 +1270,17 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                         : colors.semantic.error
                   }
                 />
-                <Text style={{
-                  ...styles.badgeText,
-                  color: recipe.difficulty === 'kolay'
-                    ? colors.success[500]
-                    : recipe.difficulty === 'orta'
-                      ? colors.warning[500]
-                      : colors.semantic.error,
-                }}>
+                <Text
+                  style={{
+                    ...styles.badgeText,
+                    color:
+                      recipe.difficulty === 'kolay'
+                        ? colors.success[500]
+                        : recipe.difficulty === 'orta'
+                          ? colors.warning[500]
+                          : colors.semantic.error,
+                  }}
+                >
                   {recipe.difficulty}
                 </Text>
               </View>
@@ -1214,10 +1365,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
             </View>
 
             <View
-              style={[
-                styles.statCard,
-                { backgroundColor: colors.primary[50] },
-              ]}
+              style={[styles.statCard, { backgroundColor: colors.primary[50] }]}
             >
               <Ionicons name='people' size={20} color={colors.primary[500]} />
               <Text
@@ -1260,8 +1408,8 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           <View style={styles.actionButtons}>
             <LinearGradient
               colors={[
-                !aiQuestionGuard.hasAccess ? '#FFD700' : colors.primary[400], 
-                !aiQuestionGuard.hasAccess ? '#FFA500' : colors.primary[600]
+                !aiQuestionGuard.hasAccess ? '#FFD700' : colors.primary[400],
+                !aiQuestionGuard.hasAccess ? '#FFA500' : colors.primary[600],
               ]}
               style={[styles.primaryActionButton]}
             >
@@ -1270,17 +1418,23 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 onPress={handleQAOpen}
               >
                 <View style={styles.aiIconContainer}>
-                  <Ionicons name='chatbubble-ellipses' size={24} color='white' />
+                  <Ionicons
+                    name='chatbubble-ellipses'
+                    size={24}
+                    color='white'
+                  />
                   <View style={styles.aiIndicator}>
-                    <Animated.View style={[
-                      styles.aiDot,
-                      {
-                        opacity: shimmerAnim.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [0.3, 1]
-                        })
-                      }
-                    ]} />
+                    <Animated.View
+                      style={[
+                        styles.aiDot,
+                        {
+                          opacity: shimmerAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0.3, 1],
+                          }),
+                        },
+                      ]}
+                    />
                   </View>
                   {!aiQuestionGuard.hasAccess && (
                     <View style={styles.premiumOverlay}>
@@ -1289,12 +1443,19 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                   )}
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text variant='labelLarge' weight='700' style={{ color: 'white' }}>
+                  <Text
+                    variant='labelLarge'
+                    weight='700'
+                    style={{ color: 'white' }}
+                  >
                     AI Soru-Cevap {!aiQuestionGuard.hasAccess && '⭐'}
                   </Text>
-                  <Text variant='bodySmall' style={{ color: 'rgba(255,255,255,0.8)' }}>
-                    {aiQuestionGuard.hasAccess 
-                      ? 'Tarif hakkında her şeyi sor' 
+                  <Text
+                    variant='bodySmall'
+                    style={{ color: 'rgba(255,255,255,0.8)' }}
+                  >
+                    {aiQuestionGuard.hasAccess
+                      ? 'Tarif hakkında her şeyi sor'
                       : 'Premium özellik - Sınırsız soru'}
                   </Text>
                 </View>
@@ -1312,22 +1473,28 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                   color={colors.text.primary}
                 />
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[
-                  styles.iconButton, 
-                  { 
-                    backgroundColor: !exportGuard.hasAccess ? '#FFD70020' : colors.surface,
+                  styles.iconButton,
+                  {
+                    backgroundColor: !exportGuard.hasAccess
+                      ? '#FFD70020'
+                      : colors.surface,
                     borderWidth: !exportGuard.hasAccess ? 1 : 0,
-                    borderColor: !exportGuard.hasAccess ? '#FFD700' : 'transparent',
-                  }
+                    borderColor: !exportGuard.hasAccess
+                      ? '#FFD700'
+                      : 'transparent',
+                  },
                 ]}
                 onPress={handleExportToPDF}
               >
                 <Ionicons
                   name='download-outline'
                   size={24}
-                  color={!exportGuard.hasAccess ? '#FFD700' : colors.text.primary}
+                  color={
+                    !exportGuard.hasAccess ? '#FFD700' : colors.text.primary
+                  }
                 />
                 {!exportGuard.hasAccess && (
                   <View style={styles.premiumMicro}>
@@ -1674,7 +1841,7 @@ const styles = StyleSheet.create({
   contentSection: {
     gap: spacing[5],
   },
-  
+
   // Section Header
   sectionHeader: {
     marginBottom: spacing[5],
@@ -1691,7 +1858,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  
+
   // Progress Container
   progressContainer: {
     padding: spacing[5],
@@ -1964,7 +2131,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 2,
   },
-  
+
   // Loading state
   loadingContainer: {
     flex: 1,

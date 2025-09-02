@@ -136,12 +136,12 @@ export const tr = {
       asian: 'Asya',
       healthy: 'Sağlıklı',
       dessert: 'Tatlı',
-      fast: 'Hızlı'
+      fast: 'Hızlı',
     },
     levelLabels: {
       beginner: 'Başlangıç',
       intermediate: 'Orta',
-      advanced: 'İleri'
+      advanced: 'İleri',
     },
     dietaryRestrictions: 'Beslenme Tercihleri',
     favoriteCategories: 'Favori Mutfaklar',
@@ -172,30 +172,30 @@ export const tr = {
       breakfast: {
         name: 'Kahvaltı',
         subtitle: 'Hızlı başlat',
-        ingredients: ['yumurta', 'peynir', 'domates']
+        ingredients: ['yumurta', 'peynir', 'domates'],
       },
       lunch: {
         name: 'Öğle',
         subtitle: 'Doyurucu',
-        ingredients: ['tavuk', 'pirinç', 'sebze']
+        ingredients: ['tavuk', 'pirinç', 'sebze'],
       },
       dinner: {
         name: 'Akşam',
         subtitle: 'Lezzetli',
-        ingredients: ['et', 'patates', 'soğan']
+        ingredients: ['et', 'patates', 'soğan'],
       },
       snack: {
         name: 'Hızlı',
         subtitle: '15 dakika',
-        ingredients: ['makarna', 'domates', 'peynir']
-      }
+        ingredients: ['makarna', 'domates', 'peynir'],
+      },
     },
     welcomeTitle: 'Ne pişirmek istersin?',
     welcomeSubtitle: 'Tek dokunuşla AI tarif önerisi al',
     customCreate: {
       title: 'Kendi Malzemelerinle Oluştur',
-      subtitle: 'Elindeki malzemeleri seç, AI sana özel tarifler bulsun'
-    }
+      subtitle: 'Elindeki malzemeleri seç, AI sana özel tarifler bulsun',
+    },
   },
 
   // Recipe
@@ -251,8 +251,10 @@ export const tr = {
     aiErrorDesc: 'Tarif üretilirken bir hata oluştu',
     recipesLoadFailed: 'Tarifler yüklenemedi',
     favoritesLoadFailed: 'Favoriler yüklenemedi',
-    recipeCorrupted: 'Bu tarif bozuk görünüyor. Lütfen uygulamayı yeniden başlatın.',
-    recipeCorruptedShort: 'Bu tarif bozuk görünüyor. Favorileri temizlemeyi deneyin.',
+    recipeCorrupted:
+      'Bu tarif bozuk görünüyor. Lütfen uygulamayı yeniden başlatın.',
+    recipeCorruptedShort:
+      'Bu tarif bozuk görünüyor. Favorileri temizlemeyi deneyin.',
     recipeRemoveFailed: 'Tarif çıkarılırken hata oluştu',
     questionAnswerFailed: 'Soru yanıtlanırken hata oluştu',
   },
@@ -302,88 +304,88 @@ export const tr = {
     account: 'Hesap',
     profile: {
       title: 'Profil',
-      subtitle: 'Profil bilgilerinizi yönetin'
+      subtitle: 'Profil bilgilerinizi yönetin',
     },
     notifications: {
       title: 'Bildirimler',
-      subtitle: 'Push bildirimleri ve uyarılar'
+      subtitle: 'Push bildirimleri ve uyarılar',
     },
     language: {
       title: 'Dil',
       turkish: 'Türkçe',
-      english: 'English'
+      english: 'English',
     },
     appSettings: 'Uygulama Ayarları',
     theme: {
       title: 'Tema',
       light: 'Açık mod',
-      dark: 'Karanlık mod'
+      dark: 'Karanlık mod',
     },
     soundEffects: {
       title: 'Ses Efektleri',
-      subtitle: 'Uygulama sesleri ve geri bildirimler'
+      subtitle: 'Uygulama sesleri ve geri bildirimler',
     },
     hapticFeedback: {
       title: 'Haptik Geri Bildirim',
-      subtitle: 'Titreşim geri bildirimi'
+      subtitle: 'Titreşim geri bildirimi',
     },
     premiumFeatures: 'Premium Özellikler',
     advancedRecipes: {
       title: 'Gelişmiş Tarif Önerileri',
-      subtitle: 'AI destekli kişiselleştirilmiş tarifler'
+      subtitle: 'AI destekli kişiselleştirilmiş tarifler',
     },
     unlimitedSearch: {
       title: 'Sınırsız Tarif Arama',
-      subtitle: 'Günlük limit olmadan sınırsız erişim'
+      subtitle: 'Günlük limit olmadan sınırsız erişim',
     },
     premiumSupport: {
       title: 'Öncelikli Destek',
-      subtitle: '7/24 müşteri desteği'
+      subtitle: '7/24 müşteri desteği',
     },
     offlineRecipes: {
       title: 'Çevrimdışı Tarifler',
-      subtitle: 'İnternet bağlantısı olmadan tariflere erişin'
+      subtitle: 'İnternet bağlantısı olmadan tariflere erişin',
     },
     support: 'Destek',
     helpCenter: {
       title: 'Yardım Merkezi',
-      subtitle: 'SSS ve kullanım kılavuzu'
+      subtitle: 'SSS ve kullanım kılavuzu',
     },
     contactUs: {
       title: 'İletişim',
-      subtitle: 'Sorularınız için bize ulaşın'
+      subtitle: 'Sorularınız için bize ulaşın',
     },
     supportContact: {
       title: 'Destek İletişimi',
-      subtitle: 'Ekibimizden yardım alın'
+      subtitle: 'Ekibimizden yardım alın',
     },
     shareApp: {
       title: 'Uygulamayı Paylaş',
-      subtitle: 'Arkadaşlarınızla paylaşın'
+      subtitle: 'Arkadaşlarınızla paylaşın',
     },
     rateApp: {
       title: 'Uygulamayı Değerlendir',
-      subtitle: 'App Store\'da değerlendirme yapın'
+      subtitle: "App Store'da değerlendirme yapın",
     },
     about: 'Hakkında',
     legal: 'Yasal',
     developerTools: 'Geliştirici Araçları',
     developmentMode: {
       title: 'Geliştirme Modu',
-      subtitle: 'Ortam: {{environment}}'
+      subtitle: 'Ortam: {{environment}}',
     },
     debugLogs: {
       title: 'Debug Logları',
-      subtitle: 'Uygulama debug bilgilerini görüntüle'
+      subtitle: 'Uygulama debug bilgilerini görüntüle',
     },
     debugInfo: 'Debug Bilgisi',
     privacyPolicy: {
       title: 'Gizlilik Politikası',
-      subtitle: 'Veri koruma ve gizlilik'
+      subtitle: 'Veri koruma ve gizlilik',
     },
     termsOfService: {
       title: 'Kullanım Koşulları',
-      subtitle: 'Uygulama kullanım şartları'
+      subtitle: 'Uygulama kullanım şartları',
     },
     version: 'Sürüm',
     developerOptions: 'Geliştirici Seçenekleri',
@@ -395,7 +397,7 @@ export const tr = {
     themeChanged: 'Tema değiştirildi',
     debugEnabled: 'Debug modu etkinleştirildi',
     cacheCleared: 'Önbellek temizlendi',
-    environment: 'Ortam'
+    environment: 'Ortam',
   },
 
   // Warnings
@@ -712,7 +714,6 @@ export const tr = {
     terms_agreement:
       "Devam ederek Kullanım Koşulları ve Gizlilik Politikası'nı kabul ediyorsunuz",
   },
-
 
   // Additional onboarding content moved to main onboarding object above
 };

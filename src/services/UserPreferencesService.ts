@@ -9,6 +9,7 @@ export interface UserPreferences {
   cookingLevel: string; // ModernHomeScreen'de kullanılan
   notificationsEnabled: boolean;
   onboardingCompleted: boolean;
+  language?: 'tr' | 'en';
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {
@@ -20,6 +21,7 @@ const DEFAULT_PREFERENCES: UserPreferences = {
   cookingLevel: 'orta',
   notificationsEnabled: false,
   onboardingCompleted: false,
+  language: 'tr',
 };
 
 const STORAGE_KEYS = {

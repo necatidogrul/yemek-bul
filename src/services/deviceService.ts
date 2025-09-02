@@ -107,18 +107,16 @@ export class DeviceService {
    * Cihaz tipini belirle
    */
   static getDeviceType(): 'phone' | 'tablet' | 'desktop' {
-    const { width } = Platform.OS === 'web' 
-      ? { width: window.innerWidth } 
-      : { width: 375 }; // Default mobile width
+    const { width } =
+      Platform.OS === 'web' ? { width: window.innerWidth } : { width: 375 }; // Default mobile width
 
     if (Platform.OS === 'web') {
       return width > 768 ? 'desktop' : 'phone';
     }
 
     const platformInfo = Platform as any;
-    const isTablet = Platform.OS === 'ios' 
-      ? platformInfo.isPad || false
-      : width > 600;
+    const isTablet =
+      Platform.OS === 'ios' ? platformInfo.isPad || false : width > 600;
 
     return isTablet ? 'tablet' : 'phone';
   }

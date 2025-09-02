@@ -35,7 +35,9 @@ class HistoryService {
       const updatedHistory = [newRequest, ...history];
 
       // Premium kullanıcılar için daha fazla kayıt tutma
-      const maxItems = isPremium ? this.MAX_HISTORY_ITEMS * 5 : this.MAX_HISTORY_ITEMS;
+      const maxItems = isPremium
+        ? this.MAX_HISTORY_ITEMS * 5
+        : this.MAX_HISTORY_ITEMS;
       const trimmedHistory = updatedHistory.slice(0, maxItems);
 
       await AsyncStorage.setItem(
@@ -93,7 +95,9 @@ class HistoryService {
   /**
    * İstatistikleri hesaplar
    */
-  static async getStats(includePremiumStats: boolean = false): Promise<HistoryStats> {
+  static async getStats(
+    includePremiumStats: boolean = false
+  ): Promise<HistoryStats> {
     try {
       const history = await this.getHistory();
 
@@ -307,9 +311,11 @@ class HistoryService {
   /**
    * Premium istatistikleri hesaplar
    */
-  private static calculatePremiumStats(history: AIRequestHistory[]): Partial<HistoryStats> {
+  private static calculatePremiumStats(
+    history: AIRequestHistory[]
+  ): Partial<HistoryStats> {
     const now = new Date();
-    
+
     // Token kullanımı
     const totalTokensUsed = history.reduce(
       (sum, item) => sum + (item.requestDetails?.tokenUsed || 0),
@@ -320,9 +326,11 @@ class HistoryService {
     const responseTimes = history
       .map(item => item.requestDetails?.responseTime)
       .filter(time => time !== undefined) as number[];
-    const averageResponseTime = responseTimes.length > 0
-      ? responseTimes.reduce((sum, time) => sum + time, 0) / responseTimes.length
-      : 0;
+    const averageResponseTime =
+      responseTimes.length > 0
+        ? responseTimes.reduce((sum, time) => sum + time, 0) /
+          responseTimes.length
+        : 0;
 
     // Günün saatine göre kullanım
     const hourCounts: { [key: number]: number } = {};
@@ -336,7 +344,8 @@ class HistoryService {
       .slice(0, 5);
 
     // Mutfak türlerine göre başarı oranı
-    const cuisineCounts: { [key: string]: { success: number; total: number } } = {};
+    const cuisineCounts: { [key: string]: { success: number; total: number } } =
+      {};
     history.forEach(item => {
       if (item.preferences?.cuisine) {
         const cuisine = item.preferences.cuisine;
@@ -373,14 +382,21 @@ class HistoryService {
     const monthlyTrends = [];
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = date.toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' });
+      const monthKey = date.toLocaleDateString('tr-TR', {
+        month: 'short',
+        year: '2-digit',
+      });
       const monthStart = date.getTime();
-      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0).getTime();
-      
+      const monthEnd = new Date(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        0
+      ).getTime();
+
       const monthHistory = history.filter(
         item => item.timestamp >= monthStart && item.timestamp <= monthEnd
       );
-      
+
       monthlyTrends.push({
         month: monthKey,
         requests: monthHistory.length,

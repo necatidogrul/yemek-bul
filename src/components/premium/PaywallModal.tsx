@@ -145,7 +145,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         if (retryCount < 5) {
           setRetryCount(prev => prev + 1);
           console.log(`⏳ Waiting for SDK... (attempt ${retryCount + 1}/5)`);
-          
+
           // Her denemede biraz daha bekle
           const delay = 1000 * (retryCount + 1);
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -154,7 +154,9 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
         // Son deneme başarısız - kullanıcıya bilgi ver
         console.error('❌ RevenueCat could not be initialized after retries');
-        throw new Error('RevenueCat başlatılamadı. Lütfen uygulamayı yeniden başlatın.');
+        throw new Error(
+          'RevenueCat başlatılamadı. Lütfen uygulamayı yeniden başlatın.'
+        );
       }
 
       // Offerings'leri yükle
@@ -202,21 +204,25 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       let errorMessage = 'Paketler yüklenemedi';
 
       if (error instanceof Error) {
-        if (error.message.includes('No offerings available') || 
-            error.message.includes('No offerings configured')) {
+        if (
+          error.message.includes('No offerings available') ||
+          error.message.includes('No offerings configured')
+        ) {
           errorMessage =
             'Premium paketler henüz yapılandırılmamış. Lütfen daha sonra tekrar deneyin.';
         } else if (error.message.includes('RevenueCat başlatılamadı')) {
           errorMessage = error.message;
-        } else if (error.message.includes('configure') || 
-                   error.message.includes('singleton') ||
-                   error.message.includes('SDK not')) {
+        } else if (
+          error.message.includes('configure') ||
+          error.message.includes('singleton') ||
+          error.message.includes('SDK not')
+        ) {
           errorMessage =
             'RevenueCat servisi başlatılamadı. Lütfen uygulamayı kapatıp yeniden açın.';
         } else if (error.message.includes('network')) {
           errorMessage = 'İnternet bağlantınızı kontrol edin.';
         }
-        
+
         console.error('Error details:', error.message);
       }
 
@@ -340,9 +346,15 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       return `${product.priceString}/${t('premium.period.year')}`;
     } else if (identifier.includes('lifetime')) {
       return `${product.priceString} ${t('premium.period.once')}`;
-    } else if (identifier.includes('three_month') || identifier.includes('3month')) {
+    } else if (
+      identifier.includes('three_month') ||
+      identifier.includes('3month')
+    ) {
       return `${product.priceString}/3 ${t('premium.period.months')}`;
-    } else if (identifier.includes('six_month') || identifier.includes('6month')) {
+    } else if (
+      identifier.includes('six_month') ||
+      identifier.includes('6month')
+    ) {
       return `${product.priceString}/6 ${t('premium.period.months')}`;
     }
 
@@ -351,16 +363,22 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
   const getPackageTitle = (packageItem: PurchasesPackage): string => {
     const identifier = packageItem.identifier.toLowerCase();
-    
+
     if (identifier.includes('weekly')) {
       return t('premium.weekly_trial');
     } else if (identifier.includes('annual') || identifier.includes('yearly')) {
       return t('premium.yearly_subscription');
     } else if (identifier.includes('lifetime')) {
       return t('premium.lifetime_purchase');
-    } else if (identifier.includes('three_month') || identifier.includes('3month')) {
+    } else if (
+      identifier.includes('three_month') ||
+      identifier.includes('3month')
+    ) {
       return t('premium.three_month_subscription');
-    } else if (identifier.includes('six_month') || identifier.includes('6month')) {
+    } else if (
+      identifier.includes('six_month') ||
+      identifier.includes('6month')
+    ) {
       return t('premium.six_month_subscription');
     }
 
@@ -383,8 +401,8 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       isVisible={isVisible}
       onBackButtonPress={onClose}
       style={styles.modal}
-      animationIn="slideInUp"
-      animationOut="slideOutDown"
+      animationIn='slideInUp'
+      animationOut='slideOutDown'
       backdropOpacity={0.5}
       useNativeDriver={true}
       hideModalContentWhileAnimating={true}
@@ -401,64 +419,18 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Hero Section */}
-          <View style={styles.heroSection}>
+          {/* Kompakt Hero Section */}
+          <View style={styles.compactHero}>
             <View style={styles.premiumBadge}>
-              <Ionicons name="star" size={20} color="#FFD700" />
+              <Ionicons name='star' size={16} color='#FFD700' />
               <Text style={styles.premiumBadgeText}>PREMIUM</Text>
             </View>
-            <Text style={styles.heroTitle}>
+            <Text style={styles.compactTitle}>
               {title || t('premium.upgrade_to_premium')}
             </Text>
-            <Text style={styles.heroSubtitle}>
-              {t('premium.unlock_all_features')}
-            </Text>
           </View>
 
-          {/* Özellik vurgusu */}
-          {feature && (
-            <View style={styles.featureHighlight}>
-              <Ionicons name="sparkles" size={20} color={designColors.primary[600]} />
-              <Text style={styles.featureText}>
-                {t('premium.feature_unlock', { feature })}
-              </Text>
-            </View>
-          )}
-
-          {/* Premium özellikler listesi */}
-          <View style={styles.featuresContainer}>
-            <Text style={styles.featuresTitle}>
-              {t('premium.what_you_get')}
-            </Text>
-            {premiumFeatures.map((premiumFeature, index) => (
-              <View key={index} style={styles.featureItem}>
-                <View style={styles.featureIcon}>
-                  <Ionicons
-                    name={premiumFeature.icon as any}
-                    size={22}
-                    color={designColors.primary[600]}
-                  />
-                </View>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>
-                    {premiumFeature.title}
-                  </Text>
-                  <Text style={styles.featureDescription}>
-                    {premiumFeature.description}
-                  </Text>
-                </View>
-                <View style={styles.checkmark}>
-                  <Ionicons
-                    name="checkmark"
-                    size={16}
-                    color={designColors.success[600]}
-                  />
-                </View>
-              </View>
-            ))}
-          </View>
-
-          {/* Package seçimi */}
+          {/* Package seçimi - EN ÜSTTE */}
           {offerings.length > 0 &&
             offerings[0].availablePackages.length > 0 && (
               <View style={styles.packagesContainer}>
@@ -466,11 +438,17 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                   {t('premium.choose_plan')}
                 </Text>
                 {offerings[0].availablePackages.map((packageItem, index) => {
-                  const isSelected = selectedPackage?.identifier === packageItem.identifier;
+                  const isSelected =
+                    selectedPackage?.identifier === packageItem.identifier;
                   const identifier = packageItem.identifier.toLowerCase();
-                  const isPopular = identifier.includes('annual') || identifier.includes('yearly') || identifier.includes('six_month');
-                  const isBestValue = identifier.includes('annual') || identifier.includes('yearly');
-                  
+                  const isPopular =
+                    identifier.includes('annual') ||
+                    identifier.includes('yearly') ||
+                    identifier.includes('six_month');
+                  const isBestValue =
+                    identifier.includes('annual') ||
+                    identifier.includes('yearly');
+
                   return (
                     <TouchableOpacity
                       key={packageItem.identifier}
@@ -488,7 +466,7 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                           </Text>
                         </View>
                       )}
-                      
+
                       <View style={styles.packageContent}>
                         <View style={styles.packageInfo}>
                           <Text style={styles.packageTitle}>
@@ -499,15 +477,19 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                           </Text>
                           {isPopular && (
                             <Text style={styles.savingsText}>
-                              {t('premium.save_percentage', { percentage: '60' })}
+                              {t('premium.save_percentage', {
+                                percentage: '60',
+                              })}
                             </Text>
                           )}
                         </View>
-                        
-                        <View style={[
-                          styles.selectionIndicator,
-                          isSelected && styles.selectionIndicatorSelected
-                        ]}>
+
+                        <View
+                          style={[
+                            styles.selectionIndicator,
+                            isSelected && styles.selectionIndicatorSelected,
+                          ]}
+                        >
                           {isSelected ? (
                             <Ionicons
                               name='checkmark-circle'
@@ -524,6 +506,46 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
                 })}
               </View>
             )}
+
+          {/* Özellik vurgusu */}
+          {feature && (
+            <View style={styles.featureHighlight}>
+              <Ionicons
+                name='sparkles'
+                size={18}
+                color={designColors.primary[600]}
+              />
+              <Text style={styles.featureText}>
+                {t('premium.feature_unlock', { feature })}
+              </Text>
+            </View>
+          )}
+
+          {/* Premium özellikler listesi - KISALTILMIŞ */}
+          <View style={styles.featuresContainer}>
+            <Text style={styles.featuresTitle}>
+              {t('premium.what_you_get')}
+            </Text>
+            <View style={styles.featuresGrid}>
+              {premiumFeatures.slice(0, 4).map((premiumFeature, index) => (
+                <View key={index} style={styles.compactFeatureItem}>
+                  <View style={styles.compactFeatureIcon}>
+                    <Ionicons
+                      name={premiumFeature.icon as any}
+                      size={18}
+                      color={designColors.primary[600]}
+                    />
+                  </View>
+                  <Text style={styles.compactFeatureTitle}>
+                    {premiumFeature.title}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <Text style={styles.moreFeatures}>
+              +{premiumFeatures.length - 4} daha fazla özellik
+            </Text>
+          </View>
 
           {/* No offerings message */}
           {offerings.length === 0 && !loading && (
@@ -637,12 +659,19 @@ const createStyles = () =>
       flex: 1,
       paddingHorizontal: 20,
     },
-    
-    // Hero Section
-    heroSection: {
+
+    // Kompakt Hero Section
+    compactHero: {
       alignItems: 'center',
-      paddingVertical: 24,
-      marginBottom: 8,
+      paddingVertical: 16,
+      marginBottom: 16,
+    },
+    compactTitle: {
+      fontSize: 20,
+      fontWeight: '700',
+      color: '#1A1A1A',
+      textAlign: 'center',
+      marginTop: 8,
     },
     premiumBadge: {
       flexDirection: 'row',
@@ -661,20 +690,6 @@ const createStyles = () =>
       fontSize: 12,
       color: '#B8860B',
       letterSpacing: 1,
-    },
-    heroTitle: {
-      fontSize: 28,
-      fontWeight: '800',
-      color: '#1A1A1A',
-      textAlign: 'center',
-      marginBottom: 8,
-      lineHeight: 34,
-    },
-    heroSubtitle: {
-      fontSize: 16,
-      color: '#666666',
-      textAlign: 'center',
-      lineHeight: 22,
     },
 
     // Feature Highlight
@@ -697,16 +712,56 @@ const createStyles = () =>
       marginLeft: 8,
     },
 
-    // Features Section
+    // Features Section - Kompakt
     featuresContainer: {
-      marginBottom: 32,
+      marginBottom: 24,
     },
     featuresTitle: {
-      fontSize: 20,
+      fontSize: 18,
       fontWeight: '700',
       color: '#1A1A1A',
-      marginBottom: 20,
+      marginBottom: 16,
       textAlign: 'center',
+    },
+    featuresGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginBottom: 12,
+    },
+    compactFeatureItem: {
+      width: '48%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#FAFAFA',
+      padding: 12,
+      borderRadius: 12,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: '#F0F0F0',
+    },
+    compactFeatureIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: designColors.primary[100],
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 10,
+    },
+    compactFeatureTitle: {
+      fontWeight: '600',
+      fontSize: 13,
+      color: '#1A1A1A',
+      flex: 1,
+      lineHeight: 18,
+    },
+    moreFeatures: {
+      textAlign: 'center',
+      fontSize: 14,
+      color: designColors.primary[600],
+      fontWeight: '600',
+      fontStyle: 'italic',
     },
     featureItem: {
       flexDirection: 'row',
@@ -751,9 +806,10 @@ const createStyles = () =>
       justifyContent: 'center',
     },
 
-    // Packages Section
+    // Packages Section - Daha prominent
     packagesContainer: {
-      marginBottom: 20,
+      marginBottom: 24,
+      paddingHorizontal: 4,
     },
     sectionTitle: {
       marginBottom: 20,
@@ -853,12 +909,24 @@ const createStyles = () =>
     footer: {
       padding: 20,
       paddingBottom: 40,
-      borderTopWidth: 1,
-      borderTopColor: '#EEEEEE',
+      borderTopWidth: 2,
+      borderTopColor: designColors.primary[100],
       backgroundColor: '#FFFFFF',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 5,
     },
     purchaseButton: {
       marginBottom: 16,
+      paddingVertical: 16,
+      backgroundColor: designColors.primary[600],
+      shadowColor: designColors.primary[600],
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 6,
     },
     restoreButton: {
       alignItems: 'center',

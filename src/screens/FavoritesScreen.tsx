@@ -22,6 +22,7 @@ import { FavoritesService } from '../services/FavoritesService';
 
 // UI Components
 import { Text } from '../components/ui';
+import { EmptyState } from '../components/ui/EmptyState';
 import { useThemedStyles } from '../hooks/useThemedStyles';
 import { useToast } from '../contexts/ToastContext';
 import { useHaptics } from '../hooks/useHaptics';
@@ -213,10 +214,10 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     >
       <View style={styles.gridImageContainer}>
         {item.imageUrl ? (
-          <Image 
-            source={{ uri: item.imageUrl }} 
+          <Image
+            source={{ uri: item.imageUrl }}
             style={styles.gridImage}
-            resizeMode="cover"
+            resizeMode='cover'
           />
         ) : (
           <LinearGradient
@@ -231,10 +232,19 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 
         {/* Difficulty Badge */}
         {item.difficulty && (
-          <View style={[styles.difficultyBadge, {
-            backgroundColor: item.difficulty === 'kolay' ? '#10B981' :
-                           item.difficulty === 'orta' ? '#F59E0B' : '#EF4444'
-          }]}>
+          <View
+            style={[
+              styles.difficultyBadge,
+              {
+                backgroundColor:
+                  item.difficulty === 'kolay'
+                    ? '#10B981'
+                    : item.difficulty === 'orta'
+                      ? '#F59E0B'
+                      : '#EF4444',
+              },
+            ]}
+          >
             <Text style={{ color: 'white', fontSize: 10, fontWeight: '600' }}>
               {item.difficulty.toUpperCase()}
             </Text>
@@ -244,7 +254,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
         {/* Remove Favorite Button */}
         <TouchableOpacity
           style={styles.removeButton}
-          onPress={async (e) => {
+          onPress={async e => {
             e.stopPropagation();
             if (!item.id) return;
 
@@ -261,9 +271,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.gridContent}>
-        <Text 
-          variant='bodyMedium' 
-          weight='600' 
+        <Text
+          variant='bodyMedium'
+          weight='600'
           numberOfLines={2}
           style={{ color: colors.text.primary }}
         >
@@ -272,13 +282,21 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 
         <View style={styles.gridStats}>
           <View style={styles.statItem}>
-            <Ionicons name='time-outline' size={14} color={colors.neutral[400]} />
+            <Ionicons
+              name='time-outline'
+              size={14}
+              color={colors.neutral[400]}
+            />
             <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
               {item.cookingTime || 30} dk
             </Text>
           </View>
           <View style={styles.statItem}>
-            <Ionicons name='people-outline' size={14} color={colors.neutral[400]} />
+            <Ionicons
+              name='people-outline'
+              size={14}
+              color={colors.neutral[400]}
+            />
             <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
               {item.servings || 4} kişi
             </Text>
@@ -299,10 +317,10 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     >
       <View style={styles.listImageContainer}>
         {item.imageUrl ? (
-          <Image 
-            source={{ uri: item.imageUrl }} 
+          <Image
+            source={{ uri: item.imageUrl }}
             style={styles.listImage}
-            resizeMode="cover"
+            resizeMode='cover'
           />
         ) : (
           <LinearGradient
@@ -317,39 +335,62 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       </View>
 
       <View style={styles.listContent}>
-        <Text 
-          variant='bodyLarge' 
-          weight='600' 
+        <Text
+          variant='bodyLarge'
+          weight='600'
           numberOfLines={1}
           style={{ color: colors.text.primary }}
         >
           {item.name}
         </Text>
-        
+
         <View style={styles.listStats}>
           <View style={styles.statItem}>
-            <Ionicons name='time-outline' size={12} color={colors.neutral[400]} />
+            <Ionicons
+              name='time-outline'
+              size={12}
+              color={colors.neutral[400]}
+            />
             <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
               {item.cookingTime || 30} dk
             </Text>
           </View>
           <View style={styles.statItem}>
-            <Ionicons name='people-outline' size={12} color={colors.neutral[400]} />
+            <Ionicons
+              name='people-outline'
+              size={12}
+              color={colors.neutral[400]}
+            />
             <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
               {item.servings || 4}
             </Text>
           </View>
           {item.difficulty && (
-            <View style={[styles.difficultyChip, {
-              backgroundColor: item.difficulty === 'kolay' ? '#10B98120' :
-                             item.difficulty === 'orta' ? '#F59E0B20' : '#EF444420'
-            }]}>
-              <Text style={{ 
-                color: item.difficulty === 'kolay' ? '#10B981' :
-                       item.difficulty === 'orta' ? '#F59E0B' : '#EF4444',
-                fontSize: 11,
-                fontWeight: '600'
-              }}>
+            <View
+              style={[
+                styles.difficultyChip,
+                {
+                  backgroundColor:
+                    item.difficulty === 'kolay'
+                      ? '#10B98120'
+                      : item.difficulty === 'orta'
+                        ? '#F59E0B20'
+                        : '#EF444420',
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  color:
+                    item.difficulty === 'kolay'
+                      ? '#10B981'
+                      : item.difficulty === 'orta'
+                        ? '#F59E0B'
+                        : '#EF4444',
+                  fontSize: 11,
+                  fontWeight: '600',
+                }}
+              >
                 {item.difficulty}
               </Text>
             </View>
@@ -374,65 +415,51 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     </TouchableOpacity>
   );
 
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <View style={styles.emptyIconContainer}>
-        <Ionicons name='heart-outline' size={60} color={colors.primary[400]} />
-      </View>
+  const renderEmpty = () => {
+    if (searchQuery || filterBy !== 'all') {
+      return (
+        <EmptyState
+          type='no-search-results'
+          actions={[
+            {
+              label: 'Filtreleri Temizle',
+              onPress: clearFilters,
+              variant: 'outline',
+              icon: 'close-circle-outline',
+            },
+          ]}
+        />
+      );
+    }
 
-      <Text
-        variant='headlineMedium'
-        weight='700'
-        align='center'
-        style={{ marginTop: spacing[4], color: colors.text.primary }}
-      >
-        {searchQuery || filterBy !== 'all'
-          ? 'Sonuç Bulunamadı'
-          : 'Favori Tarifin Yok'}
-      </Text>
-
-      <Text
-        variant='bodyMedium'
-        align='center'
-        style={{ 
-          marginTop: spacing[2], 
-          marginBottom: spacing[6],
-          color: colors.neutral[500],
-          paddingHorizontal: spacing[6]
-        }}
-      >
-        {searchQuery || filterBy !== 'all'
-          ? 'Arama kriterlerine uygun tarif bulunamadı'
-          : 'Beğendiğin tarifleri favorilere ekle ve burada topla'}
-      </Text>
-
-      {!searchQuery && filterBy === 'all' && (
-        <TouchableOpacity
-          style={styles.emptyButton}
-          onPress={() => navigation.getParent()?.navigate('HomeTab' as any)}
-        >
-          <LinearGradient
-            colors={[colors.primary[500], colors.primary[600]]}
-            style={styles.emptyButtonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <Ionicons name='search' size={20} color='white' />
-            <Text variant='bodyMedium' weight='600' style={{ color: 'white' }}>
-              Tarif Keşfet
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
+    return (
+      <EmptyState
+        type='no-favorites'
+        actions={[
+          {
+            label: 'Tarif Keşfet',
+            onPress: () => navigation.getParent()?.navigate('HomeTab' as any),
+            icon: 'compass-outline',
+          },
+        ]}
+      />
+    );
+  };
 
   // Premium olmayan kullanıcılar için paywall
   if (!favoritesGuard.hasAccess) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
-        <StatusBar barStyle='light-content' backgroundColor={colors.primary[600]} />
-        
+      <SafeAreaView
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}
+      >
+        <StatusBar
+          barStyle='light-content'
+          backgroundColor={colors.primary[600]}
+        />
+
         {/* Header */}
         <LinearGradient
           colors={[colors.primary[600], colors.primary[700]]}
@@ -445,13 +472,17 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             >
               <Ionicons name='chevron-back' size={24} color='white' />
             </TouchableOpacity>
-            
+
             <View style={styles.premiumHeaderCenter}>
-              <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
+              <Text
+                variant='headlineSmall'
+                weight='bold'
+                style={{ color: 'white' }}
+              >
                 Favorilerim
               </Text>
             </View>
-            
+
             <View style={styles.premiumHeaderActions} />
           </View>
         </LinearGradient>
@@ -469,32 +500,49 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             >
               <Ionicons name='heart' size={40} color='white' />
             </LinearGradient>
-            
-            <Text variant='displaySmall' weight='bold' color='primary' align='center'>
+
+            <Text
+              variant='displaySmall'
+              weight='bold'
+              color='primary'
+              align='center'
+            >
               Premium Özellik
             </Text>
-            
-            <Text variant='bodyLarge' color='secondary' align='center' style={styles.premiumDescription}>
+
+            <Text
+              variant='bodyLarge'
+              color='secondary'
+              align='center'
+              style={styles.premiumDescription}
+            >
               Favori tariflerinizi kaydetmek ve yönetmek için Premium'a geçin
             </Text>
-            
+
             <View style={styles.premiumFeaturesList}>
               {[
                 'Sınırsız favori tarif kaydetme',
-                'Favorileri kategorilere ayırma', 
+                'Favorileri kategorilere ayırma',
                 'Offline erişim için kaydetme',
                 'Favori tarifleri dışa aktarma',
-                'Gelişmiş arama ve filtreleme'
+                'Gelişmiş arama ve filtreleme',
               ].map((feature, index) => (
                 <View key={index} style={styles.premiumFeatureItem}>
-                  <Ionicons name='checkmark-circle' size={20} color={colors.success[500]} />
-                  <Text variant='bodyMedium' style={{ flex: 1, marginLeft: 12 }}>
+                  <Ionicons
+                    name='checkmark-circle'
+                    size={20}
+                    color={colors.success[500]}
+                  />
+                  <Text
+                    variant='bodyMedium'
+                    style={{ flex: 1, marginLeft: 12 }}
+                  >
                     {feature}
                   </Text>
                 </View>
               ))}
             </View>
-            
+
             <LinearGradient
               colors={['#FF6B6B', '#FF8E8E']}
               style={styles.premiumButton}
@@ -504,7 +552,11 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                 onPress={() => favoritesGuard.requirePremium()}
               >
                 <Ionicons name='heart' size={20} color='white' />
-                <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
+                <Text
+                  variant='headlineSmall'
+                  weight='bold'
+                  style={{ color: 'white' }}
+                >
                   Premium'a Geç
                 </Text>
               </TouchableOpacity>
@@ -516,18 +568,29 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background.primary }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <StatusBar barStyle='dark-content' />
 
       {/* Compact Header */}
-      <View style={[styles.header, { backgroundColor: colors.background.primary }]}>
+      <View
+        style={[styles.header, { backgroundColor: colors.background.primary }]}
+      >
         <View style={styles.headerTop}>
           <View>
-            <Text variant='headlineMedium' weight='bold' style={{ color: colors.text.primary }}>
+            <Text
+              variant='headlineMedium'
+              weight='bold'
+              style={{ color: colors.text.primary }}
+            >
               Favorilerim
             </Text>
             {filteredFavorites.length > 0 && (
-              <Text variant='bodySmall' style={{ color: colors.neutral[500], marginTop: 2 }}>
+              <Text
+                variant='bodySmall'
+                style={{ color: colors.neutral[500], marginTop: 2 }}
+              >
                 {filteredFavorites.length} tarif kayıtlı
               </Text>
             )}
@@ -535,29 +598,43 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 
           <View style={styles.viewToggle}>
             <TouchableOpacity
-              style={[styles.toggleButton, viewMode === 'grid' && styles.toggleActive]}
+              style={[
+                styles.toggleButton,
+                viewMode === 'grid' && styles.toggleActive,
+              ]}
               onPress={() => {
                 setViewMode('grid');
                 haptics.selection();
               }}
             >
-              <Ionicons 
-                name='grid' 
-                size={18} 
-                color={viewMode === 'grid' ? colors.primary[600] : colors.neutral[400]} 
+              <Ionicons
+                name='grid'
+                size={18}
+                color={
+                  viewMode === 'grid'
+                    ? colors.primary[600]
+                    : colors.neutral[400]
+                }
               />
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.toggleButton, viewMode === 'list' && styles.toggleActive]}
+              style={[
+                styles.toggleButton,
+                viewMode === 'list' && styles.toggleActive,
+              ]}
               onPress={() => {
                 setViewMode('list');
                 haptics.selection();
               }}
             >
-              <Ionicons 
-                name='list' 
-                size={20} 
-                color={viewMode === 'list' ? colors.primary[600] : colors.neutral[400]} 
+              <Ionicons
+                name='list'
+                size={20}
+                color={
+                  viewMode === 'list'
+                    ? colors.primary[600]
+                    : colors.neutral[400]
+                }
               />
             </TouchableOpacity>
           </View>
@@ -565,7 +642,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 
         {/* Search Bar */}
         <View style={styles.searchContainer}>
-          <View style={[styles.searchBar, { backgroundColor: colors.neutral[50] }]}>
+          <View
+            style={[styles.searchBar, { backgroundColor: colors.neutral[50] }]}
+          >
             <Ionicons name='search' size={18} color={colors.neutral[400]} />
             <TextInput
               value={searchQuery}
@@ -576,19 +655,26 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             />
             {searchQuery.length > 0 && (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <Ionicons name='close-circle' size={18} color={colors.neutral[400]} />
+                <Ionicons
+                  name='close-circle'
+                  size={18}
+                  color={colors.neutral[400]}
+                />
               </TouchableOpacity>
             )}
           </View>
 
           <TouchableOpacity
-            style={[styles.filterToggle, showFilters && { backgroundColor: colors.primary[100] }]}
+            style={[
+              styles.filterToggle,
+              showFilters && { backgroundColor: colors.primary[100] },
+            ]}
             onPress={toggleFilters}
           >
-            <Ionicons 
-              name='options-outline' 
-              size={20} 
-              color={showFilters ? colors.primary[600] : colors.neutral[600]} 
+            <Ionicons
+              name='options-outline'
+              size={20}
+              color={showFilters ? colors.primary[600] : colors.neutral[600]}
             />
           </TouchableOpacity>
         </View>
@@ -611,7 +697,11 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           ]}
         >
           <View style={styles.filterSection}>
-            <Text variant='labelSmall' weight='600' style={{ color: colors.neutral[600] }}>
+            <Text
+              variant='labelSmall'
+              weight='600'
+              style={{ color: colors.neutral[600] }}
+            >
               Sıralama
             </Text>
             <View style={styles.filterChips}>
@@ -624,23 +714,32 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                   key={option.key}
                   style={[
                     styles.filterChip,
-                    sortBy === option.key && { backgroundColor: colors.primary[100] },
+                    sortBy === option.key && {
+                      backgroundColor: colors.primary[100],
+                    },
                   ]}
                   onPress={() => {
                     setSortBy(option.key as SortOption);
                     haptics.selection();
                   }}
                 >
-                  <Ionicons 
-                    name={option.icon as any} 
-                    size={14} 
-                    color={sortBy === option.key ? colors.primary[600] : colors.neutral[500]} 
+                  <Ionicons
+                    name={option.icon as any}
+                    size={14}
+                    color={
+                      sortBy === option.key
+                        ? colors.primary[600]
+                        : colors.neutral[500]
+                    }
                   />
-                  <Text 
-                    variant='labelSmall' 
+                  <Text
+                    variant='labelSmall'
                     weight={sortBy === option.key ? '600' : '400'}
-                    style={{ 
-                      color: sortBy === option.key ? colors.primary[600] : colors.neutral[600] 
+                    style={{
+                      color:
+                        sortBy === option.key
+                          ? colors.primary[600]
+                          : colors.neutral[600],
                     }}
                   >
                     {option.label}
@@ -651,7 +750,11 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.filterSection}>
-            <Text variant='labelSmall' weight='600' style={{ color: colors.neutral[600] }}>
+            <Text
+              variant='labelSmall'
+              weight='600'
+              style={{ color: colors.neutral[600] }}
+            >
               Zorluk
             </Text>
             <View style={styles.filterChips}>
@@ -665,18 +768,23 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                   key={option.key}
                   style={[
                     styles.filterChip,
-                    filterBy === option.key && { backgroundColor: colors.secondary[100] },
+                    filterBy === option.key && {
+                      backgroundColor: colors.secondary[100],
+                    },
                   ]}
                   onPress={() => {
                     setFilterBy(option.key as FilterOption);
                     haptics.selection();
                   }}
                 >
-                  <Text 
-                    variant='labelSmall' 
+                  <Text
+                    variant='labelSmall'
                     weight={filterBy === option.key ? '600' : '400'}
-                    style={{ 
-                      color: filterBy === option.key ? colors.secondary[600] : colors.neutral[600] 
+                    style={{
+                      color:
+                        filterBy === option.key
+                          ? colors.secondary[600]
+                          : colors.neutral[600],
                     }}
                   >
                     {option.label}
@@ -692,7 +800,10 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       {isLoading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={colors.primary[500]} />
-          <Text variant='bodyMedium' style={{ marginTop: spacing[3], color: colors.neutral[500] }}>
+          <Text
+            variant='bodyMedium'
+            style={{ marginTop: spacing[3], color: colors.neutral[500] }}
+          >
             Favoriler yükleniyor...
           </Text>
         </View>
@@ -704,12 +815,15 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           key={viewMode}
           contentContainerStyle={[
             styles.listContainer,
-            filteredFavorites.length === 0 && { flex: 1, justifyContent: 'center' }
+            filteredFavorites.length === 0 && {
+              flex: 1,
+              justifyContent: 'center',
+            },
           ]}
           columnWrapperStyle={viewMode === 'grid' ? styles.gridRow : undefined}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={renderEmpty}
-          ItemSeparatorComponent={() => 
+          ItemSeparatorComponent={() =>
             viewMode === 'list' ? <View style={{ height: spacing[2] }} /> : null
           }
         />

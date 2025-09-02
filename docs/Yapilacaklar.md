@@ -185,25 +185,19 @@ Reklam Stratejisi
 🔧 TEKNİK İYİLEŞTİRMELER
 
 1. Performance
-
-
-    - Image caching ekle
-    - Lazy loading implement et
-    - Bundle size optimizasyonu
+   - Image caching ekle
+   - Lazy loading implement et
+   - Bundle size optimizasyonu
 
 2. Analytics
-
-
-    - Mixpanel/Amplitude entegrasyonu
-    - User behavior tracking
-    - A/B testing altyapısı
+   - Mixpanel/Amplitude entegrasyonu
+   - User behavior tracking
+   - A/B testing altyapısı
 
 3. Backend
-
-
-    - Rate limiting ekle
-    - Caching stratejisi
-    - CDN kullanımı
+   - Rate limiting ekle
+   - Caching stratejisi
+   - CDN kullanımı
 
 📝 ÖZET VE AKSİYON PLANI
 

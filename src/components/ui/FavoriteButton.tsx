@@ -11,6 +11,7 @@ import { Logger } from '../../services/LoggerService';
 import { Recipe } from '../../types/Recipe';
 import { FavoritesService } from '../../services/FavoritesService';
 import { useToast } from '../../contexts/ToastContext';
+import { useHaptics } from '../../hooks/useHaptics';
 
 interface FavoriteButtonProps {
   recipe: Recipe;
@@ -27,7 +28,8 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { showSuccess, showError } = useToast();
+  const { showError } = useToast();
+  const haptics = useHaptics();
 
   useEffect(() => {
     checkFavoriteStatus();
@@ -55,9 +57,8 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
 
       if (result.success) {
         setIsFavorite(result.isAdded || false);
-        if (result.message) {
-          showSuccess(result.message);
-        }
+        // Visual feedback from heart animation is enough, add haptic
+        haptics.success();
       } else if (result.message) {
         Logger.warn('Favorite toggle failed:', result.message);
         showError(result.message);

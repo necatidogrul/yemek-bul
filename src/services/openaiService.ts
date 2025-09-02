@@ -195,7 +195,8 @@ export class OpenAIService {
           dinner: '🌆 AKŞAM YEMEĞİ için',
           snack: '🍿 ATIŞTIRMALIK için',
         },
-        basePrompt: 'Bu malzemelerden bazılarını veya tamamını kullanarak 3 tarif öner (her tarif en az 2-3 malzeme kullanmalı):',
+        basePrompt:
+          'Bu malzemelerden bazılarını veya tamamını kullanarak 3 tarif öner (her tarif en az 2-3 malzeme kullanmalı):',
         userProfile: 'KULLANICI PROFİLİ:',
         nutrition: 'Beslenme:',
         favorites: 'Favori mutfaklar:',
@@ -222,7 +223,8 @@ export class OpenAIService {
           dinner: '🌆 For DINNER',
           snack: '🍿 For SNACK',
         },
-        basePrompt: 'Suggest 3 recipes using some or all of these ingredients (each recipe should use at least 2-3 ingredients):',
+        basePrompt:
+          'Suggest 3 recipes using some or all of these ingredients (each recipe should use at least 2-3 ingredients):',
         userProfile: 'USER PROFILE:',
         nutrition: 'Dietary restrictions:',
         favorites: 'Favorite cuisines:',
@@ -584,5 +586,257 @@ Lütfen bu soruyu net, pratik ve yardımcı şekilde yanıtla. Gerekirse alterna
     const prompt = this.buildPrompt({ ingredients, preferences });
     const estimatedTokens = this.estimateTokens(prompt) + 1500; // Response tokens
     return (estimatedTokens / 1000) * this.TOKEN_COST_PER_1K;
+  }
+
+  /**
+   * Çoklu fotoğraftan malzeme tespiti (Vision API)
+   */
+  static async analyzeIngredientImages(imageUris: string[]): Promise<string[]> {
+    console.log(
+      `🔍 OpenAI Vision API: Analyzing ${imageUris.length} ingredient images...`
+    );
+
+    try {
+      // Tüm görselleri base64'e çevir
+      const base64Images = await Promise.all(
+        imageUris.map(uri => this.convertImageToBase64(uri))
+      );
+
+      const headers: Record<string, string> = __DEV__
+        ? {
+            Authorization: `Bearer ${this.DEV_API_KEY}`,
+            'Content-Type': 'application/json',
+          }
+        : {
+            Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''}`,
+            apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+            'Content-Type': 'application/json',
+          };
+
+      const url = __DEV__
+        ? 'https://api.openai.com/v1/chat/completions'
+        : `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/openai-vision-proxy`;
+
+      // Content array'ini oluştur - text + tüm resimler
+      const content: any[] = [
+        {
+          type: 'text',
+          text: `Bu ${imageUris.length} adet buzdolabı/mutfak fotoğraflarına bakarak içindeki yemek malzemelerini listele. Tüm fotoğraflardaki malzemeleri birleştir ve sadece yemek yapımında kullanılabilecek malzemeleri say.
+
+Önemli kurallar:
+- Sadece görünür olan malzemeleri listele
+- Kapalı kutular/kaplar içindekileri tahmin etme
+- Aynı malzemeyi tekrar etme
+- Her malzemeyi Türkçe ismiyle, ayrı satırda ve küçük harflerle yaz
+- Sayı veya noktalama kullanma
+
+Örnek format:
+domates
+soğan
+peynir
+yumurta
+süt
+ekmek
+
+Lütfen sadece malzeme listesini ver, başka açıklama yapma.`,
+        },
+      ];
+
+      // Tüm resimleri content'e ekle
+      base64Images.forEach((base64Image, index) => {
+        content.push({
+          type: 'image_url',
+          image_url: {
+            url: `data:image/jpeg;base64,${base64Image}`,
+            detail: 'low',
+          },
+        });
+      });
+
+      const requestBody = {
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content,
+          },
+        ],
+        max_tokens: 400,
+        temperature: 0.1,
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `Vision API error: ${response.status} - ${
+            errorData.error?.message || response.statusText
+          }`
+        );
+      }
+
+      const data = await response.json();
+      const content_response = data.choices[0]?.message?.content;
+
+      if (!content_response) {
+        throw new Error("Vision API'dan yanıt alınamadı");
+      }
+
+      // Yanıtı satırlara böl ve temizle
+      const ingredients = content_response
+        .split('\n')
+        .map((line: string) => line.trim().toLowerCase())
+        .filter(
+          (line: string) =>
+            line.length > 0 &&
+            !line.includes(':') &&
+            !line.startsWith('-') &&
+            !line.match(/^\d+\./) &&
+            !line.includes('malzeme')
+        )
+        .slice(0, 25); // Maksimum 25 malzeme
+
+      console.log(
+        '✅ OpenAI Vision API: Detected ingredients from multiple images:',
+        ingredients
+      );
+      return ingredients;
+    } catch (error) {
+      console.error('❌ Multi-Vision API Error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Tek fotoğraftan malzeme tespiti (Vision API) - geriye uyumluluk
+   */
+  static async analyzeIngredientImage(imageUri: string): Promise<string[]> {
+    console.log('🔍 OpenAI Vision API: Analyzing ingredient image...');
+
+    try {
+      // Görüntüyü base64'e çevir
+      const base64Image = await this.convertImageToBase64(imageUri);
+
+      const headers: Record<string, string> = __DEV__
+        ? {
+            Authorization: `Bearer ${this.DEV_API_KEY}`,
+            'Content-Type': 'application/json',
+          }
+        : {
+            Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || ''}`,
+            apikey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '',
+            'Content-Type': 'application/json',
+          };
+
+      const url = __DEV__
+        ? 'https://api.openai.com/v1/chat/completions'
+        : `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/openai-vision-proxy`;
+
+      const requestBody = {
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Bu buzdolabı/mutfak fotoğrafına bakarak içindeki yemek malzemelerini listele. Sadece yemek yapımında kullanılabilecek malzemeleri say. Her malzemeyi Türkçe ismiyle, ayrı satırda ve küçük harflerle yaz.
+
+Önemli kurallar:
+- Sadece görünür olan malzemeleri listele
+- Kapalı kutular/kaplar içindekileri tahmin etme
+- Her malzemeyi tek satırda yaz
+- Sayı veya noktalama kullanma
+
+Örnek format:
+domates
+soğan  
+peynir
+yumurta
+
+Lütfen sadece malzeme listesini ver, başka açıklama yapma.`,
+              },
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:image/jpeg;base64,${base64Image}`,
+                  detail: 'low',
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 300,
+        temperature: 0.1,
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `Vision API error: ${response.status} - ${
+            errorData.error?.message || response.statusText
+          }`
+        );
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
+
+      if (!content) {
+        throw new Error("Vision API'dan yanıt alınamadı");
+      }
+
+      // Yanıtı satırlara böl ve temizle
+      const ingredients = content
+        .split('\n')
+        .map((line: string) => line.trim().toLowerCase())
+        .filter(
+          (line: string) =>
+            line.length > 0 && !line.includes(':') && !line.startsWith('-')
+        )
+        .slice(0, 20); // Maksimum 20 malzeme
+
+      console.log('✅ OpenAI Vision API: Detected ingredients:', ingredients);
+      return ingredients;
+    } catch (error) {
+      console.error('❌ Vision API Error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Görüntüyü base64 formatına çevir
+   */
+  private static async convertImageToBase64(imageUri: string): Promise<string> {
+    try {
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result as string;
+          // "data:image/jpeg;base64," kısmını çıkar
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Base64 conversion error:', error);
+      throw new Error('Fotoğraf işlenirken hata oluştu');
+    }
   }
 }

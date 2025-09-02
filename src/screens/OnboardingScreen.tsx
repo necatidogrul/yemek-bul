@@ -107,18 +107,46 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
 
   // Compact preference options
   const cuisinePreferences = [
-    { id: 'turkish', emoji: '🇹🇷', label: t('onboarding.categoriesLabels.turkish') },
-    { id: 'italian', emoji: '🍝', label: t('onboarding.categoriesLabels.italian') },
+    {
+      id: 'turkish',
+      emoji: '🇹🇷',
+      label: t('onboarding.categoriesLabels.turkish'),
+    },
+    {
+      id: 'italian',
+      emoji: '🍝',
+      label: t('onboarding.categoriesLabels.italian'),
+    },
     { id: 'asian', emoji: '🍜', label: t('onboarding.categoriesLabels.asian') },
-    { id: 'healthy', emoji: '🥗', label: t('onboarding.categoriesLabels.healthy') },
-    { id: 'dessert', emoji: '🍰', label: t('onboarding.categoriesLabels.dessert') },
+    {
+      id: 'healthy',
+      emoji: '🥗',
+      label: t('onboarding.categoriesLabels.healthy'),
+    },
+    {
+      id: 'dessert',
+      emoji: '🍰',
+      label: t('onboarding.categoriesLabels.dessert'),
+    },
     { id: 'fast', emoji: '⚡', label: t('onboarding.categoriesLabels.fast') },
   ];
 
   const skillLevels = [
-    { id: 'beginner', emoji: '🐣', label: t('onboarding.levelLabels.beginner') },
-    { id: 'intermediate', emoji: '👨‍🍳', label: t('onboarding.levelLabels.intermediate') },
-    { id: 'advanced', emoji: '⭐', label: t('onboarding.levelLabels.advanced') },
+    {
+      id: 'beginner',
+      emoji: '🐣',
+      label: t('onboarding.levelLabels.beginner'),
+    },
+    {
+      id: 'intermediate',
+      emoji: '👨‍🍳',
+      label: t('onboarding.levelLabels.intermediate'),
+    },
+    {
+      id: 'advanced',
+      emoji: '⭐',
+      label: t('onboarding.levelLabels.advanced'),
+    },
   ];
 
   // Pulse animation for interactive elements

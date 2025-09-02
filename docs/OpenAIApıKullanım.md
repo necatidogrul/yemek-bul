@@ -162,5 +162,4 @@ bildirimler culturalPreferences?: string[] // Kültürel tercihler }
 Bu geliştirmelerle uygulamanız çok daha zengin, kişiselleştirilmiş ve profesyonel tarif önerileri
 sunabilir.  
  Her yeni parametre, kullanıcı deneyimini artırırken AI'dan daha değerli içgörüler almanızı
-sağlayacaktır.
-Peki ş
+sağlayacaktır. Peki ş

@@ -94,7 +94,7 @@ export const withPremiumGuard = <T extends object>(
   return (props: T) => {
     const [hasAccess, setHasAccess] = useState<boolean>(false);
     const { hasFeatureAccess } = usePremium();
-    
+
     useEffect(() => {
       const checkAccess = async () => {
         const access = await hasFeatureAccess(feature);

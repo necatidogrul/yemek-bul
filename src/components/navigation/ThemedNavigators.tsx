@@ -22,10 +22,12 @@ import SettingsScreen from '../../screens/SettingsScreen';
 
 // Navigation Types
 export type HomeStackParamList = {
-  HomeMain: { 
-    prefillIngredients?: string[];
-    shouldGenerateRecipes?: boolean;
-  } | undefined;
+  HomeMain:
+    | {
+        prefillIngredients?: string[];
+        shouldGenerateRecipes?: boolean;
+      }
+    | undefined;
   IngredientsSelect: undefined;
   RecipeResults: {
     ingredients: string[];
@@ -45,11 +47,11 @@ export type HomeStackParamList = {
 
 export type FavoritesStackParamList = {
   FavoritesMain: undefined;
-  RecipeDetail: { 
-    recipeId: string; 
+  RecipeDetail: {
+    recipeId: string;
     recipeName: string;
     recipe?: any;
-    isAiGenerated?: boolean; 
+    isAiGenerated?: boolean;
   };
 };
 
@@ -60,11 +62,11 @@ export type HistoryStackParamList = {
     aiRecipes?: any[];
     fromHistory?: boolean;
   };
-  RecipeDetail: { 
-    recipeId: string; 
+  RecipeDetail: {
+    recipeId: string;
     recipeName: string;
     recipe?: any;
-    isAiGenerated?: boolean; 
+    isAiGenerated?: boolean;
   };
 };
 

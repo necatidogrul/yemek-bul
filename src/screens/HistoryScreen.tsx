@@ -29,6 +29,7 @@ import { Recipe } from '../types/Recipe';
 
 // UI Components
 import { Text, Card, Button } from '../components/ui';
+import { EmptyState } from '../components/ui/EmptyState';
 import { FavoriteButton } from '../components/ui/FavoriteButton';
 import { useThemedStyles } from '../hooks/useThemedStyles';
 import { usePremium } from '../contexts/PremiumContext';
@@ -154,7 +155,9 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     }
 
     try {
-      const result = await FavoritesService.addToFavorites(convertToFullRecipe(recipe));
+      const result = await FavoritesService.addToFavorites(
+        convertToFullRecipe(recipe)
+      );
       if (result.success) {
         showSuccess(result.message || 'Tarif favorilerinize eklendi!');
       } else {
@@ -346,17 +349,19 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                   <View key={recipe.id} style={styles.recipeListItem}>
                     <TouchableOpacity
                       style={styles.recipeNameButton}
-                      onPress={() => navigation.navigate('RecipeDetail', {
-                        recipeId: recipe.id,
-                        recipeName: recipe.name,
-                        recipe: convertToFullRecipe(recipe),
-                      })}
+                      onPress={() =>
+                        navigation.navigate('RecipeDetail', {
+                          recipeId: recipe.id,
+                          recipeName: recipe.name,
+                          recipe: convertToFullRecipe(recipe),
+                        })
+                      }
                     >
                       <Text variant='labelSmall' color='secondary'>
                         • {recipe.name}
                       </Text>
                     </TouchableOpacity>
-                    
+
                     {isPremium ? (
                       <FavoriteButton
                         recipe={convertToFullRecipe(recipe)}
@@ -368,8 +373,17 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                         onPress={() => handleAddToFavorites(recipe)}
                         style={styles.premiumFavoriteButton}
                       >
-                        <Ionicons name='heart-outline' size={12} color={colors.neutral[400]} />
-                        <Ionicons name='star' size={8} color={colors.warning[500]} style={styles.premiumIcon} />
+                        <Ionicons
+                          name='heart-outline'
+                          size={12}
+                          color={colors.neutral[400]}
+                        />
+                        <Ionicons
+                          name='star'
+                          size={8}
+                          color={colors.warning[500]}
+                          style={styles.premiumIcon}
+                        />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -837,29 +851,38 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                     Haftalık Aktivite
                   </Text>
                   <View style={styles.weeklyActivity}>
-                    {['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'].map((day, index) => {
-                      const dayData = stats.weeklyActivity?.find(d => d.day === index);
-                      const count = dayData?.count || 0;
-                      const maxCount = Math.max(...(stats.weeklyActivity?.map(d => d.count) || [1]));
-                      const height = Math.max(4, (count / maxCount) * 40);
-                      
-                      return (
-                        <View key={day} style={styles.weeklyActivityItem}>
-                          <View
-                            style={[
-                              styles.weeklyActivityBar,
-                              {
-                                height,
-                                backgroundColor: count > 0 ? colors.primary[500] : colors.neutral[200]
-                              }
-                            ]}
-                          />
-                          <Text variant='labelSmall' color='secondary'>
-                            {day}
-                          </Text>
-                        </View>
-                      );
-                    })}
+                    {['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'].map(
+                      (day, index) => {
+                        const dayData = stats.weeklyActivity?.find(
+                          d => d.day === index
+                        );
+                        const count = dayData?.count || 0;
+                        const maxCount = Math.max(
+                          ...(stats.weeklyActivity?.map(d => d.count) || [1])
+                        );
+                        const height = Math.max(4, (count / maxCount) * 40);
+
+                        return (
+                          <View key={day} style={styles.weeklyActivityItem}>
+                            <View
+                              style={[
+                                styles.weeklyActivityBar,
+                                {
+                                  height,
+                                  backgroundColor:
+                                    count > 0
+                                      ? colors.primary[500]
+                                      : colors.neutral[200],
+                                },
+                              ]}
+                            />
+                            <Text variant='labelSmall' color='secondary'>
+                              {day}
+                            </Text>
+                          </View>
+                        );
+                      }
+                    )}
                   </View>
                 </View>
               )}
@@ -876,15 +899,27 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                         <Text variant='labelSmall' color='secondary'>
                           {month.month}
                         </Text>
-                        <Text variant='bodyMedium' weight='semibold' color='primary'>
+                        <Text
+                          variant='bodyMedium'
+                          weight='semibold'
+                          color='primary'
+                        >
                           {month.requests}
                         </Text>
-                        <Text variant='labelSmall' style={{ 
-                          color: month.success > month.requests * 0.7 
-                            ? colors.success[600] 
-                            : colors.warning[600] 
-                        }}>
-                          %{Math.round((month.success / (month.requests || 1)) * 100)} başarı
+                        <Text
+                          variant='labelSmall'
+                          style={{
+                            color:
+                              month.success > month.requests * 0.7
+                                ? colors.success[600]
+                                : colors.warning[600],
+                          }}
+                        >
+                          %
+                          {Math.round(
+                            (month.success / (month.requests || 1)) * 100
+                          )}{' '}
+                          başarı
                         </Text>
                       </View>
                     ))}
@@ -972,9 +1007,17 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   // Premium olmayan kullanıcılar için paywall
   if (!historyGuard.hasAccess) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.background.primary }]}>
-        <StatusBar barStyle='light-content' backgroundColor={colors.primary[600]} />
-        
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}
+      >
+        <StatusBar
+          barStyle='light-content'
+          backgroundColor={colors.primary[600]}
+        />
+
         {/* Header */}
         <LinearGradient
           colors={[colors.primary[600], colors.primary[700]]}
@@ -988,13 +1031,17 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               >
                 <Ionicons name='chevron-back' size={24} color='white' />
               </TouchableOpacity>
-              
+
               <View style={styles.headerCenter}>
-                <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
+                <Text
+                  variant='headlineSmall'
+                  weight='bold'
+                  style={{ color: 'white' }}
+                >
                   Arama Geçmişi
                 </Text>
               </View>
-              
+
               <View style={styles.headerActions} />
             </View>
           </SafeAreaView>
@@ -1013,32 +1060,50 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             >
               <Ionicons name='star' size={40} color='white' />
             </LinearGradient>
-            
-            <Text variant='displaySmall' weight='bold' color='primary' align='center'>
+
+            <Text
+              variant='displaySmall'
+              weight='bold'
+              color='primary'
+              align='center'
+            >
               Premium Özellik
             </Text>
-            
-            <Text variant='bodyLarge' color='secondary' align='center' style={styles.premiumDescription}>
-              Arama geçmişinizi görmek ve detaylı istatistikler almak için Premium'a geçin
+
+            <Text
+              variant='bodyLarge'
+              color='secondary'
+              align='center'
+              style={styles.premiumDescription}
+            >
+              Arama geçmişinizi görmek ve detaylı istatistikler almak için
+              Premium'a geçin
             </Text>
-            
+
             <View style={styles.premiumFeaturesList}>
               {[
                 'Sınırsız geçmiş kaydı',
-                'Detaylı arama istatistikleri', 
+                'Detaylı arama istatistikleri',
                 'Popüler kombinasyonlar',
                 'Tarif başarı oranları',
-                'En çok kullanılan malzemeler'
+                'En çok kullanılan malzemeler',
               ].map((feature, index) => (
                 <View key={index} style={styles.premiumFeatureItem}>
-                  <Ionicons name='checkmark-circle' size={20} color={colors.success[500]} />
-                  <Text variant='bodyMedium' style={{ flex: 1, marginLeft: 12 }}>
+                  <Ionicons
+                    name='checkmark-circle'
+                    size={20}
+                    color={colors.success[500]}
+                  />
+                  <Text
+                    variant='bodyMedium'
+                    style={{ flex: 1, marginLeft: 12 }}
+                  >
                     {feature}
                   </Text>
                 </View>
               ))}
             </View>
-            
+
             <LinearGradient
               colors={['#FFD700', '#FFA500']}
               style={styles.premiumButton}
@@ -1048,7 +1113,11 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 onPress={() => historyGuard.requirePremium()}
               >
                 <Ionicons name='star' size={20} color='white' />
-                <Text variant='headlineSmall' weight='bold' style={{ color: 'white' }}>
+                <Text
+                  variant='headlineSmall'
+                  weight='bold'
+                  style={{ color: 'white' }}
+                >
                   Premium'a Geç
                 </Text>
               </TouchableOpacity>
@@ -1311,92 +1380,16 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             {renderFilterBar()}
 
             {history.length === 0 ? (
-              <Animated.View
-                style={[
-                  styles.emptyContainer,
+              <EmptyState
+                type='no-history'
+                actions={[
                   {
-                    opacity: fadeAnim,
-                    transform: [{ translateY: slideAnim }],
+                    label: 'İlk Aramayı Yap',
+                    onPress: () => navigation.getParent()?.navigate('HomeTab'),
+                    icon: 'search-outline',
                   },
                 ]}
-              >
-                <View style={styles.emptyIllustration}>
-                  <LinearGradient
-                    colors={[colors.primary[100], colors.primary[200]]}
-                    style={styles.emptyIconContainer}
-                  >
-                    <Ionicons
-                      name='time-outline'
-                      size={40}
-                      color={colors.primary[500]}
-                    />
-                  </LinearGradient>
-                  <View style={styles.emptyDecorations}>
-                    <View
-                      style={[
-                        styles.emptyDot,
-                        { backgroundColor: colors.primary[300] },
-                      ]}
-                    />
-                    <View
-                      style={[
-                        styles.emptyDot,
-                        styles.emptyDotLarge,
-                        { backgroundColor: colors.primary[200] },
-                      ]}
-                    />
-                    <View
-                      style={[
-                        styles.emptyDot,
-                        { backgroundColor: colors.primary[400] },
-                      ]}
-                    />
-                  </View>
-                </View>
-
-                <View style={styles.emptyContent}>
-                  <Text
-                    variant='headlineMedium'
-                    weight='bold'
-                    color='primary'
-                    align='center'
-                  >
-                    Henüz Arama Geçmişi Yok
-                  </Text>
-                  <Text
-                    variant='bodyMedium'
-                    color='secondary'
-                    align='center'
-                    style={styles.emptyDescription}
-                  >
-                    AI ile tarif aramaya başladığınızda{'\n'}geçmişiniz burada
-                    görünecek
-                  </Text>
-                </View>
-
-                <View style={styles.emptyActions}>
-                  <Button
-                    variant='primary'
-                    size='lg'
-                    onPress={() => navigation.getParent()?.navigate('HomeTab')}
-                    leftIcon={
-                      <Ionicons name='search' size={18} color='white' />
-                    }
-                    style={styles.startSearchButton}
-                  >
-                    İlk Aramayı Yap
-                  </Button>
-
-                  <TouchableOpacity
-                    style={styles.emptySecondaryAction}
-                    onPress={() => navigation.goBack()}
-                  >
-                    <Text variant='bodySmall' color='primary' weight='medium'>
-                      Geri Dön
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </Animated.View>
+              />
             ) : (
               <View style={styles.historyList}>
                 {history.map(item => (
