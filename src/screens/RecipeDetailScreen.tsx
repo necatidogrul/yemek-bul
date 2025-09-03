@@ -314,7 +314,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
       label: 'Kalori',
       value: 280,
       unit: 'kcal',
-      color: colors.semantic.error,
+      color: colors.error[500],
       icon: 'fire',
     },
     {
@@ -328,7 +328,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
       label: 'Karbonhidrat',
       value: 35,
       unit: 'g',
-      color: colors.semantic.warning,
+      color: colors.warning[500],
       icon: 'grain',
     },
     {
@@ -383,7 +383,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
         <SafeAreaView style={styles.headerSafeArea}>
           <View style={styles.headerContent}>
             <TouchableOpacity
-              style={[styles.headerButton, { backgroundColor: colors.surface }]}
+              style={[styles.headerButton, { backgroundColor: colors.surface.primary }]}
               onPress={() => navigation.goBack()}
             >
               <Ionicons
@@ -571,7 +571,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: colors.surface }]}
+              style={[styles.actionCard, { backgroundColor: colors.surface.primary }]}
               onPress={handleQAOpen}
             >
               <View style={styles.actionCardContent}>
@@ -594,7 +594,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: colors.surface }]}
+              style={[styles.actionCard, { backgroundColor: colors.surface.primary }]}
               onPress={handleShare}
             >
               <View style={styles.actionCardContent}>
@@ -612,7 +612,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
 
           {/* Tab Navigation */}
           <View
-            style={[styles.tabContainer, { backgroundColor: colors.surface }]}
+            style={[styles.tabContainer, { backgroundColor: colors.surface.primary }]}
           >
             {['ingredients', 'instructions', 'nutrition'].map(tab => (
               <TouchableOpacity
@@ -676,7 +676,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 <View
                   style={[
                     styles.servingAdjuster,
-                    { backgroundColor: colors.surface },
+                    { backgroundColor: colors.surface.primary },
                   ]}
                 >
                   <Text variant='headlineMedium' weight='semibold'>
@@ -732,7 +732,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                         {
                           backgroundColor: checkedIngredients[index]
                             ? colors.primary[50]
-                            : colors.surface,
+                            : colors.surface.primary,
                           borderColor: checkedIngredients[index]
                             ? colors.primary[200]
                             : colors.border.light,
@@ -759,10 +759,10 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                       </View>
                       <Text
                         variant='bodyLarge'
-                        style={[
+                        style={StyleSheet.flatten([
                           styles.ingredientText,
-                          checkedIngredients[index] ? styles.checkedText : null,
-                        ].filter(Boolean)}
+                          checkedIngredients[index] && styles.checkedText,
+                        ])}
                       >
                         {ingredient}
                       </Text>
@@ -774,7 +774,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 <View
                   style={[
                     styles.progressCard,
-                    { backgroundColor: colors.surface },
+                    { backgroundColor: colors.surface.primary },
                   ]}
                 >
                   <View style={styles.progressHeader}>
@@ -834,7 +834,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                       <TouchableOpacity
                         style={[
                           styles.exitButton,
-                          { backgroundColor: colors.semantic.error },
+                          { backgroundColor: colors.error[500] },
                         ]}
                         onPress={() => {
                           setIsCookingMode(false);
@@ -849,7 +849,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                     <View
                       style={[
                         styles.stepCard,
-                        { backgroundColor: colors.surface },
+                        { backgroundColor: colors.surface.primary },
                       ]}
                     >
                       <View style={styles.stepNumber}>
@@ -931,7 +931,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                             backgroundColor:
                               currentStep ===
                               (recipe.instructions?.length || 0) - 1
-                                ? colors.semantic.success + '20'
+                                ? colors.success[500] + '20'
                                 : colors.primary[500],
                           },
                         ]}
@@ -952,7 +952,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                             color:
                               currentStep ===
                               (recipe.instructions?.length || 0) - 1
-                                ? colors.semantic.success
+                                ? colors.success[500]
                                 : 'white',
                           }}
                         >
@@ -972,7 +972,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                           color={
                             currentStep ===
                             (recipe.instructions?.length || 0) - 1
-                              ? colors.semantic.success
+                              ? colors.success[500]
                               : 'white'
                           }
                         />
@@ -1007,7 +1007,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                           key={index}
                           style={[
                             styles.instructionItem,
-                            { backgroundColor: colors.surface },
+                            { backgroundColor: colors.surface.primary },
                           ]}
                         >
                           <View
@@ -1070,7 +1070,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                       key={index}
                       style={[
                         styles.nutritionCard,
-                        { backgroundColor: colors.surface },
+                        { backgroundColor: colors.surface.primary },
                       ]}
                     >
                       <View
@@ -1106,7 +1106,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
                 <View
                   style={[
                     styles.dailyValuesCard,
-                    { backgroundColor: colors.surface },
+                    { backgroundColor: colors.surface.primary },
                   ]}
                 >
                   <Text
@@ -1180,13 +1180,13 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
         style={[
           styles.bottomBar,
           {
-            backgroundColor: colors.surface,
+            backgroundColor: colors.surface.primary,
             borderTopColor: colors.border.light,
           },
         ]}
       >
         <TouchableOpacity
-          style={[styles.bottomAction, { backgroundColor: colors.surface }]}
+          style={[styles.bottomAction, { backgroundColor: colors.surface.primary }]}
           onPress={handleExportPDF}
         >
           <Ionicons
@@ -1210,7 +1210,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
         </View>
 
         <TouchableOpacity
-          style={[styles.bottomAction, { backgroundColor: colors.surface }]}
+          style={[styles.bottomAction, { backgroundColor: colors.surface.primary }]}
           onPress={handleShare}
         >
           <Ionicons

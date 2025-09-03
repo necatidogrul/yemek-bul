@@ -28,6 +28,7 @@ Built with React Native/Expo, uses OpenAI for recipe generation and Supabase for
 - `npm run lint` - Run ESLint
 - `npm run lint:fix` - Fix ESLint issues
 - `npm run format` - Format with Prettier
+- `npm run format:check` - Check Prettier formatting
 - `npm run typecheck` - TypeScript type checking
 
 ### Building & Deployment
@@ -52,10 +53,10 @@ Built with React Native/Expo, uses OpenAI for recipe generation and Supabase for
 ### Key Services
 
 - **OpenAIService**: AI recipe generation with intelligent prompting and image search
-- **RevenueCatService**: Subscription/premium features management
-- **FavoritesService**: Recipe bookmarking with AsyncStorage
-- **UserPreferencesService**: User settings and onboarding state
-- **Supabase**: Backend services (database, edge functions)
+- **RevenueCatService**: Subscription/premium features management (iOS/Android app purchases)
+- **FavoritesService**: Recipe bookmarking with AsyncStorage persistence
+- **UserPreferencesService**: User settings, dietary preferences, and onboarding state
+- **Supabase**: Backend services (database, edge functions for secure API routing)
 
 ### AI Recipe Generation Flow
 
@@ -91,6 +92,12 @@ Built with React Native/Expo, uses OpenAI for recipe generation and Supabase for
 - `EXPO_PUBLIC_OPENAI_API_KEY`: Direct OpenAI API (development only)
 - `EXPO_PUBLIC_SUPABASE_URL`: Supabase project URL
 - `EXPO_PUBLIC_SUPABASE_ANON_KEY`: Supabase anonymous key
+- `EXPO_PUBLIC_UNSPLASH_API_KEY`: Unsplash API for recipe images
+- `EXPO_PUBLIC_GOOGLE_CUSTOM_SEARCH_API_KEY`: Google Custom Search for images
+- `EXPO_PUBLIC_GOOGLE_CSE_ID`: Google Custom Search Engine ID
+- `EXPO_PUBLIC_REVENUECAT_API_KEY_IOS`: RevenueCat iOS API key
+- `EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID`: RevenueCat Android API key
+- `EXPO_PUBLIC_DEBUG_PREMIUM`: Debug flag for premium features
 
 ### Security Architecture
 
@@ -131,9 +138,24 @@ Babel alias configured: `@` -> `./src`
 
 ## Development Guidelines
 
+### RevenueCat Integration Notes
+
+- **Expo Go Limitation**: RevenueCat only works with development builds (`eas build --profile development`), not Expo Go
+- **Platform Keys**: iOS uses dedicated API key, Android key is currently empty/test
+- **Error Handling**: App continues with limited functionality if RevenueCat fails to initialize
+- **Debug Mode**: Extensive logging available in development mode
+
 ### Code Changes Documentation
 
 - ALWAYS provide detailed explanations of any changes made
 - Explain the reasoning behind each modification
 - Help maintain understanding of the codebase evolution
 - Document any security implications of changes
+
+### UI/UX Patterns
+
+- Dark/light theme support is built-in via ThemeContext
+- All components should use `useThemedStyles` hook for consistent theming
+- Turkish/English localization via i18next
+- Haptic feedback integration throughout the app
+- Toast notifications for user feedback
