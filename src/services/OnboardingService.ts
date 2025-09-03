@@ -8,6 +8,7 @@ export interface OnboardingStep {
     | 'welcome'
     | 'feature-discovery'
     | 'preferences'
+    | 'dietary-preferences'
     | 'tutorial'
     | 'completion';
   title: string;
@@ -31,6 +32,7 @@ export interface OnboardingProgress {
     favoriteCategories: string[];
     cookingLevel: 'başlangıç' | 'orta' | 'uzman';
     dietaryRestrictions: string[];
+    dietaryPreferences: string[]; // Yeni diyet tercihleri
     notifications: boolean;
     language: 'tr' | 'en';
   };
@@ -87,6 +89,23 @@ export class OnboardingService {
       gradient: ['#06B6D4', '#10B981'],
       interactive: true,
       skippable: true,
+    },
+    {
+      id: 'dietary-preferences',
+      type: 'dietary-preferences',
+      title: 'Beslenme Tercihlerin',
+      subtitle: 'Özel diyet gereksinimlerini belirle',
+      description: 'Vegan, vejetaryan, glutensiz gibi beslenme tercihlerini seç',
+      icon: 'leaf-outline',
+      color: '#22C55E',
+      gradient: ['#22C55E', '#16A34A'],
+      interactive: true,
+      skippable: true,
+      tips: [
+        'Tarifler tercihlerin doğrultusunda filtrelenecek',
+        'İstediğin zaman değiştirebilirsin',
+        'Birden fazla seçenek işaretleyebilirsin'
+      ]
     },
     {
       id: 'tutorial',
@@ -158,6 +177,7 @@ export class OnboardingService {
         favoriteCategories: [],
         cookingLevel: 'orta',
         dietaryRestrictions: [],
+        dietaryPreferences: [], // Yeni diyet tercihleri
         notifications: true,
         language: 'tr',
       },

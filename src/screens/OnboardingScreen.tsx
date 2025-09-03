@@ -129,6 +129,21 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
       label: t('onboarding.categoriesLabels.dessert'),
     },
     { id: 'fast', emoji: '⚡', label: t('onboarding.categoriesLabels.fast') },
+    {
+      id: 'vegan',
+      emoji: '🌱',
+      label: t('onboarding.categoriesLabels.vegan'),
+    },
+    {
+      id: 'vegetarian',
+      emoji: '🥕',
+      label: t('onboarding.categoriesLabels.vegetarian'),
+    },
+    {
+      id: 'glutenfree',
+      emoji: '🌾',
+      label: t('onboarding.categoriesLabels.glutenfree'),
+    },
   ];
 
   const skillLevels = [
@@ -356,11 +371,6 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
         return (
           <View style={styles.preferencesContainer}>
             <View style={styles.preferencesSection}>
-              <RNText
-                style={[styles.sectionTitle, { color: colors.text.primary }]}
-              >
-                Favori Mutfaklar
-              </RNText>
               <View style={styles.preferencesGrid}>
                 {cuisinePreferences.map(pref => {
                   const isSelected = preferences.favoriteCategories.includes(

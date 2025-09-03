@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Logger } from '../services/LoggerService';
 import {
   View,
   Text,
@@ -23,6 +22,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useToast } from '../contexts/ToastContext';
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../contexts/LanguageContext';
+import { usePremium } from '../contexts/PremiumContext';
 import { RevenueCatService } from '../services/RevenueCatService';
 import {
   typography,
@@ -39,6 +39,7 @@ export const SettingsScreen: React.FC = () => {
   const { showSuccess, showError } = useToast();
   const { t } = useTranslation();
   const { changeLanguage, currentLanguage } = useLanguage();
+  const { showPaywall } = usePremium();
 
   // Animation values
   const fadeAnim = useState(new Animated.Value(0))[0];
@@ -50,7 +51,6 @@ export const SettingsScreen: React.FC = () => {
 
   // Settings state
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [premiumStatus, setPremiumStatus] = useState<any>(null);
@@ -60,6 +60,7 @@ export const SettingsScreen: React.FC = () => {
     checkPremiumStatus();
     startEntranceAnimation();
   }, []);
+
 
   const startEntranceAnimation = () => {
     Animated.parallel([
@@ -85,6 +86,7 @@ export const SettingsScreen: React.FC = () => {
       console.error('Premium status check failed:', error);
     }
   };
+
 
   const checkDeveloperMode = () => {
     if (__DEV__) {
@@ -147,8 +149,29 @@ Build: ${
 
   const handleContactSupport = () => {
     Linking.openURL(
-      'mailto:necatidogrul7@gmail.com?subject=Yemek Bulucu Support Request'
+      'mailto:necatidogrul7@gmail.com?subject=Yemek Bulucu - Destek Talebi&body=Merhaba,%0A%0ALütfen sorunuzu detaylıca açıklayınız:%0A%0A'
     );
+  };
+
+  const handleRateApp = () => {
+    // iOS App Store rating
+    const appStoreUrl = 'https://apps.apple.com/app/idYOUR_APP_ID?action=write-review';
+    Linking.openURL(appStoreUrl).catch(() => {
+      showError('App Store açılamadı');
+    });
+  };
+
+  const handleShareApp = () => {
+    const shareUrl = 'https://apps.apple.com/app/idYOUR_APP_ID';
+    const message = `AI destekli tarif keşfi için Yemek Bulucu uygulamasını deneyin! ${shareUrl}`;
+    
+    // Web paylaşımı - gerçek uygulamada Share API kullanılabilir
+    Linking.openURL(`mailto:?subject=Yemek Bulucu Tavsiyesi&body=${encodeURIComponent(message)}`);
+  };
+
+  const openAppStore = () => {
+    const appStoreUrl = 'https://apps.apple.com/app/idYOUR_APP_ID';
+    Linking.openURL(appStoreUrl);
   };
 
   const SettingItem = ({
@@ -346,16 +369,41 @@ Build: ${
   );
 
   const PremiumCard = () => {
-    if (isPremiumUser) return null;
+    if (isPremiumUser) {
+      return (
+        <View style={styles.premiumCardContainer}>
+          <LinearGradient
+            colors={[colors.success[400], colors.success[500]]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.premiumCard}
+          >
+            <View style={styles.premiumCardContent}>
+              <View style={styles.premiumCardIcon}>
+                <Ionicons name='checkmark-circle' size={24} color={colors.neutral[0]} />
+              </View>
+              <View style={styles.premiumCardText}>
+                <Text style={[styles.premiumCardTitle, { color: colors.neutral[0] }]}>
+                  Premium Aktif ✨
+                </Text>
+                <Text style={[styles.premiumCardSubtitle, { color: colors.neutral[0] }]}>
+                  Tüm özelliklere sınırsız erişim
+                </Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </View>
+      );
+    }
 
     return (
-      <TouchableOpacity style={styles.premiumCardContainer} activeOpacity={0.8}>
+      <TouchableOpacity 
+        style={styles.premiumCardContainer} 
+        activeOpacity={0.8}
+        onPress={() => showPaywall()}
+      >
         <LinearGradient
-          colors={[
-            colors.primary[400],
-            colors.primary[500],
-            colors.secondary[500],
-          ]}
+          colors={[colors.primary[400], colors.primary[500], colors.secondary[500]]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.premiumCard}
@@ -365,25 +413,14 @@ Build: ${
               <Ionicons name='diamond' size={24} color={colors.neutral[0]} />
             </View>
             <View style={styles.premiumCardText}>
-              <Text
-                style={[styles.premiumCardTitle, { color: colors.neutral[0] }]}
-              >
+              <Text style={[styles.premiumCardTitle, { color: colors.neutral[0] }]}>
                 Premium'a Yükselt
               </Text>
-              <Text
-                style={[
-                  styles.premiumCardSubtitle,
-                  { color: colors.neutral[0] },
-                ]}
-              >
+              <Text style={[styles.premiumCardSubtitle, { color: colors.neutral[0] }]}>
                 Sınırsız tarif ve özel özellikler
               </Text>
             </View>
-            <Ionicons
-              name='arrow-forward'
-              size={20}
-              color={colors.neutral[0]}
-            />
+            <Ionicons name='arrow-forward' size={20} color={colors.neutral[0]} />
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -441,23 +478,13 @@ Build: ${
 
         {/* Premium Upgrade Card */}
         <PremiumCard />
-        {/* Account Settings */}
-        <SectionHeader title={t('settings.account')} />
+        {/* Uygulama Ayarları */}
+        <SectionHeader title="Uygulama Ayarları" />
         <View style={styles.section}>
           <SettingItem
-            icon='person-outline'
-            title={t('settings.profile.title')}
-            subtitle={t('settings.profile.subtitle')}
-            iconColor={colors.primary[600]}
-            iconBackground={colors.primary[100]}
-            onPress={() => {
-              /* Navigate to profile */
-            }}
-          />
-          <SettingItem
             icon='notifications-outline'
-            title={t('settings.notifications.title')}
-            subtitle={t('settings.notifications.subtitle')}
+            title="Bildirimler"
+            subtitle="Yeni özellikler ve güncellemeler"
             iconColor={colors.info[600]}
             iconBackground={colors.info[100]}
             rightElement={
@@ -480,31 +507,29 @@ Build: ${
           />
           <SettingItem
             icon='globe-outline'
-            title={t('settings.language.title')}
+            title="Dil Seçimi"
             subtitle={
               currentLanguage === 'tr'
-                ? t('settings.language.turkish')
-                : t('settings.language.english')
+                ? 'Türkçe'
+                : 'English'
             }
             iconColor={colors.secondary[600]}
-            iconBackground={colors.primary[100]}
+            iconBackground={colors.secondary[100]}
             onPress={() => {
               const newLang = currentLanguage === 'tr' ? 'en' : 'tr';
               changeLanguage(newLang);
-              showSuccess(t('settings.languageChanged'));
+              showSuccess('Dil değiştirildi');
             }}
           />
         </View>
 
-        {/* App Settings */}
-        <SectionHeader title={t('settings.appSettings')} />
+        {/* Görünüm Ayarları */}
+        <SectionHeader title="Görünüm" />
         <View style={styles.section}>
           <SettingItem
             icon={isDark ? 'moon' : 'sunny'}
-            title={t('settings.theme.title')}
-            subtitle={
-              isDark ? t('settings.theme.dark') : t('settings.theme.light')
-            }
+            title="Tema"
+            subtitle={isDark ? 'Koyu tema' : 'Açık tema'}
             iconColor={isDark ? colors.info[600] : colors.warning[600]}
             iconBackground={isDark ? colors.info[100] : colors.warning[100]}
             rightElement={
@@ -524,31 +549,9 @@ Build: ${
             showChevron={false}
           />
           <SettingItem
-            icon='volume-high-outline'
-            title={t('settings.soundEffects.title')}
-            subtitle={t('settings.soundEffects.subtitle')}
-            iconColor={colors.secondary[600]}
-            iconBackground={colors.primary[100]}
-            rightElement={
-              <Switch
-                value={soundEnabled}
-                onValueChange={setSoundEnabled}
-                trackColor={{
-                  false: colors.neutral[300],
-                  true: colors.primary[300],
-                }}
-                thumbColor={
-                  soundEnabled ? colors.primary[600] : colors.neutral[400]
-                }
-                ios_backgroundColor={colors.neutral[300]}
-              />
-            }
-            showChevron={false}
-          />
-          <SettingItem
             icon='phone-portrait-outline'
-            title={t('settings.hapticFeedback.title')}
-            subtitle={t('settings.hapticFeedback.subtitle')}
+            title="Dokunma Geri Bildirimi"
+            subtitle="Titreşim ile geri bildirim"
             iconColor={colors.primary[500]}
             iconBackground={colors.primary[100]}
             rightElement={
@@ -569,41 +572,32 @@ Build: ${
           />
         </View>
 
-        {/* Premium Features */}
-        <SectionHeader title={t('settings.premiumFeatures')} />
+        {/* Destek ve Yardım */}
+        <SectionHeader title="Destek" />
         <View style={styles.section}>
           <SettingItem
-            icon='restaurant-outline'
-            title={t('settings.advancedRecipes.title')}
-            subtitle={t('settings.advancedRecipes.subtitle')}
-            isPremiumFeature={true}
-            onPress={() => {
-              if (!isPremiumUser) {
-                showError(t('settings.premiumRequired'));
-              }
-            }}
+            icon='mail-outline'
+            title="İletişim"
+            subtitle="Sorularınız için bize yazın"
+            iconColor={colors.primary[600]}
+            iconBackground={colors.primary[100]}
+            onPress={handleContactSupport}
           />
           <SettingItem
-            icon='bookmark-outline'
-            title='Sınırsız Favoriler'
-            subtitle='İstediğiniz kadar tarifi kaydedin'
-            isPremiumFeature={true}
-            onPress={() => {
-              if (!isPremiumUser) {
-                showError(t('settings.premiumRequired'));
-              }
-            }}
+            icon='star-outline'
+            title="Uygulamayı Değerlendir"
+            subtitle="App Store'da puan verin"
+            iconColor={colors.warning[600]}
+            iconBackground={colors.warning[100]}
+            onPress={handleRateApp}
           />
           <SettingItem
-            icon='download-outline'
-            title='Çevrimdışı Tarifler'
-            subtitle={t('settings.offlineRecipes.subtitle')}
-            isPremiumFeature={true}
-            onPress={() => {
-              if (!isPremiumUser) {
-                showError(t('settings.premiumRequired'));
-              }
-            }}
+            icon='share-outline'
+            title="Arkadaşlarınla Paylaş"
+            subtitle="Yemek Bulucu'yu öner"
+            iconColor={colors.secondary[600]}
+            iconBackground={colors.secondary[100]}
+            onPress={handleShareApp}
           />
         </View>
 
@@ -636,115 +630,64 @@ Build: ${
           </>
         )}
 
-        {/* Support */}
-        <SectionHeader title={t('settings.support')} />
-        <View style={styles.section}>
-          <SettingItem
-            icon='help-circle-outline'
-            title={t('settings.helpCenter.title')}
-            subtitle={t('settings.helpCenter.subtitle')}
-            iconColor={colors.primary[600]}
-            iconBackground={colors.primary[100]}
-            onPress={() => {
-              /* Navigate to help */
-            }}
-          />
-          <SettingItem
-            icon='mail-outline'
-            title={t('settings.supportContact.title')}
-            subtitle={t('settings.supportContact.subtitle')}
-            iconColor={colors.primary[600]}
-            iconBackground={colors.primary[100]}
-            onPress={handleContactSupport}
-          />
-          <SettingItem
-            icon='star-outline'
-            title={t('settings.rateApp.title')}
-            subtitle={t('settings.rateApp.subtitle')}
-            iconColor={colors.primary[500]}
-            iconBackground={colors.primary[100]}
-            onPress={() => {
-              /* Open app store */
-            }}
-          />
-          <SettingItem
-            icon='share-outline'
-            title={t('settings.shareApp.title')}
-            subtitle={t('settings.shareApp.subtitle')}
-            iconColor={colors.secondary[600]}
-            iconBackground={colors.primary[100]}
-            onPress={() => {
-              /* Share app */
-            }}
-          />
-        </View>
-
-        {/* Legal */}
-        <SectionHeader title={t('settings.legal')} />
+        {/* Yasal Bilgiler */}
+        <SectionHeader title="Yasal" />
         <View style={styles.section}>
           <SettingItem
             icon='shield-checkmark-outline'
-            title={t('settings.privacyPolicy.title')}
-            iconColor={colors.secondary[600]}
-            iconBackground={colors.primary[100]}
+            title="Gizlilik Politikası"
+            subtitle="Veri kullanım politikamız"
+            iconColor={colors.info[600]}
+            iconBackground={colors.info[100]}
             onPress={openPrivacyPolicy}
           />
           <SettingItem
             icon='document-text-outline'
-            title={t('settings.termsOfService.title')}
+            title="Kullanım Şartları"
+            subtitle="Hizmet şartları ve koşulları"
             iconColor={colors.primary[600]}
             iconBackground={colors.primary[100]}
             onPress={openTermsOfService}
           />
+          <SettingItem
+            icon='storefront-outline'
+            title="App Store'da Görüntüle"
+            subtitle="Uygulama mağazasında incele"
+            iconColor={colors.secondary[600]}
+            iconBackground={colors.secondary[100]}
+            onPress={openAppStore}
+          />
         </View>
 
-        {/* About */}
-        <SectionHeader title='Hakkında' />
+        {/* Uygulama Bilgileri */}
+        <SectionHeader title="Uygulama" />
         <View style={[styles.section, styles.lastSection]}>
-          <TouchableOpacity
-            style={[
-              styles.settingItem,
-              {
-                backgroundColor: colors.current.surface,
-                borderBottomWidth: 0,
-                borderRadius: borderRadius.lg,
-              },
-              shadows.sm,
-            ]}
+          <SettingItem
+            icon='information-circle-outline'
+            title="Yemek Bulucu"
+            subtitle={`Sürüm ${Constants.expoConfig?.version || '1.0.0'} ${versionTapCount > 0 ? `(${versionTapCount}/10)` : ''}`}
+            iconColor={colors.primary[600]}
+            iconBackground={colors.primary[100]}
             onPress={handleVersionTap}
-            activeOpacity={0.7}
-          >
-            <View style={styles.settingLeft}>
-              <View
-                style={[
-                  styles.iconContainer,
-                  { backgroundColor: colors.neutral[100] },
-                ]}
-              >
-                <Ionicons
-                  name='information-circle-outline'
-                  size={22}
-                  color={colors.text.secondary}
-                />
-              </View>
-              <View style={styles.textContainer}>
-                <Text
-                  style={[styles.settingTitle, { color: colors.text.primary }]}
-                >
-                  Sürüm
-                </Text>
-                <Text
-                  style={[
-                    styles.settingSubtitle,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  {Constants.expoConfig?.version || '1.0.0'}
-                  {versionTapCount > 0 && ` (${versionTapCount}/10)`}
-                </Text>
-              </View>
-            </View>
-          </TouchableOpacity>
+            showChevron={false}
+          />
+          <SettingItem
+            icon='code-outline'
+            title="Geliştirici"
+            subtitle="Necati Doğrul"
+            iconColor={colors.secondary[600]}
+            iconBackground={colors.secondary[100]}
+            onPress={() => Linking.openURL('https://necatidogrul.dev')}
+            showChevron={false}
+          />
+          <SettingItem
+            icon='heart-outline'
+            title="Teşekkürler"
+            subtitle="AI ile yapıldı ❤️"
+            iconColor={colors.error[500]}
+            iconBackground={colors.error[100]}
+            showChevron={false}
+          />
         </View>
 
         {/* Bottom spacing */}

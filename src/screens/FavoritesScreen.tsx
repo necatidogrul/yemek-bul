@@ -53,7 +53,13 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const { colors } = useThemedStyles();
   const { showSuccess, showError } = useToast();
   const haptics = useHaptics();
-  const { isPremium, showPaywall } = usePremium();
+  const { isPremium, showPaywall, refreshPremiumStatus, isLoading: premiumLoading } = usePremium();
+
+  const debugLog = (message: string, data?: any) => {
+    if (__DEV__) {
+      Logger.info(`[FavoritesScreen] ${message}`, data || '');
+    }
+  };
 
   // Premium guard for favorites access
   const favoritesGuard = usePremiumGuard({
@@ -143,6 +149,27 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     loadFavorites();
     return unsubscribe;
   }, [navigation, favoritesGuard.hasAccess]);
+
+  // Premium durumu değiştiğinde favorileri yeniden yükle
+  useEffect(() => {
+    if (isPremium && !isLoading) {
+      debugLog('Premium status changed to active, reloading favorites');
+      loadFavorites();
+    }
+  }, [isPremium]);
+
+  // App focus'ta premium durumunu kontrol et
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', async () => {
+      if (!isLoading) {
+        debugLog('FavoritesScreen focused, refreshing premium status');
+        // Premium durumunu force refresh yap
+        await refreshPremiumStatus?.(true);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, isLoading]);
 
   const handleRecipePress = (recipe: Recipe) => {
     if (!recipe.id) {

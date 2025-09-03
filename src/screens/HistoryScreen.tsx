@@ -12,6 +12,7 @@ import {
   StatusBar,
   Animated,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Logger } from '../services/LoggerService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -33,7 +34,6 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { FavoriteButton } from '../components/ui/FavoriteButton';
 import { useThemedStyles } from '../hooks/useThemedStyles';
 import { usePremium } from '../contexts/PremiumContext';
-// import { usePremiumGuard } from '../hooks/usePremiumGuard';
 import { useToast } from '../contexts/ToastContext';
 import { spacing, borderRadius, shadows } from '../theme/design-tokens';
 
@@ -64,14 +64,17 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const slideAnim = useState(() => new Animated.Value(50))[0];
 
   const { colors } = useThemedStyles();
-  const { isPremium, showPaywall } = usePremium();
+  const { isPremium, showPaywall, refreshPremiumStatus, isLoading: premiumLoading } = usePremium();
   const { showSuccess, showError } = useToast();
 
-  // Premium guard for history access - removed to allow free users to see history
-  // const historyGuard = usePremiumGuard({
-  //   feature: 'unlimitedRecipes',
-  //   title: 'Geçmiş özelliği premium kullanıcılar içindir',
-  // });
+  const debugLog = (message: string, data?: any) => {
+    if (__DEV__) {
+      Logger.info(`[HistoryScreen] ${message}`, data || '');
+    }
+  };
+
+  // Premium kontrolü basit yöntemle - favoriler gibi
+  const hasHistoryAccess = isPremium;
 
   // Convert history recipe to full Recipe type
   const convertToFullRecipe = (historyRecipe: any): Recipe => ({
@@ -85,9 +88,34 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   });
 
   useEffect(() => {
-    // Allow all users to see history
+    if (!hasHistoryAccess) {
+      // Premium gerektiren özellik için paywall göster
+      return;
+    }
     loadHistoryData();
-  }, [filter]);
+  }, [filter, hasHistoryAccess]);
+
+  // Premium durumu değiştiğinde geçmişi yeniden yükle
+  useEffect(() => {
+    if (isPremium && !isLoading) {
+      debugLog('Premium status changed to active, reloading history');
+      loadHistoryData();
+    }
+  }, [isPremium]);
+
+  // App focus'ta premium durumunu kontrol et
+  useEffect(() => {
+    const unsubscribe = navigation.addListener?.('focus', async () => {
+      if (!isLoading) {
+        debugLog('HistoryScreen focused, refreshing premium status');
+        // Premium durumunu force refresh yap
+        await refreshPremiumStatus?.(true);
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation, isLoading]);
+
 
   useEffect(() => {
     // Start entrance animation
@@ -106,6 +134,11 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   }, []);
 
   const loadHistoryData = async () => {
+    if (!hasHistoryAccess) {
+      setIsLoading(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       const [historyData, statsData, popularData] = await Promise.all([
@@ -1001,7 +1034,128 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     </Animated.View>
   );
 
-  // Premium olmayan kullanıcılar için paywall - kaldırıldı, artık herkes görebilir
+  // Premium olmayan kullanıcılar için paywall
+  if (!hasHistoryAccess) {
+    return (
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: colors.background.primary },
+        ]}
+      >
+        <StatusBar
+          barStyle='light-content'
+          backgroundColor={colors.primary[600]}
+        />
+
+        {/* Header */}
+        <LinearGradient
+          colors={[colors.primary[600], colors.primary[700]]}
+          style={styles.premiumHeader}
+        >
+          <SafeAreaView>
+            <View style={styles.premiumHeaderContainer}>
+              <TouchableOpacity
+                style={styles.premiumBackButton}
+                onPress={() => navigation.goBack()}
+              >
+                <Ionicons name='chevron-back' size={24} color='white' />
+              </TouchableOpacity>
+
+              <View style={styles.premiumHeaderCenter}>
+                <Text
+                  variant='headlineSmall'
+                  weight='bold'
+                  style={{ color: 'white' }}
+                >
+                  Arama Geçmişi
+                </Text>
+              </View>
+
+              <View style={styles.premiumHeaderActions} />
+            </View>
+          </SafeAreaView>
+        </LinearGradient>
+
+        {/* Scrollable Premium Required Content */}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.premiumScrollContent}
+          bounces={true}
+        >
+          <View style={styles.premiumRequiredContainer}>
+            <LinearGradient
+              colors={[colors.primary[500], colors.primary[600]]}
+              style={styles.premiumMainIcon}
+            >
+              <Ionicons name='time' size={40} color='white' />
+            </LinearGradient>
+
+            <Text
+              variant='displaySmall'
+              weight='bold'
+              color='primary'
+              align='center'
+            >
+              Premium Özellik
+            </Text>
+
+            <Text
+              variant='bodyLarge'
+              color='secondary'
+              align='center'
+              style={styles.premiumDescription}
+            >
+              Arama geçmişinizi görmek ve analiz etmek için Premium'a geçin
+            </Text>
+
+            <View style={styles.premiumFeaturesList}>
+              {[
+                'Tüm arama geçmişinizi görüntüleme',
+                'Detaylı istatistik ve analiz',
+                'Popüler malzeme kombinasyonları',
+                'Haftalık ve aylık aktivite raporları',
+                'Başarılı tarifleri tekrar bulma',
+              ].map((feature, index) => (
+                <View key={index} style={styles.premiumFeatureItem}>
+                  <Ionicons
+                    name='checkmark-circle'
+                    size={20}
+                    color={colors.success[500]}
+                  />
+                  <Text
+                    variant='bodyMedium'
+                    style={{ flex: 1, marginLeft: 12 }}
+                  >
+                    {feature}
+                  </Text>
+                </View>
+              ))}
+            </View>
+
+            <LinearGradient
+              colors={[colors.primary[500], colors.primary[600]]}
+              style={styles.premiumButton}
+            >
+              <TouchableOpacity
+                style={styles.premiumButtonContent}
+                onPress={() => showPaywall()}
+              >
+                <Ionicons name='time' size={20} color='white' />
+                <Text
+                  variant='headlineSmall'
+                  weight='bold'
+                  style={{ color: 'white' }}
+                >
+                  Premium'a Geç
+                </Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -1115,6 +1269,20 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             >
               <Ionicons name='chevron-back' size={24} color='white' />
             </TouchableOpacity>
+            
+            {/* Premium status refresh butonu - debug için */}
+            {__DEV__ && (
+              <TouchableOpacity
+                style={[styles.backButton, { marginLeft: 8 }]}
+                onPress={async () => {
+                  debugLog('Manual refresh triggered');
+                  await refreshPremiumStatus?.(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name='refresh' size={18} color='white' />
+              </TouchableOpacity>
+            )}
 
             <View style={styles.headerCenter}>
               <View style={styles.headerTitleContainer}>
@@ -1818,6 +1986,33 @@ const styles = StyleSheet.create({
   },
 
   // Premium Required Styles
+  premiumHeader: {
+    paddingBottom: spacing[3],
+    ...shadows.sm,
+  },
+  premiumHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing[4],
+    paddingTop: spacing[2],
+    minHeight: 56,
+  },
+  premiumBackButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  premiumHeaderCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  premiumHeaderActions: {
+    width: 36,
+    alignItems: 'flex-end',
+  },
   premiumScrollContent: {
     flexGrow: 1,
     paddingBottom: 100,

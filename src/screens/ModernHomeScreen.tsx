@@ -10,6 +10,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { Logger } from '../services/LoggerService';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -278,12 +279,96 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
         });
 
         haptics.success();
+        
+        // Save to history
+        const startTime = Date.now();
+        try {
+          await HistoryService.saveRequest(
+            {
+              ingredients: suggestion.defaultIngredients,
+              preferences: {
+                difficulty: userPreferences.cookingLevel === 'başlangıç'
+                  ? 'kolay'
+                  : userPreferences.cookingLevel === 'uzman'
+                    ? 'zor'
+                    : 'orta',
+                servings: 2,
+                cookingTime: suggestion.cookingTime,
+              },
+              results: {
+                count: aiResponse.recipes.length,
+                recipes: aiResponse.recipes.map(recipe => ({
+                  id: recipe.id || `ai_${Date.now()}_${Math.random()}`,
+                  name: recipe.name,
+                  difficulty: recipe.difficulty,
+                  cookingTime: recipe.cookingTime,
+                  // Premium için ek bilgiler
+                  ...(isPremium && {
+                    servings: recipe.servings,
+                    ingredients: recipe.ingredients,
+                    instructions: recipe.instructions,
+                    imageUrl: recipe.imageUrl,
+                  }),
+                })),
+              },
+              success: true,
+              requestDetails: isPremium
+                ? {
+                    tokenUsed: aiResponse.totalTokensUsed || 0,
+                    responseTime: Date.now() - startTime,
+                    model: 'gpt-3.5-turbo',
+                    requestType: 'ai' as const,
+                  }
+                : undefined,
+              userContext: {
+                isPremium,
+                userId: 'user_' + Date.now(),
+              },
+            },
+            isPremium
+          );
+          console.log('✅ Smart suggestion history saved successfully');
+        } catch (error) {
+          console.error('❌ Failed to save smart suggestion history:', error);
+        }
+
         // Success feedback through navigation - no need for toast
         navigation.navigate('RecipeResults', {
           ingredients: suggestion.defaultIngredients,
           aiRecipes: aiResponse.recipes,
         });
       } else {
+        // Save failed attempt to history
+        try {
+          await HistoryService.saveRequest(
+            {
+              ingredients: suggestion.defaultIngredients,
+              preferences: {
+                difficulty: userPreferences.cookingLevel === 'başlangıç'
+                  ? 'kolay'
+                  : userPreferences.cookingLevel === 'uzman'
+                    ? 'zor'
+                    : 'orta',
+                servings: 2,
+                cookingTime: suggestion.cookingTime,
+              },
+              results: {
+                count: 0,
+                recipes: [],
+              },
+              success: false,
+              userContext: {
+                isPremium,
+                userId: 'user_' + Date.now(),
+              },
+            },
+            isPremium
+          );
+          console.log('✅ Smart suggestion failed attempt saved to history');
+        } catch (error) {
+          console.error('❌ Failed to save smart suggestion failed history:', error);
+        }
+        
         // Show warning only for critical case where no recipes found
         showWarning(
           t('messages.noRecipeFound'),
@@ -315,6 +400,34 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
         );
       } else {
         appError = ErrorHandlingService.getGenericError(error);
+      }
+
+      // Save error to history
+      try {
+        await HistoryService.saveRequest(
+          {
+            ingredients: suggestion.defaultIngredients,
+            preferences: {
+              difficulty: 'kolay',
+              servings: 2,
+              cookingTime: suggestion.cookingTime,
+            },
+            results: {
+              count: 0,
+              recipes: [],
+            },
+            success: false,
+            error: appError.message,
+            userContext: {
+              isPremium,
+              userId: 'user_' + Date.now(),
+            },
+          },
+          isPremium
+        );
+        console.log('✅ Smart suggestion error saved to history');
+      } catch (historyError) {
+        console.error('❌ Failed to save smart suggestion error history:', historyError);
       }
 
       showError(
@@ -623,14 +736,20 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
       <StatusBar barStyle='light-content' backgroundColor='#1a1a2e' />
 
       {/* Compact Header */}
-      <View style={styles.compactHeader}>
+      <View style={[styles.compactHeader, { backgroundColor: colors.background.primary }]}>
         <View style={styles.compactHeaderContent}>
           <View style={styles.compactHeaderLeft}>
-            <Ionicons name='restaurant' size={20} color={colors.primary[500]} />
+            <View style={styles.appIconContainer}>
+              <Image 
+                source={require('../../assets/icon.png')} 
+                style={styles.appIcon}
+                resizeMode="contain"
+              />
+            </View>
             <Text
               variant='bodyLarge'
               weight='bold'
-              style={{ color: colors.text.primary }}
+              style={[styles.appTitle, { color: colors.text.primary }]}
             >
               {t('app.name')}
             </Text>
@@ -640,30 +759,55 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
           <TouchableOpacity
             style={[
               styles.creditCounter,
-              { backgroundColor: isPremium ? colors.success[100] : colors.primary[100] },
+              { 
+                backgroundColor: isPremium ? colors.success[50] : colors.primary[50],
+                borderColor: isPremium ? colors.success[200] : colors.primary[200]
+              }
             ]}
             onPress={() => {
               if (!isPremium) {
                 showPaywall();
+              } else {
+                // Premium kullanıcı için limit takip ekranına git veya paywall göster (limit dolmuşsa)
+                if (remainingRequests.daily <= 0 || (remainingRequests.monthly && remainingRequests.monthly <= 0)) {
+                  showPaywall();
+                } else {
+                  // Limit takip modalını göster - şimdilik paywall göster
+                  showPaywall();
+                }
               }
             }}
             activeOpacity={0.7}
           >
-            <Ionicons 
-              name={isPremium ? "star" : "diamond"} 
-              size={14} 
-              color={isPremium ? colors.success[600] : colors.primary[600]} 
-            />
-            <Text
-              variant='labelSmall'
-              weight='600'
-              style={{ color: isPremium ? colors.success[600] : colors.primary[600], fontSize: 12 }}
-            >
-              {isPremium ? 
-                `G: ${remainingRequests.daily} | A: ${remainingRequests.monthly || 0}` : 
-                remainingRequests.daily
-              }
-            </Text>
+            <View style={[
+              styles.creditIconContainer,
+              { backgroundColor: isPremium ? colors.success[500] : colors.primary[500] }
+            ]}>
+              <Ionicons 
+                name={isPremium ? "star" : "diamond"} 
+                size={12} 
+                color="white"
+              />
+            </View>
+            <View style={styles.creditTextContainer}>
+              <Text
+                variant='labelSmall'
+                weight='600'
+                style={[styles.creditLabel, { color: colors.text.secondary }]}
+              >
+                {isPremium ? 'Premium' : 'Kredi'}
+              </Text>
+              <Text
+                variant='labelSmall'
+                weight='700'
+                style={[styles.creditValue, { color: isPremium ? colors.success[600] : colors.primary[600] }]}
+              >
+                {isPremium ? 
+                  `${remainingRequests.daily}/${remainingRequests.monthly || 0}` : 
+                  remainingRequests.daily
+                }
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -830,16 +974,11 @@ const styles = StyleSheet.create({
 
   // Compact Header
   compactHeader: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    backgroundColor: 'white',
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    paddingTop: spacing[6],
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.03)',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   compactHeaderContent: {
     flexDirection: 'row',
@@ -849,15 +988,62 @@ const styles = StyleSheet.create({
   compactHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[2],
+    gap: spacing[3],
+    flex: 1,
+  },
+  appIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: '#f8f9fa',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  appIcon: {
+    width: 28,
+    height: 28,
+  },
+  appTitle: {
+    fontSize: 18,
+    lineHeight: 22,
   },
   creditCounter: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing[2],
-    paddingVertical: 4,
-    borderRadius: borderRadius.full,
-    gap: 4,
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    gap: spacing[2],
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  creditIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  creditTextContainer: {
+    alignItems: 'flex-end',
+  },
+  creditLabel: {
+    fontSize: 10,
+    lineHeight: 12,
+  },
+  creditValue: {
+    fontSize: 13,
+    lineHeight: 16,
+    marginTop: 1,
   },
 
   // Main Content

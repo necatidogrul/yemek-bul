@@ -180,16 +180,26 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
 
       setOfferings(availableOfferings);
 
-      // Varsayılan olarak ilk package'ı seç
-      if (availableOfferings[0]?.availablePackages?.length > 0) {
+      // Tüm offerings'lerden paketleri topla ve monthly'yi bul
+      const allPackages = availableOfferings.flatMap(offering => offering.availablePackages);
+      
+      if (allPackages.length > 0) {
         // Önce monthly package'ı ara
-        const monthlyPackage = availableOfferings[0].availablePackages.find(
-          p =>
-            p.identifier === '$rc_monthly' || p.identifier.includes('monthly')
+        const monthlyPackage = allPackages.find(
+          p => {
+            const id = p.identifier.toLowerCase();
+            const productId = p.product.identifier.toLowerCase();
+            return (
+              id === '$rc_monthly' || 
+              id.includes('monthly') || 
+              id.includes('month') ||
+              productId.includes('monthly') || 
+              productId.includes('month')
+            );
+          }
         );
 
-        const selectedPkg =
-          monthlyPackage || availableOfferings[0].availablePackages[0];
+        const selectedPkg = monthlyPackage || allPackages[0];
         setSelectedPackage(selectedPkg);
 
         console.log('✅ Package selected:', {
@@ -432,13 +442,13 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
           </View>
 
           {/* Package seçimi - EN ÜSTTE */}
-          {offerings.length > 0 &&
-            offerings[0].availablePackages.length > 0 && (
+          {offerings.length > 0 && (
               <View style={styles.packagesContainer}>
                 <Text style={styles.sectionTitle}>
                   {t('premium.choose_plan')}
                 </Text>
-                {offerings[0].availablePackages.map((packageItem, index) => {
+                {/* Tüm offerings'lerden paketleri topla */}
+                {offerings.flatMap(offering => offering.availablePackages).map((packageItem, index) => {
                   const isSelected =
                     selectedPackage?.identifier === packageItem.identifier;
                   const identifier = packageItem.identifier.toLowerCase();

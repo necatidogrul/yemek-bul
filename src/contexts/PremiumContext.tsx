@@ -11,6 +11,7 @@ import React, {
   useEffect,
   useCallback,
 } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import Constants from 'expo-constants';
 import {
   RevenueCatService,
@@ -46,7 +47,7 @@ interface PremiumContextType {
   };
 
   // Actions
-  refreshPremiumStatus: () => Promise<void>;
+  refreshPremiumStatus: (forceRefresh?: boolean) => Promise<void>;
   handlePurchaseSuccess: () => void;
 }
 
@@ -73,6 +74,47 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
     | undefined
   >();
 
+  // Premium durumu yenileme fonksiyonu - en üstte tanımla
+  const refreshPremiumStatus = useCallback(async (forceRefresh = false) => {
+    try {
+      debugLog('Refreshing premium status', { forceRefresh });
+      
+      // Customer info'yu refresh et - force refresh ile
+      if (forceRefresh) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      await RevenueCatService.refreshCustomerInfo();
+
+      // Premium durumunu al
+      const status = await RevenueCatService.getPremiumStatus();
+      
+      // Mevcut durumla karşılaştır
+      const hasChanged = premiumStatus.isPremium !== status.isPremium || 
+                        premiumStatus.isActive !== status.isActive;
+      
+      setPremiumStatus(status);
+
+      debugLog('Premium status updated:', { 
+        previous: premiumStatus, 
+        current: status, 
+        hasChanged 
+      });
+      
+      if (hasChanged) {
+        debugLog('Premium status changed, triggering UI updates');
+      }
+    } catch (error) {
+      Logger.error('Failed to refresh premium status:', error);
+
+      // Hata durumunda premium'u false yap
+      setPremiumStatus({
+        isPremium: false,
+        isActive: false,
+      });
+    }
+  }, [premiumStatus]);
+
   // RevenueCat'i başlat ve premium durumunu kontrol et
   useEffect(() => {
     // Context mount olduktan sonra başlat
@@ -82,6 +124,19 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
 
     return () => clearTimeout(timer);
   }, []);
+
+  // App lifecycle yönetimi - background'dan döndüğünde premium durumunu kontrol et
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active' && !isLoading) {
+        debugLog('App became active, refreshing premium status');
+        refreshPremiumStatus();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [isLoading, refreshPremiumStatus]);
 
   const initializePremium = async () => {
     try {
@@ -116,30 +171,17 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
     }
   };
 
-  const refreshPremiumStatus = useCallback(async () => {
-    try {
-      // Customer info'yu refresh et
-      await RevenueCatService.refreshCustomerInfo();
-
-      // Premium durumunu al
-      const status = await RevenueCatService.getPremiumStatus();
-      setPremiumStatus(status);
-
-      debugLog('Premium status updated:', status);
-    } catch (error) {
-      Logger.error('Failed to refresh premium status:', error);
-
-      // Hata durumunda premium'u false yap
-      setPremiumStatus({
-        isPremium: false,
-        isActive: false,
-      });
-    }
-  }, []);
-
   const hasFeatureAccess = useCallback(
     async (feature: PremiumFeature): Promise<boolean> => {
       try {
+        // Development override kontrolü
+        const isDevelopmentPremiumOverride = __DEV__ && process.env.EXPO_PUBLIC_DEBUG_PREMIUM === 'true';
+        
+        if (isDevelopmentPremiumOverride) {
+          debugLog('🔧 DEBUG: hasFeatureAccess overridden to TRUE for development');
+          return true;
+        }
+        
         return await RevenueCatService.hasFeatureAccess(feature);
       } catch (error) {
         Logger.error('Failed to check feature access:', error);
@@ -164,12 +206,25 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
   const handlePurchaseSuccess = useCallback(async () => {
     debugLog('Purchase successful, refreshing premium status');
 
+    // RevenueCat'in cache'ini temizlemek için kısa bir bekleme
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     // Premium durumunu güncelle
     await refreshPremiumStatus();
 
     // Paywall'ı kapat
     hidePaywall();
+
+    debugLog('Purchase success handled, premium status updated');
   }, [refreshPremiumStatus, hidePaywall]);
+
+  // Development ortamında debug için premium durumunu override et
+  const isDevelopmentPremiumOverride = __DEV__ && process.env.EXPO_PUBLIC_DEBUG_PREMIUM === 'true';
+  const effectiveIsPremium = isDevelopmentPremiumOverride || (premiumStatus.isPremium && premiumStatus.isActive);
+
+  if (isDevelopmentPremiumOverride) {
+    debugLog('🔧 DEBUG: Premium status overridden to TRUE for development');
+  }
 
   const value: PremiumContextType = {
     // Premium durumu
@@ -178,7 +233,7 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
 
     // Premium özellikleri
     hasFeatureAccess,
-    isPremium: premiumStatus.isPremium && premiumStatus.isActive,
+    isPremium: effectiveIsPremium,
 
     // Paywall yönetimi
     showPaywall,
@@ -187,7 +242,7 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
     paywallContext,
 
     // Actions
-    refreshPremiumStatus,
+    refreshPremiumStatus: (forceRefresh?: boolean) => refreshPremiumStatus(forceRefresh || false),
     handlePurchaseSuccess,
   };
 

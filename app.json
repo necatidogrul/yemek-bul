@@ -2,7 +2,7 @@
   "expo": {
     "name": "Yemek Bulucu",
     "slug": "yemek-bulucu",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yemekbulucuai.app",
-      "buildNumber": "19",
+      "buildNumber": "27",
       "requireFullScreen": false,
       "infoPlist": {
         "NSCameraUsageDescription": "Malzemelerin fotoğrafını çekmek için kamera erişimi gerekiyor.",

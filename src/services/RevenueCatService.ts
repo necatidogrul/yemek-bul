@@ -157,7 +157,7 @@ export class RevenueCatService {
   /**
    * Kullanıcı bilgilerini güncelle
    */
-  static async refreshCustomerInfo(): Promise<CustomerInfo | null> {
+  static async refreshCustomerInfo(forceRefresh = false): Promise<CustomerInfo | null> {
     try {
       if (!this.isInitialized) {
         await this.initialize();
@@ -169,13 +169,41 @@ export class RevenueCatService {
         return null;
       }
 
-      const customerInfo = await Purchases.getCustomerInfo();
+      debugLog(`🔄 Refreshing customer info (force: ${forceRefresh})`);
+      
+      // Force refresh için cache'i bypass et
+      let customerInfo: CustomerInfo;
+      if (forceRefresh) {
+        // Cache'i bypass etmek için restore'dan sonra get yapalım
+        try {
+          // Sandbox'ta restore purchases çağırarak cache'i temizleyelim
+          debugLog('🔄 Force refresh: Restoring purchases to clear cache');
+          customerInfo = await Purchases.restorePurchases();
+        } catch (restoreError) {
+          debugLog('⚠️ Restore failed, falling back to getCustomerInfo');
+          customerInfo = await Purchases.getCustomerInfo();
+        }
+      } else {
+        customerInfo = await Purchases.getCustomerInfo();
+      }
+      
       this.currentCustomerInfo = customerInfo;
 
       debugLog('📊 Customer info refreshed:', {
         userId: customerInfo.originalAppUserId,
         activeSubscriptions: Object.keys(customerInfo.activeSubscriptions),
         activeEntitlements: Object.keys(customerInfo.entitlements.active),
+        entitlementsDetail: Object.fromEntries(
+          Object.entries(customerInfo.entitlements.active).map(([key, entitlement]) => [
+            key, 
+            {
+              isActive: entitlement.isActive,
+              willRenew: entitlement.willRenew,
+              productId: entitlement.productIdentifier,
+              expirationDate: entitlement.expirationDate
+            }
+          ])
+        )
       });
 
       return customerInfo;
@@ -193,33 +221,57 @@ export class RevenueCatService {
   /**
    * Mevcut premium durumunu kontrol et
    */
-  static async getPremiumStatus(): Promise<PremiumStatus> {
+  static async getPremiumStatus(forceRefresh = false): Promise<PremiumStatus> {
     try {
-      if (!this.currentCustomerInfo) {
-        await this.refreshCustomerInfo();
+      if (!this.currentCustomerInfo || forceRefresh) {
+        await this.refreshCustomerInfo(forceRefresh);
       }
 
       if (!this.currentCustomerInfo) {
+        debugLog('❌ No customer info available for premium status check');
         return { isPremium: false, isActive: false };
       }
 
-      // Entitlement kontrolü - "Premium Subscription" ile eşleşmeli
-      const premiumEntitlement =
-        this.currentCustomerInfo.entitlements.active[
-          REVENUECAT_CONFIG.entitlements.premium
-        ] ||
-        this.currentCustomerInfo.entitlements.active['Premium Subscription'] ||
-        this.currentCustomerInfo.entitlements.active['premium'];
+      // Tüm entitlement'ları kontrol et - geniş kapsam
+      const allActiveEntitlements = this.currentCustomerInfo.entitlements.active;
+      const entitlementKeys = Object.keys(allActiveEntitlements);
+      
+      debugLog('🔍 Checking premium entitlements:', {
+        totalActive: entitlementKeys.length,
+        keys: entitlementKeys,
+        targetEntitlement: REVENUECAT_CONFIG.entitlements.premium
+      });
+
+      // Birden fazla entitlement formatını kontrol et
+      const premiumEntitlement = 
+        allActiveEntitlements[REVENUECAT_CONFIG.entitlements.premium] ||  // Ana konfigürasyon
+        allActiveEntitlements['Premium Subscription'] ||  // Genel format
+        allActiveEntitlements['premium'] ||  // Küçük harf
+        allActiveEntitlements['Premium'] ||  // Büyük başharf
+        // Eğer hiçbiri yoksa, ilk aktif entitlement'ı al (sandbox test için)
+        (entitlementKeys.length > 0 ? allActiveEntitlements[entitlementKeys[0]] : null);
 
       if (!premiumEntitlement) {
         debugLog(
-          'No active premium entitlement found. Checking all entitlements:',
-          Object.keys(this.currentCustomerInfo.entitlements.active)
+          '❌ No active premium entitlement found',
+          {
+            searchedKeys: [
+              REVENUECAT_CONFIG.entitlements.premium,
+              'Premium Subscription', 
+              'premium', 
+              'Premium'
+            ],
+            availableKeys: entitlementKeys,
+            customerInfo: {
+              userId: this.currentCustomerInfo.originalAppUserId,
+              activeSubscriptions: Object.keys(this.currentCustomerInfo.activeSubscriptions)
+            }
+          }
         );
         return { isPremium: false, isActive: false };
       }
 
-      return {
+      const premiumStatus = {
         isPremium: true,
         isActive: premiumEntitlement.isActive,
         expirationDate: premiumEntitlement.expirationDate
@@ -231,6 +283,9 @@ export class RevenueCatService {
         productId: premiumEntitlement.productIdentifier,
         willRenew: premiumEntitlement.willRenew,
       };
+      
+      debugLog('✅ Premium status determined:', premiumStatus);
+      return premiumStatus;
     } catch (error) {
       Logger.error('❌ Failed to get premium status:', error);
       return { isPremium: false, isActive: false };
@@ -240,14 +295,17 @@ export class RevenueCatService {
   /**
    * Belirli bir premium özelliğe erişimi kontrol et
    */
-  static async hasFeatureAccess(feature: PremiumFeature): Promise<boolean> {
-    const premiumStatus = await this.getPremiumStatus();
+  static async hasFeatureAccess(feature: PremiumFeature, forceRefresh = false): Promise<boolean> {
+    const premiumStatus = await this.getPremiumStatus(forceRefresh);
 
     if (!premiumStatus.isPremium || !premiumStatus.isActive) {
+      debugLog(`❌ Feature access denied for ${feature}: premium=${premiumStatus.isPremium}, active=${premiumStatus.isActive}`);
       return false;
     }
 
-    return PREMIUM_FEATURES[feature] || false;
+    const hasAccess = PREMIUM_FEATURES[feature] || false;
+    debugLog(`🔑 Feature access for ${feature}: ${hasAccess}`);
+    return hasAccess;
   }
 
   /**
@@ -280,46 +338,35 @@ export class RevenueCatService {
           throw new Error('Offerings object is null');
         }
 
-        // Current offering kontrolü
-        if (!offerings.current) {
-          debugLog('⚠️ No current offering, checking for Default offering...');
-
-          // "Default" offering'i ara (büyük harfle başlıyor)
-          const defaultOffering =
-            offerings.all['Default'] || offerings.all['default'];
-
-          if (defaultOffering) {
-            debugLog(
-              `✅ Found Default offering: ${defaultOffering.identifier}`
-            );
-            return [defaultOffering];
+        // Tüm mevcut offering'leri döndür
+        const allOfferings = Object.values(offerings.all);
+        
+        if (allOfferings.length === 0) {
+          if (retryCount < maxRetries - 1) {
+            debugLog(`⏳ No offerings found, retrying in ${retryDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            retryCount++;
+            continue;
           }
 
-          const allOfferings = Object.values(offerings.all);
-
-          if (allOfferings.length === 0) {
-            if (retryCount < maxRetries - 1) {
-              debugLog(`⏳ No offerings found, retrying in ${retryDelay}ms...`);
-              await new Promise(resolve => setTimeout(resolve, retryDelay));
-              retryCount++;
-              continue;
-            }
-
-            throw new Error(
-              'No offerings configured in RevenueCat dashboard. ' +
-                'Please check your RevenueCat dashboard configuration.'
-            );
-          }
-
-          // İlk offering'i kullan
-          debugLog(
-            `✅ Using first available offering: ${allOfferings[0].identifier}`
+          throw new Error(
+            'No offerings configured in RevenueCat dashboard. ' +
+              'Please check your RevenueCat dashboard configuration.'
           );
-          return [allOfferings[0]];
         }
 
-        debugLog(`✅ Found current offering: ${offerings.current.identifier}`);
-        return [offerings.current];
+        // WeeklyOffering'i öncelikle sırala
+        const sortedOfferings = allOfferings.sort((a, b) => {
+          if (a.identifier === 'WeeklyOffering') return -1;
+          if (b.identifier === 'WeeklyOffering') return 1;
+          if (a.identifier === 'Default') return -1;
+          if (b.identifier === 'Default') return 1;
+          return 0;
+        });
+
+        debugLog(`✅ Found ${sortedOfferings.length} offering(s):`, 
+          sortedOfferings.map(o => o.identifier));
+        return sortedOfferings;
       } catch (error: any) {
         Logger.error(`❌ Attempt ${retryCount + 1} failed:`, error.message);
 
@@ -347,19 +394,63 @@ export class RevenueCatService {
    */
   private static getMockOfferings(): PurchasesOffering[] {
     return [
+      // Weekly Offering
+      {
+        identifier: 'WeeklyOffering',
+        serverDescription: 'Weekly Premium Subscription',
+        availablePackages: [
+          {
+            identifier: '$rc_weekly',
+            packageType: 'WEEKLY',
+            product: {
+              identifier: 'com.yemekbulucu.subscription.weekly',
+              description: 'Premium Weekly Subscription',
+              title: 'Premium Haftalık',
+              price: 29.99,
+              priceString: '₺29,99',
+              currencyCode: 'TRY',
+              introPrice: null,
+              discounts: null,
+            },
+            offeringIdentifier: 'WeeklyOffering',
+          },
+        ],
+        lifetime: null,
+        annual: null,
+        sixMonth: null,
+        threeMonth: null,
+        twoMonth: null,
+        monthly: null,
+        weekly: {
+          identifier: '$rc_weekly',
+          packageType: 'WEEKLY',
+          product: {
+            identifier: 'com.yemekbulucu.subscription.weekly',
+            description: 'Premium Weekly Subscription',
+            title: 'Premium Haftalık',
+            price: 29.99,
+            priceString: '₺29,99',
+            currencyCode: 'TRY',
+            introPrice: null,
+            discounts: null,
+          },
+          offeringIdentifier: 'WeeklyOffering',
+        } as any,
+      } as any,
+      // Monthly Offering (Default)
       {
         identifier: 'Default',
-        serverDescription: 'Default Offering',
+        serverDescription: 'Monthly Premium Subscription',
         availablePackages: [
           {
             identifier: '$rc_monthly',
             packageType: 'MONTHLY',
             product: {
-              identifier: 'com.yemekbulucu.subscription.basic.monthly',
+              identifier: 'com.yemekbulucu.subscription.monthly',
               description: 'Premium Monthly Subscription',
               title: 'Premium Aylık',
-              price: 39.99,
-              priceString: '₺39,99',
+              price: 79.99,
+              priceString: '₺79,99',
               currencyCode: 'TRY',
               introPrice: null,
               discounts: null,
@@ -372,7 +463,21 @@ export class RevenueCatService {
         sixMonth: null,
         threeMonth: null,
         twoMonth: null,
-        monthly: null,
+        monthly: {
+          identifier: '$rc_monthly',
+          packageType: 'MONTHLY',
+          product: {
+            identifier: 'com.yemekbulucu.subscription.monthly',
+            description: 'Premium Monthly Subscription',
+            title: 'Premium Aylık',
+            price: 79.99,
+            priceString: '₺79,99',
+            currencyCode: 'TRY',
+            introPrice: null,
+            discounts: null,
+          },
+          offeringIdentifier: 'Default',
+        } as any,
         weekly: null,
       } as any,
     ];
