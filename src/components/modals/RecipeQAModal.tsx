@@ -42,33 +42,23 @@ const QUICK_QUESTIONS = [
   },
   {
     id: 3,
-    text: 'Pişirme süresini kısaltabilir miyim?',
-    icon: 'time',
-  },
-  {
-    id: 4,
     text: 'Bu tarif hangi diyete uygun?',
     icon: 'fitness',
   },
   {
-    id: 5,
+    id: 4,
     text: 'Kalorisi ne kadar?',
     icon: 'speedometer',
   },
   {
-    id: 6,
+    id: 5,
     text: 'Nasıl daha lezzetli yaparım?',
     icon: 'star',
   },
   {
-    id: 7,
+    id: 6,
     text: 'Hangi yan yemeklerle servis edilir?',
     icon: 'restaurant',
-  },
-  {
-    id: 8,
-    text: 'Bu yemeği saklama koşulları nedir?',
-    icon: 'archive',
   },
 ];
 

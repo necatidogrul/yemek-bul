@@ -209,8 +209,8 @@ export const PremiumProvider: React.FC<PremiumProviderProps> = ({
     // RevenueCat'in cache'ini temizlemek için kısa bir bekleme
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Premium durumunu güncelle
-    await refreshPremiumStatus();
+    // Premium durumunu force refresh et
+    await refreshPremiumStatus(true);
 
     // Paywall'ı kapat
     hidePaywall();

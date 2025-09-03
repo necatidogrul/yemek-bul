@@ -35,7 +35,12 @@ import { FavoriteButton } from '../components/ui/FavoriteButton';
 import { useThemedStyles } from '../hooks/useThemedStyles';
 import { usePremium } from '../contexts/PremiumContext';
 import { useToast } from '../contexts/ToastContext';
-import { spacing, borderRadius, shadows } from '../theme/design-tokens';
+import {
+  spacing,
+  borderRadius,
+  shadows,
+  typography,
+} from '../theme/design-tokens';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -64,7 +69,12 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const slideAnim = useState(() => new Animated.Value(50))[0];
 
   const { colors } = useThemedStyles();
-  const { isPremium, showPaywall, refreshPremiumStatus, isLoading: premiumLoading } = usePremium();
+  const {
+    isPremium,
+    showPaywall,
+    refreshPremiumStatus,
+    isLoading: premiumLoading,
+  } = usePremium();
   const { showSuccess, showError } = useToast();
 
   const debugLog = (message: string, data?: any) => {
@@ -106,7 +116,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   // App focus'ta premium durumunu kontrol et
   useEffect(() => {
     const unsubscribe = navigation.addListener?.('focus', async () => {
-      if (!isLoading) {
+      if (!isLoading && !premiumLoading) {
         debugLog('HistoryScreen focused, refreshing premium status');
         // Premium durumunu force refresh yap
         await refreshPremiumStatus?.(true);
@@ -114,8 +124,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     });
 
     return unsubscribe;
-  }, [navigation, isLoading]);
-
+  }, [navigation, isLoading, premiumLoading]);
 
   useEffect(() => {
     // Start entrance animation
@@ -252,226 +261,92 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   };
 
   const renderHistoryItem = ({ item }: { item: AIRequestHistory }) => (
-    <Animated.View
-      style={{
-        opacity: fadeAnim,
-        transform: [{ translateY: slideAnim }],
-      }}
+    <TouchableOpacity
+      style={styles.historyCard}
+      onPress={() => handleViewResults(item)}
+      activeOpacity={0.9}
     >
-      <Card variant='elevated' size='lg' style={styles.historyItem}>
-        <View style={styles.historyItemHeader}>
-          <View style={styles.statusBadge}>
-            <View
-              style={[
-                styles.statusIndicator,
-                {
-                  backgroundColor: item.success
-                    ? colors.success[500]
-                    : colors.error[500],
-                },
-              ]}
-            />
-            <Text variant='labelSmall' weight='medium' color='secondary'>
-              {formatDate(item.timestamp)}
-            </Text>
-          </View>
+      <View style={styles.historyCardHeader}>
+        <View style={styles.statusBadge}>
+          <View
+            style={[
+              styles.statusIndicator,
+              {
+                backgroundColor: item.success
+                  ? colors.success[500]
+                  : colors.error[500],
+              },
+            ]}
+          />
+          <Text variant='labelSmall' color='secondary'>
+            {formatDate(item.timestamp)}
+          </Text>
+        </View>
 
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDeleteItem(item.id)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={e => {
+            e.stopPropagation();
+            handleDeleteItem(item.id);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name='trash-outline' size={16} color={colors.error[400]} />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.historyContent}>
+        <Text
+          variant='bodyMedium'
+          weight='600'
+          numberOfLines={1}
+          style={{ color: colors.text.primary }}
+        >
+          {item.ingredients.join(', ')}
+        </Text>
+
+        <View style={styles.historyStats}>
+          <View
+            style={[
+              styles.resultBadge,
+              {
+                backgroundColor: item.success
+                  ? colors.success[50]
+                  : colors.error[50],
+              },
+            ]}
           >
             <Ionicons
-              name='trash-outline'
-              size={16}
-              color={colors.error[400]}
+              name={item.success ? 'checkmark-circle' : 'close-circle'}
+              size={12}
+              color={item.success ? colors.success[600] : colors.error[600]}
             />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.historyContent}>
-          <View style={styles.resultSummary}>
-            <View
-              style={[
-                styles.resultBadge,
-                {
-                  backgroundColor: item.success
-                    ? colors.success[50]
-                    : colors.error[50],
-                  borderColor: item.success
-                    ? colors.success[200]
-                    : colors.error[200],
-                },
-              ]}
+            <Text
+              variant='labelSmall'
+              style={{
+                color: item.success ? colors.success[700] : colors.error[700],
+              }}
             >
-              <Ionicons
-                name={item.success ? 'checkmark-circle' : 'close-circle'}
-                size={16}
-                color={item.success ? colors.success[600] : colors.error[600]}
-              />
-              <Text
-                variant='bodySmall'
-                weight='semibold'
-                style={{
-                  color: item.success ? colors.success[700] : colors.error[700],
-                }}
-              >
-                {item.results.count} tarif{' '}
-                {item.success ? 'bulundu' : 'bulunamadı'}
-              </Text>
-            </View>
+              {item.results.count} tarif
+            </Text>
           </View>
-
-          <View style={styles.ingredientsList}>
-            {item.ingredients.slice(0, 4).map((ingredient, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.ingredientChip,
-                  {
-                    backgroundColor: colors.primary[50],
-                    borderColor: colors.primary[100],
-                  },
-                ]}
-              >
-                <Text
-                  variant='labelSmall'
-                  weight='medium'
-                  style={{ color: colors.primary[700] }}
-                >
-                  {ingredient}
-                </Text>
-              </View>
-            ))}
-            {item.ingredients.length > 4 && (
-              <View
-                style={[
-                  styles.ingredientChip,
-                  styles.moreChip,
-                  { backgroundColor: colors.neutral[100] },
-                ]}
-              >
-                <Text
-                  variant='labelSmall'
-                  weight='medium'
-                  style={{ color: colors.neutral[600] }}
-                >
-                  +{item.ingredients.length - 4}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {item.success && item.results.recipes.length > 0 && (
-            <View style={styles.recipesPreview}>
-              <View style={styles.recipePreviewHeader}>
-                <Ionicons
-                  name='restaurant'
-                  size={14}
-                  color={colors.primary[500]}
-                />
-                <Text variant='bodySmall' weight='medium' color='primary'>
-                  Bulunan tarifler
-                </Text>
-              </View>
-              <View style={styles.recipesList}>
-                {item.results.recipes.slice(0, 2).map((recipe, index) => (
-                  <View key={recipe.id} style={styles.recipeListItem}>
-                    <TouchableOpacity
-                      style={styles.recipeNameButton}
-                      onPress={() =>
-                        navigation.navigate('RecipeDetail', {
-                          recipeId: recipe.id,
-                          recipeName: recipe.name,
-                          recipe: convertToFullRecipe(recipe),
-                        })
-                      }
-                    >
-                      <Text variant='labelSmall' color='secondary'>
-                        • {recipe.name}
-                      </Text>
-                    </TouchableOpacity>
-
-                    {isPremium ? (
-                      <FavoriteButton
-                        recipe={convertToFullRecipe(recipe)}
-                        size='small'
-                        style={styles.historyFavoriteButton}
-                      />
-                    ) : (
-                      <TouchableOpacity
-                        onPress={() => handleAddToFavorites(recipe)}
-                        style={styles.premiumFavoriteButton}
-                      >
-                        <Ionicons
-                          name='heart-outline'
-                          size={12}
-                          color={colors.neutral[400]}
-                        />
-                        <Ionicons
-                          name='star'
-                          size={8}
-                          color={colors.warning[500]}
-                          style={styles.premiumIcon}
-                        />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                ))}
-                {item.results.recipes.length > 2 && (
-                  <Text variant='labelSmall' color='primary' weight='medium'>
-                    +{item.results.recipes.length - 2} tarif daha
-                  </Text>
-                )}
-              </View>
-            </View>
-          )}
         </View>
+      </View>
 
-        <View style={styles.historyItemFooter}>
-          <Button
-            variant={item.success ? 'primary' : 'outline'}
-            size='sm'
-            onPress={() => handleViewResults(item)}
-            leftIcon={
-              <Ionicons
-                name={item.success ? 'eye' : 'refresh'}
-                size={14}
-                color={item.success ? 'white' : colors.primary[600]}
-              />
-            }
-            style={styles.actionButton}
-          >
-            {item.success ? 'Sonuçları Gör' : 'Tekrar Dene'}
-          </Button>
-
-          {item.preferences && (
-            <View style={styles.preferencesInfo}>
-              {item.preferences.difficulty && (
-                <View style={styles.preferenceTag}>
-                  <Ionicons
-                    name='speedometer'
-                    size={10}
-                    color={colors.neutral[400]}
-                  />
-                  <Text variant='labelSmall' color='secondary'>
-                    {item.preferences.difficulty}
-                  </Text>
-                </View>
-              )}
-              {item.preferences.cookingTime && (
-                <View style={styles.preferenceTag}>
-                  <Ionicons name='time' size={10} color={colors.neutral[400]} />
-                  <Text variant='labelSmall' color='secondary'>
-                    {item.preferences.cookingTime}dk
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-        </View>
-      </Card>
-    </Animated.View>
+      <TouchableOpacity
+        style={styles.viewButton}
+        onPress={e => {
+          e.stopPropagation();
+          handleViewResults(item);
+        }}
+      >
+        <Ionicons
+          name={item.success ? 'eye' : 'refresh'}
+          size={18}
+          color={colors.primary[600]}
+        />
+      </TouchableOpacity>
+    </TouchableOpacity>
   );
 
   const renderStatsView = () => {
@@ -1034,48 +909,54 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     </Animated.View>
   );
 
-  // Premium olmayan kullanıcılar için paywall
+  // Premium olmayan kullanıcılar için paywall - Clean Style
   if (!hasHistoryAccess) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: colors.background.primary },
         ]}
       >
-        <StatusBar
-          barStyle='light-content'
-          backgroundColor={colors.primary[600]}
-        />
+        <StatusBar barStyle='dark-content' />
 
-        {/* Header */}
-        <LinearGradient
-          colors={[colors.primary[600], colors.primary[700]]}
-          style={styles.premiumHeader}
+        {/* Header - Exact Copy from SettingsScreen */}
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.surface.primary,
+              borderBottomColor: colors.neutral[100],
+            },
+          ]}
         >
-          <SafeAreaView>
-            <View style={styles.premiumHeaderContainer}>
-              <TouchableOpacity
-                style={styles.premiumBackButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Ionicons name='chevron-back' size={24} color='white' />
-              </TouchableOpacity>
-
-              <View style={styles.premiumHeaderCenter}>
-                <Text
-                  variant='headlineSmall'
-                  weight='bold'
-                  style={{ color: 'white' }}
-                >
-                  Arama Geçmişi
-                </Text>
-              </View>
-
-              <View style={styles.premiumHeaderActions} />
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.backButtonContainer,
+                { backgroundColor: colors.neutral[100] },
+              ]}
+            >
+              <Ionicons
+                name='arrow-back'
+                size={22}
+                color={colors.text.primary}
+              />
             </View>
-          </SafeAreaView>
-        </LinearGradient>
+          </TouchableOpacity>
+          <Text
+            variant='headlineSmall'
+            weight='bold'
+            style={{ color: colors.text.primary }}
+          >
+            Arama Geçmişi
+          </Text>
+          <View style={styles.headerRight} />
+        </View>
 
         {/* Scrollable Premium Required Content */}
         <ScrollView
@@ -1153,276 +1034,209 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             </LinearGradient>
           </View>
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (isLoading) {
     return (
-      <View
+      <SafeAreaView
         style={[
           styles.container,
           { backgroundColor: colors.background.primary },
         ]}
       >
-        <StatusBar
-          barStyle='light-content'
-          backgroundColor={colors.primary[600]}
-        />
+        <StatusBar barStyle='dark-content' />
 
-        {/* Header for loading state */}
-        <LinearGradient
-          colors={[
-            colors.primary[500],
-            colors.primary[600],
-            colors.primary[700],
+        {/* Header - Exact Copy from SettingsScreen */}
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.surface.primary,
+              borderBottomColor: colors.neutral[100],
+            },
           ]}
-          style={styles.heroHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
         >
-          <SafeAreaView>
-            <View style={styles.headerContainer}>
-              <View style={styles.headerLeft}>
-                <View style={styles.heroIcon}>
-                  <Ionicons name='time' size={24} color='white' />
-                </View>
-                <View>
-                  <Text
-                    variant='headlineMedium'
-                    weight='bold'
-                    style={{ color: 'white' }}
-                  >
-                    Arama Geçmişi
-                  </Text>
-                  <Text
-                    variant='bodySmall'
-                    style={{ color: 'rgba(255,255,255,0.8)' }}
-                  >
-                    Yükleniyor...
-                  </Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={styles.backButton}
-                onPress={() => navigation.goBack()}
-                activeOpacity={0.8}
-              >
-                <Ionicons name='arrow-back' size={24} color='white' />
-              </TouchableOpacity>
-            </View>
-          </SafeAreaView>
-        </LinearGradient>
-
-        <View style={styles.loadingContainer}>
-          <LinearGradient
-            colors={[colors.primary[100], colors.primary[200]]}
-            style={styles.loadingIcon}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
           >
-            <Ionicons name='time' size={32} color={colors.primary[500]} />
-          </LinearGradient>
-          <ActivityIndicator size='large' color={colors.primary[500]} />
+            <View
+              style={[
+                styles.backButtonContainer,
+                { backgroundColor: colors.neutral[100] },
+              ]}
+            >
+              <Ionicons
+                name='arrow-back'
+                size={22}
+                color={colors.text.primary}
+              />
+            </View>
+          </TouchableOpacity>
           <Text
             variant='headlineSmall'
-            weight='semibold'
-            color='primary'
-            align='center'
+            weight='bold'
+            style={{ color: colors.text.primary }}
           >
-            Geçmiş Yükleniyor...
+            Arama Geçmişi
           </Text>
+          <View style={styles.headerRight} />
+        </View>
+
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size='large' color={colors.primary[500]} />
           <Text
             variant='bodyMedium'
-            color='secondary'
-            align='center'
-            style={styles.loadingSubtext}
+            style={{ marginTop: spacing[3], color: colors.neutral[500] }}
           >
-            Arama geçmişiniz hazırlanıyor
+            Geçmiş yükleniyor...
           </Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
-      <StatusBar
-        barStyle='light-content'
-        backgroundColor={colors.primary[600]}
-      />
+      <StatusBar barStyle='dark-content' />
 
-      {/* Compact Modern Header */}
-      <LinearGradient
-        colors={[colors.primary[600], colors.primary[700]]}
-        style={styles.compactHeader}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      {/* Header - Exact Copy from SettingsScreen */}
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.surface.primary,
+            borderBottomColor: colors.neutral[100],
+          },
+        ]}
       >
-        <SafeAreaView>
-          <View style={styles.headerContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <View
+            style={[
+              styles.backButtonContainer,
+              { backgroundColor: colors.neutral[100] },
+            ]}
+          >
+            <Ionicons name='arrow-back' size={22} color={colors.text.primary} />
+          </View>
+        </TouchableOpacity>
+        <Text
+          variant='headlineSmall'
+          weight='bold'
+          style={{ color: colors.text.primary }}
+        >
+          Arama Geçmişi
+        </Text>
+        <View style={styles.headerRight}>
+          {/* View Mode Toggle */}
+          <View style={styles.viewToggle}>
             <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => navigation.goBack()}
-              activeOpacity={0.8}
+              style={[
+                styles.toggleButton,
+                viewMode === 'list' && styles.toggleActive,
+              ]}
+              onPress={() => {
+                setViewMode('list');
+              }}
             >
-              <Ionicons name='chevron-back' size={24} color='white' />
+              <Ionicons
+                name='list'
+                size={18}
+                color={
+                  viewMode === 'list'
+                    ? colors.primary[600]
+                    : colors.neutral[400]
+                }
+              />
             </TouchableOpacity>
-            
-            {/* Premium status refresh butonu - debug için */}
-            {__DEV__ && (
-              <TouchableOpacity
-                style={[styles.backButton, { marginLeft: 8 }]}
-                onPress={async () => {
-                  debugLog('Manual refresh triggered');
-                  await refreshPremiumStatus?.(true);
-                }}
-                activeOpacity={0.8}
-              >
-                <Ionicons name='refresh' size={18} color='white' />
-              </TouchableOpacity>
-            )}
-
-            <View style={styles.headerCenter}>
-              <View style={styles.headerTitleContainer}>
-                <View style={styles.headerIcon}>
-                  <Ionicons name='time' size={16} color='white' />
-                </View>
-                <Text
-                  variant='headlineSmall'
-                  weight='bold'
-                  style={{ color: 'white' }}
-                >
-                  Arama Geçmişi
-                </Text>
-              </View>
-              {stats && (
-                <Text
-                  variant='labelSmall'
-                  style={{ color: 'rgba(255,255,255,0.8)' }}
-                >
-                  {stats.totalRequests} arama • {stats.successfulRequests}{' '}
-                  başarılı
-                </Text>
-              )}
-            </View>
-
-            <View style={styles.headerActions}>
-              {history.length > 0 && (
-                <TouchableOpacity
-                  style={styles.headerActionButton}
-                  onPress={handleClearHistory}
-                  activeOpacity={0.8}
-                >
-                  <Ionicons
-                    name='refresh'
-                    size={18}
-                    color='rgba(255,255,255,0.8)'
-                  />
-                </TouchableOpacity>
-              )}
-            </View>
+            <TouchableOpacity
+              style={[
+                styles.toggleButton,
+                viewMode === 'stats' && styles.toggleActive,
+              ]}
+              onPress={() => {
+                setViewMode('stats');
+              }}
+            >
+              <Ionicons
+                name='stats-chart'
+                size={16}
+                color={
+                  viewMode === 'stats'
+                    ? colors.primary[600]
+                    : colors.neutral[400]
+                }
+              />
+            </TouchableOpacity>
           </View>
-        </SafeAreaView>
-      </LinearGradient>
+        </View>
+      </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        bounces={true}
-        nestedScrollEnabled={true}
-      >
-        {/* View Mode Toggle */}
-        <Card variant='elevated' size='lg' style={styles.controlsCard}>
-          <View style={styles.viewModeContainer}>
-            <View style={styles.viewModeToggle}>
-              <TouchableOpacity
-                style={[
-                  styles.viewModeButton,
-                  viewMode === 'list' && styles.viewModeButtonActive,
-                  {
-                    backgroundColor:
-                      viewMode === 'list'
-                        ? colors.primary[500]
-                        : colors.neutral[100],
-                  },
-                ]}
-                onPress={() => setViewMode('list')}
-              >
-                <Ionicons
-                  name='list'
-                  size={16}
-                  color={viewMode === 'list' ? 'white' : colors.neutral[600]}
-                />
-                <Text
-                  variant='bodySmall'
-                  weight='medium'
-                  style={{
-                    color: viewMode === 'list' ? 'white' : colors.neutral[600],
-                    marginLeft: spacing[1],
-                  }}
-                >
-                  Liste
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.viewModeButton,
-                  viewMode === 'stats' && styles.viewModeButtonActive,
-                  {
-                    backgroundColor:
-                      viewMode === 'stats'
-                        ? colors.primary[500]
-                        : colors.neutral[100],
-                  },
-                ]}
-                onPress={() => setViewMode('stats')}
-              >
-                <Ionicons
-                  name='stats-chart'
-                  size={16}
-                  color={viewMode === 'stats' ? 'white' : colors.neutral[600]}
-                />
-                <Text
-                  variant='bodySmall'
-                  weight='medium'
-                  style={{
-                    color: viewMode === 'stats' ? 'white' : colors.neutral[600],
-                    marginLeft: spacing[1],
-                  }}
-                >
-                  İstatistik
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            {history.length > 0 && (
-              <TouchableOpacity
-                style={[
-                  styles.clearButton,
-                  { backgroundColor: colors.error[100] },
-                ]}
-                onPress={handleClearHistory}
-              >
-                <Ionicons name='trash' size={16} color={colors.error[500]} />
-                <Text
-                  variant='labelSmall'
-                  weight='medium'
-                  style={{ color: colors.error[500] }}
-                >
-                  Temizle
-                </Text>
-              </TouchableOpacity>
-            )}
+      {/* Search and Clear Actions */}
+      <View style={styles.actionBar}>
+        <View style={styles.searchContainer}>
+          <View
+            style={[styles.searchBar, { backgroundColor: colors.neutral[50] }]}
+          >
+            <Ionicons name='search' size={18} color={colors.neutral[400]} />
+            <Text
+              style={{
+                ...styles.searchInput,
+                color: colors.neutral[400],
+              }}
+            >
+              Geçmişte ara...
+            </Text>
           </View>
-        </Card>
 
-        {viewMode === 'list' ? (
-          <>
-            {renderFilterBar()}
+          {history.length > 0 && (
+            <TouchableOpacity
+              style={[
+                styles.clearButton,
+                { backgroundColor: colors.error[100] },
+              ]}
+              onPress={handleClearHistory}
+            >
+              <Ionicons name='trash' size={16} color={colors.error[500]} />
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
 
-            {history.length === 0 ? (
+      {/* Content */}
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size='large' color={colors.primary[500]} />
+          <Text
+            variant='bodyMedium'
+            style={{ marginTop: spacing[3], color: colors.neutral[500] }}
+          >
+            Geçmiş yükleniyor...
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={viewMode === 'list' ? history : []}
+          renderItem={({ item }) => renderHistoryItem({ item })}
+          contentContainerStyle={[
+            styles.listContainer,
+            history.length === 0 && {
+              flex: 1,
+              justifyContent: 'center',
+            },
+          ]}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={() =>
+            viewMode === 'list' ? (
               <EmptyState
                 type='no-history'
                 actions={[
@@ -1433,21 +1247,15 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                   },
                 ]}
               />
-            ) : (
-              <View style={styles.historyList}>
-                {history.map(item => (
-                  <View key={item.id} style={{ marginBottom: spacing[4] }}>
-                    {renderHistoryItem({ item })}
-                  </View>
-                ))}
-              </View>
-            )}
-          </>
-        ) : (
-          <>{renderStatsView()}</>
-        )}
-      </ScrollView>
-    </View>
+            ) : null
+          }
+          ListHeaderComponent={
+            viewMode === 'stats' ? () => renderStatsView() : null
+          }
+          ItemSeparatorComponent={() => <View style={{ height: spacing[2] }} />}
+        />
+      )}
+    </SafeAreaView>
   );
 };
 
@@ -1456,83 +1264,76 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Compact Header
-  compactHeader: {
-    paddingBottom: spacing[3],
-    ...shadows.sm,
-  },
-  headerContainer: {
+  // Header - Exact Copy from SettingsScreen
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing[4],
-    paddingTop: spacing[2],
-    minHeight: 56,
+    paddingVertical: spacing[3],
+    borderBottomWidth: 1,
+    ...shadows.xs,
   },
   backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    padding: spacing[2],
+  },
+  backButtonContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerCenter: {
+  headerTitle: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: '700',
     flex: 1,
-    alignItems: 'center',
-    gap: spacing[0.5],
+    textAlign: 'center',
+    marginHorizontal: spacing[4],
   },
-  headerTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[2],
-  },
-  headerIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerActions: {
-    width: 36,
-    alignItems: 'flex-end',
-  },
-  headerActionButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  headerRight: {
+    width: 80,
   },
 
-  // Controls
-  controlsCard: {
-    marginHorizontal: spacing[4],
-    marginBottom: spacing[3],
+  // Action Bar for Search
+  actionBar: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
   },
-  viewModeContainer: {
+  viewToggle: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    borderRadius: borderRadius.md,
+    padding: 2,
   },
-  viewModeToggle: {
+  toggleButton: {
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.md - 2,
+  },
+  toggleActive: {
+    backgroundColor: 'white',
+    ...shadows.sm,
+  },
+
+  // Search
+  searchContainer: {
     flexDirection: 'row',
-    borderRadius: borderRadius.xl,
-    padding: spacing[1],
-    backgroundColor: 'rgba(0,0,0,0.04)',
+    gap: spacing[2],
   },
-  viewModeButton: {
+  searchBar: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
-    borderRadius: borderRadius.lg,
-    gap: spacing[1],
+    borderRadius: borderRadius.md,
+    gap: spacing[2],
   },
-  viewModeButtonActive: {
-    ...shadows.sm,
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
   },
   clearButton: {
     flexDirection: 'row',
@@ -1574,27 +1375,48 @@ const styles = StyleSheet.create({
     ...shadows.xs,
   },
 
-  // History Items
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 100,
+  // Content
+  listContainer: {
+    padding: spacing[3],
   },
-  historyList: {
-    paddingHorizontal: spacing[4],
-  },
-  historyItem: {
-    ...shadows.md,
-  },
-  historyItemHeader: {
+
+  // History Card
+  historyCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    backgroundColor: 'white',
+    borderRadius: borderRadius.lg,
+    padding: spacing[3],
+    ...shadows.sm,
     alignItems: 'center',
-    marginBottom: spacing[3],
+  },
+  historyCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'absolute',
+    top: spacing[2],
+    left: spacing[3],
+    right: spacing[3],
+    zIndex: 1,
+  },
+  historyContent: {
+    flex: 1,
+    paddingTop: spacing[5],
+    paddingRight: spacing[3],
+  },
+  historyStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing[1],
+  },
+  viewButton: {
+    justifyContent: 'center',
+    paddingHorizontal: spacing[2],
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[2],
+    gap: spacing[1],
   },
   statusIndicator: {
     width: 6,
@@ -1602,78 +1424,17 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   deleteButton: {
-    padding: spacing[2],
-    borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(239, 68, 68, 0.08)',
-  },
-  historyContent: {
-    gap: spacing[3],
-  },
-  resultSummary: {
-    marginBottom: spacing[2],
+    padding: spacing[1],
+    borderRadius: borderRadius.sm,
+    backgroundColor: 'rgba(239, 68, 68, 0.1)',
   },
   resultBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: borderRadius.full,
-    gap: spacing[2],
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-  },
-  ingredientsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[1.5],
-  },
-  ingredientChip: {
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[1.5],
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-  },
-  moreChip: {
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.1)',
-  },
-  recipesPreview: {
-    padding: spacing[3],
-    backgroundColor: 'rgba(0,0,0,0.02)',
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.04)',
-  },
-  recipePreviewHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[2],
-    marginBottom: spacing[2],
-  },
-  recipesList: {
-    gap: spacing[1],
-  },
-  historyItemFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing[2],
-  },
-  actionButton: {
-    paddingHorizontal: spacing[4],
-  },
-  preferencesInfo: {
-    flexDirection: 'row',
-    gap: spacing[2],
-  },
-  preferenceTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[1],
-    backgroundColor: 'rgba(0,0,0,0.04)',
     paddingHorizontal: spacing[2],
     paddingVertical: spacing[1],
     borderRadius: borderRadius.sm,
+    gap: spacing[1],
   },
 
   // Stats View
@@ -1857,13 +1618,11 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(0,0,0,0.06)',
   },
 
-  // Loading & Empty States
+  // Loading & Empty States - Clean Style
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: spacing[6],
-    gap: spacing[4],
+    justifyContent: 'center',
   },
   loadingIcon: {
     width: 80,

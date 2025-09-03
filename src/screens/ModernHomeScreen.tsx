@@ -749,7 +749,10 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
             <Text
               variant='bodyLarge'
               weight='bold'
-              style={[styles.appTitle, { color: colors.text.primary }]}
+              style={{
+                ...styles.appTitle,
+                color: colors.text.primary
+              }}
             >
               {t('app.name')}
             </Text>
@@ -793,14 +796,20 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
               <Text
                 variant='labelSmall'
                 weight='600'
-                style={[styles.creditLabel, { color: colors.text.secondary }]}
+                style={{
+                  ...styles.creditLabel,
+                  color: colors.text.secondary
+                }}
               >
                 {isPremium ? 'Premium' : 'Kredi'}
               </Text>
               <Text
                 variant='labelSmall'
                 weight='700'
-                style={[styles.creditValue, { color: isPremium ? colors.success[600] : colors.primary[600] }]}
+                style={{
+                  ...styles.creditValue,
+                  color: isPremium ? colors.success[600] : colors.primary[600]
+                }}
               >
                 {isPremium ? 
                   `${remainingRequests.daily}/${remainingRequests.monthly || 0}` : 
@@ -829,11 +838,12 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
             {/* Welcome Section */}
             <View style={styles.welcomeSection}>
               <Text
-                variant='headlineMedium'
+                variant='headlineSmall'
                 weight='bold'
                 style={{
                   color: colors.text.primary,
-                  fontSize: screenWidth < 380 ? 24 : 28,
+                  fontSize: screenWidth < 380 ? 20 : 22,
+                  lineHeight: screenWidth < 380 ? 24 : 26,
                 }}
               >
                 {t('home.welcomeTitle')}
@@ -862,28 +872,36 @@ export const ModernHomeScreen: React.FC<ModernHomeScreenProps> = ({
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                   >
-                    <Text style={styles.suggestionIcon}>{suggestion.icon}</Text>
-                    <Text
-                      variant='bodyMedium'
-                      weight='600'
-                      style={{
-                        color: 'white',
-                        textAlign: 'center',
-                        fontSize: screenWidth < 380 ? 14 : 15,
-                      }}
-                    >
-                      {suggestion.name}
-                    </Text>
-                    <Text
-                      variant='labelSmall'
-                      style={{
-                        color: 'rgba(255,255,255,0.85)',
-                        textAlign: 'center',
-                        fontSize: screenWidth < 380 ? 11 : 12,
-                      }}
-                    >
-                      {suggestion.subtitle}
-                    </Text>
+                    <View style={styles.suggestionTop}>
+                      <Text style={styles.suggestionIcon}>{suggestion.icon}</Text>
+                    </View>
+                    <View style={styles.suggestionContent}>
+                      <Text
+                        variant='bodyMedium'
+                        weight='600'
+                        style={{
+                          color: 'white',
+                          textAlign: 'center',
+                          fontSize: screenWidth < 380 ? 14 : 15,
+                          marginBottom: spacing[1],
+                          lineHeight: 18,
+                        }}
+                      >
+                        {suggestion.name}
+                      </Text>
+                      <Text
+                        variant='labelSmall'
+                        style={{
+                          color: 'rgba(255,255,255,0.9)',
+                          textAlign: 'center',
+                          fontSize: screenWidth < 380 ? 11 : 12,
+                          lineHeight: 14,
+                          paddingHorizontal: spacing[1],
+                        }}
+                      >
+                        {suggestion.subtitle}
+                      </Text>
+                    </View>
                     <View style={styles.aiIndicator}>
                       <Ionicons name='sparkles' size={12} color='white' />
                       <Text
@@ -975,10 +993,15 @@ const styles = StyleSheet.create({
   // Compact Header
   compactHeader: {
     paddingHorizontal: spacing[4],
-    paddingVertical: spacing[3],
+    paddingVertical: spacing[4],
     paddingTop: spacing[6],
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
+    borderBottomColor: 'rgba(0,0,0,0.06)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   compactHeaderContent: {
     flexDirection: 'row',
@@ -1015,16 +1038,16 @@ const styles = StyleSheet.create({
   creditCounter: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing[2],
-    paddingVertical: spacing[2],
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
+    paddingHorizontal: spacing[3],
+    paddingVertical: spacing[2.5],
+    borderRadius: borderRadius.xl,
+    borderWidth: 1.5,
     gap: spacing[2],
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
   },
   creditIconContainer: {
     width: 24,
@@ -1052,8 +1075,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[3],
   },
   welcomeSection: {
-    paddingTop: screenHeight < 700 ? spacing[3] : spacing[4],
-    paddingBottom: screenHeight < 700 ? spacing[3] : spacing[4],
+    paddingTop: screenHeight < 700 ? spacing[4] : spacing[5],
+    paddingBottom: screenHeight < 700 ? spacing[4] : spacing[5],
+    paddingHorizontal: spacing[2],
     alignItems: 'center',
   },
 
@@ -1061,62 +1085,92 @@ const styles = StyleSheet.create({
   smartSuggestionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing[2],
-    marginBottom: screenHeight < 700 ? spacing[3] : spacing[4],
+    justifyContent: 'space-between',
+    gap: spacing[3],
+    marginBottom: screenHeight < 700 ? spacing[4] : spacing[5],
   },
   suggestionCard: {
-    width: (screenWidth - spacing[3] * 2 - spacing[2]) / 2,
-    height: screenHeight < 700 ? 90 : 100,
-    borderRadius: borderRadius.lg,
+    width: (screenWidth - spacing[3] * 2 - spacing[3]) / 2,
+    height: screenHeight < 700 ? 140 : 150,
+    borderRadius: borderRadius.xl,
     overflow: 'hidden',
     ...shadows.md,
   },
   suggestionGradient: {
     flex: 1,
-    padding: spacing[3],
-    justifyContent: 'center',
+    paddingHorizontal: spacing[2],
+    paddingVertical: spacing[3],
+    paddingTop: spacing[6],
+    paddingBottom: spacing[4],
+    justifyContent: 'space-between',
     alignItems: 'center',
     position: 'relative',
   },
+  suggestionTop: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 0.5,
+    minHeight: 50,
+  },
   suggestionIcon: {
-    fontSize: 28,
-    marginBottom: spacing[1],
+    fontSize: 36,
+    textAlign: 'center',
+    lineHeight: 40,
+  },
+  suggestionContent: {
+    flex: 0.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: spacing[4],
   },
   aiIndicator: {
     position: 'absolute',
-    top: 6,
-    right: 6,
+    bottom: spacing[2],
+    right: spacing[2],
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    paddingHorizontal: spacing[1.5],
+    paddingVertical: spacing[1],
     borderRadius: borderRadius.full,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
 
   // Custom Create Button
   customCreateButton: {
-    marginBottom: spacing[4],
+    marginBottom: spacing[5],
+    marginHorizontal: spacing[1],
     borderRadius: borderRadius.xl,
     overflow: 'hidden',
     ...shadows.lg,
   },
   customCreateGradient: {
-    padding: spacing[4],
+    padding: spacing[5],
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[3],
+    gap: spacing[4],
+    minHeight: 80,
   },
   customCreateLeft: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.lg,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 52,
+    height: 52,
+    borderRadius: borderRadius.xl,
+    backgroundColor: 'rgba(255,255,255,0.25)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   customCreateContent: {
     flex: 1,
+    paddingRight: spacing[2],
   },
   customCardBadge: {
     position: 'absolute',

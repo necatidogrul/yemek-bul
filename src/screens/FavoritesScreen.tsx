@@ -28,8 +28,8 @@ import { useThemedStyles } from '../hooks/useThemedStyles';
 import { useToast } from '../contexts/ToastContext';
 import { useHaptics } from '../hooks/useHaptics';
 import { usePremium } from '../contexts/PremiumContext';
-import { usePremiumGuard } from '../hooks/usePremiumGuard';
-import { spacing, borderRadius, shadows } from '../theme/design-tokens';
+// import { usePremiumGuard } from '../hooks/usePremiumGuard'; // Artık kullanmıyoruz
+import { spacing, borderRadius, shadows, typography } from '../theme/design-tokens';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -61,11 +61,8 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     }
   };
 
-  // Premium guard for favorites access
-  const favoritesGuard = usePremiumGuard({
-    feature: 'unlimitedRecipes',
-    title: 'Favoriler özelliği premium kullanıcılar içindir',
-  });
+  // Premium kontrolü basit yöntemle - history gibi
+  const hasFavoritesAccess = isPremium;
 
   // Animation for filter panel
   const filterAnimation = useState(new Animated.Value(0))[0];
@@ -118,7 +115,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   }, [favorites, searchQuery, sortBy, filterBy]);
 
   async function loadFavorites() {
-    if (!favoritesGuard.hasAccess) {
+    if (!hasFavoritesAccess) {
       setIsLoading(false);
       return;
     }
@@ -137,8 +134,8 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   }
 
   useEffect(() => {
-    if (!favoritesGuard.hasAccess) {
-      favoritesGuard.requirePremium();
+    if (!hasFavoritesAccess) {
+      // Premium gerektiren özellik için paywall göster
       return;
     }
 
@@ -148,7 +145,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 
     loadFavorites();
     return unsubscribe;
-  }, [navigation, favoritesGuard.hasAccess]);
+  }, [navigation, hasFavoritesAccess]);
 
   // Premium durumu değiştiğinde favorileri yeniden yükle
   useEffect(() => {
@@ -161,7 +158,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   // App focus'ta premium durumunu kontrol et
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', async () => {
-      if (!isLoading) {
+      if (!isLoading && !premiumLoading) {
         debugLog('FavoritesScreen focused, refreshing premium status');
         // Premium durumunu force refresh yap
         await refreshPremiumStatus?.(true);
@@ -169,7 +166,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     });
 
     return unsubscribe;
-  }, [navigation, isLoading]);
+  }, [navigation, isLoading, premiumLoading]);
 
   const handleRecipePress = (recipe: Recipe) => {
     if (!recipe.id) {
@@ -475,7 +472,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   };
 
   // Premium olmayan kullanıcılar için paywall
-  if (!favoritesGuard.hasAccess) {
+  if (!hasFavoritesAccess) {
     return (
       <SafeAreaView
         style={[
@@ -483,37 +480,41 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           { backgroundColor: colors.background.primary },
         ]}
       >
-        <StatusBar
-          barStyle='light-content'
-          backgroundColor={colors.primary[600]}
-        />
+        <StatusBar barStyle='dark-content' />
 
-        {/* Header */}
-        <LinearGradient
-          colors={[colors.primary[600], colors.primary[700]]}
-          style={styles.premiumHeader}
+        {/* Header - Exact Copy from SettingsScreen */}
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.surface.primary,
+              borderBottomColor: colors.neutral[100],
+            },
+          ]}
         >
-          <View style={styles.premiumHeaderContainer}>
-            <TouchableOpacity
-              style={styles.premiumBackButton}
-              onPress={() => navigation.goBack()}
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+            activeOpacity={0.7}
+          >
+            <View
+              style={[
+                styles.backButtonContainer,
+                { backgroundColor: colors.neutral[100] },
+              ]}
             >
-              <Ionicons name='chevron-back' size={24} color='white' />
-            </TouchableOpacity>
-
-            <View style={styles.premiumHeaderCenter}>
-              <Text
-                variant='headlineSmall'
-                weight='bold'
-                style={{ color: 'white' }}
-              >
-                Favorilerim
-              </Text>
+              <Ionicons name='arrow-back' size={22} color={colors.text.primary} />
             </View>
-
-            <View style={styles.premiumHeaderActions} />
-          </View>
-        </LinearGradient>
+          </TouchableOpacity>
+          <Text 
+            variant='headlineSmall' 
+            weight='bold'
+            style={{ color: colors.text.primary }}
+          >
+            Favorilerim
+          </Text>
+          <View style={styles.headerRight} />
+        </View>
 
         {/* Scrollable Premium Required Content */}
         <ScrollView
@@ -577,7 +578,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             >
               <TouchableOpacity
                 style={styles.premiumButtonContent}
-                onPress={() => favoritesGuard.requirePremium()}
+                onPress={() => showPaywall()}
               >
                 <Ionicons name='heart' size={20} color='white' />
                 <Text
@@ -601,29 +602,39 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     >
       <StatusBar barStyle='dark-content' />
 
-      {/* Compact Header */}
+      {/* Header - Exact Copy from SettingsScreen */}
       <View
-        style={[styles.header, { backgroundColor: colors.background.primary }]}
+        style={[
+          styles.header,
+          {
+            backgroundColor: colors.surface.primary,
+            borderBottomColor: colors.neutral[100],
+          },
+        ]}
       >
-        <View style={styles.headerTop}>
-          <View>
-            <Text
-              variant='headlineMedium'
-              weight='bold'
-              style={{ color: colors.text.primary }}
-            >
-              Favorilerim
-            </Text>
-            {filteredFavorites.length > 0 && (
-              <Text
-                variant='bodySmall'
-                style={{ color: colors.neutral[500], marginTop: 2 }}
-              >
-                {filteredFavorites.length} tarif kayıtlı
-              </Text>
-            )}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+        >
+          <View
+            style={[
+              styles.backButtonContainer,
+              { backgroundColor: colors.neutral[100] },
+            ]}
+          >
+            <Ionicons name='arrow-back' size={22} color={colors.text.primary} />
           </View>
-
+        </TouchableOpacity>
+        <Text 
+          variant='headlineSmall' 
+          weight='bold'
+          style={{ color: colors.text.primary }}
+        >
+          Favorilerim
+        </Text>
+        <View style={styles.headerRight}>
+          {/* View Mode Toggle */}
           <View style={styles.viewToggle}>
             <TouchableOpacity
               style={[
@@ -637,7 +648,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             >
               <Ionicons
                 name='grid'
-                size={18}
+                size={16}
                 color={
                   viewMode === 'grid'
                     ? colors.primary[600]
@@ -657,7 +668,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             >
               <Ionicons
                 name='list'
-                size={20}
+                size={18}
                 color={
                   viewMode === 'list'
                     ? colors.primary[600]
@@ -667,7 +678,10 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         </View>
+      </View>
 
+      {/* Search and Filter Actions */}
+      <View style={styles.actionBar}>
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <View
@@ -865,19 +879,42 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Header
+  // Header - Exact Copy from SettingsScreen  
   header: {
-    paddingHorizontal: spacing[3],
-    paddingTop: spacing[2],
-    paddingBottom: spacing[3],
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.05)',
-  },
-  headerTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing[3],
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    borderBottomWidth: 1,
+    ...shadows.xs,
+  },
+  backButton: {
+    padding: spacing[2],
+  },
+  backButtonContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    fontSize: typography.fontSize['2xl'],
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: spacing[4],
+  },
+  headerRight: {
+    width: 80,
+  },
+  
+  // Action Bar for Search and Filters
+  actionBar: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
   },
   viewToggle: {
     flexDirection: 'row',
