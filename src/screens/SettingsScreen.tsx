@@ -24,6 +24,8 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../contexts/LanguageContext';
 import { usePremium } from '../contexts/PremiumContext';
 import { RevenueCatService } from '../services/RevenueCatService';
+import { UserPreferencesService, UserPreferences } from '../services/UserPreferencesService';
+import PreferencesEditModal from '../components/settings/PreferencesEditModal';
 import {
   typography,
   spacing,
@@ -54,10 +56,13 @@ export const SettingsScreen: React.FC = () => {
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [premiumStatus, setPremiumStatus] = useState<any>(null);
+  const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
+  const [isEditingPreferences, setIsEditingPreferences] = useState(false);
 
   useEffect(() => {
     checkDeveloperMode();
     checkPremiumStatus();
+    loadUserPreferences();
     startEntranceAnimation();
   }, []);
 
@@ -83,6 +88,33 @@ export const SettingsScreen: React.FC = () => {
       setPremiumStatus(status);
     } catch (error) {
       console.error('Premium status check failed:', error);
+    }
+  };
+
+  const loadUserPreferences = async () => {
+    try {
+      const prefs = await UserPreferencesService.getUserPreferences();
+      setUserPreferences(prefs);
+      setNotificationsEnabled(prefs.notificationsEnabled);
+    } catch (error) {
+      console.error('Error loading user preferences:', error);
+    }
+  };
+
+  const handleEditPreferences = () => {
+    setIsEditingPreferences(true);
+  };
+
+  const savePreferences = async (prefs: Partial<UserPreferences>) => {
+    try {
+      await UserPreferencesService.saveUserPreferences(prefs);
+      const updated = await UserPreferencesService.getUserPreferences();
+      setUserPreferences(updated);
+      showSuccess(t('success.preferencesUpdated'));
+      setIsEditingPreferences(false);
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+      showError(t('error.failedToSavePreferences'));
     }
   };
 
@@ -461,6 +493,15 @@ Build: ${
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.current.background }]}
     >
+      {/* Preferences Edit Modal */}
+      {userPreferences && (
+        <PreferencesEditModal
+          visible={isEditingPreferences}
+          onClose={() => setIsEditingPreferences(false)}
+          preferences={userPreferences}
+          onSave={savePreferences}
+        />
+      )}
       {/* Modern Header */}
       <View
         style={[
@@ -508,6 +549,99 @@ Build: ${
 
         {/* Premium Upgrade Card */}
         <PremiumCard />
+        {/* Kişisel Tercihler */}
+        <SectionHeader title='Kişisel Tercihler' />
+        <View style={styles.section}>
+          {userPreferences && (
+            <>
+              <SettingItem
+                icon='restaurant-outline'
+                title='Beslenme Tercihleri'
+                subtitle={userPreferences.dietaryRestrictions?.length > 0 
+                  ? userPreferences.dietaryRestrictions.map(d => {
+                      const options: Record<string, string> = {
+                        'vegan': 'Vegan',
+                        'vegetarian': 'Vejetaryen',
+                        'gluten-free': 'Glutensiz',
+                        'lactose-free': 'Laktozsuz',
+                        'keto': 'Keto',
+                        'paleo': 'Paleo',
+                        'halal': 'Helal',
+                        'kosher': 'Koşer'
+                      };
+                      return options[d] || d;
+                    }).join(', ') 
+                  : 'Tercih belirtilmedi'}
+                iconColor={colors.success[600]}
+                iconBackground={colors.success[100]}
+                onPress={handleEditPreferences}
+              />
+              <SettingItem
+                icon='warning-outline'
+                title='Alerjiler'
+                subtitle={userPreferences.allergies?.length > 0 
+                  ? userPreferences.allergies.map(a => {
+                      const options: Record<string, string> = {
+                        'nuts': 'Fındık/Kuruyemiş',
+                        'milk': 'Süt',
+                        'eggs': 'Yumurta',
+                        'wheat': 'Buğday',
+                        'soy': 'Soya',
+                        'fish': 'Balık',
+                        'shellfish': 'Kabuklu Deniz Ürünleri',
+                        'sesame': 'Susam'
+                      };
+                      return options[a] || a;
+                    }).join(', ') 
+                  : 'Alerji yok'}
+                iconColor={colors.error[600]}
+                iconBackground={colors.error[100]}
+                onPress={handleEditPreferences}
+              />
+              <SettingItem
+                icon='earth-outline'
+                title='Mutfak Tercihleri'
+                subtitle={userPreferences.cuisineTypes?.length > 0 
+                  ? userPreferences.cuisineTypes.map(c => {
+                      const options: Record<string, string> = {
+                        'turkish': 'Türk',
+                        'italian': 'İtalyan',
+                        'chinese': 'Çin',
+                        'japanese': 'Japon',
+                        'mexican': 'Meksika',
+                        'indian': 'Hint',
+                        'french': 'Fransız',
+                        'mediterranean': 'Akdeniz',
+                        'thai': 'Tayland',
+                        'korean': 'Kore'
+                      };
+                      return options[c] || c;
+                    }).join(', ') 
+                  : 'Tercih belirtilmedi'}
+                iconColor={colors.info[600]}
+                iconBackground={colors.info[100]}
+                onPress={handleEditPreferences}
+              />
+              <SettingItem
+                icon='school-outline'
+                title='Yemek Deneyimi'
+                subtitle={(() => {
+                  const levels: Record<string, string> = {
+                    'beginner': 'Başlangıç',
+                    'intermediate': 'Orta',
+                    'advanced': 'İleri',
+                    'chef': 'Şef'
+                  };
+                  return levels[userPreferences.cookingLevel] || 'Orta';
+                })()}
+                iconColor={colors.warning[600]}
+                iconBackground={colors.warning[100]}
+                onPress={handleEditPreferences}
+              />
+            </>
+          )}
+        </View>
+
         {/* Uygulama Ayarları */}
         <SectionHeader title='Uygulama Ayarları' />
         <View style={styles.section}>
