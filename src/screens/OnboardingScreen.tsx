@@ -514,7 +514,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
             <Ionicons name='restaurant' size={20} color='white' />
           </View>
           <RNText style={[styles.appName, { color: colors.text.primary }]}>
-            Yemek Bulucu
+            YemekbulAI
           </RNText>
         </View>
 

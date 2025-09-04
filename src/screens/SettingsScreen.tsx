@@ -147,7 +147,7 @@ Build: ${
 
   const handleContactSupport = () => {
     Linking.openURL(
-      'mailto:necatidogrul7@gmail.com?subject=Yemek Bulucu - Destek Talebi&body=Merhaba,%0A%0ALütfen sorunuzu detaylıca açıklayınız:%0A%0A'
+      'mailto:necatidogrul7@gmail.com?subject=YemekbulAI - Destek Talebi&body=Merhaba,%0A%0ALütfen sorunuzu detaylıca açıklayınız:%0A%0A'
     );
   };
 
@@ -162,11 +162,11 @@ Build: ${
 
   const handleShareApp = () => {
     const shareUrl = 'https://apps.apple.com/app/idYOUR_APP_ID';
-    const message = `AI destekli tarif keşfi için Yemek Bulucu uygulamasını deneyin! ${shareUrl}`;
+    const message = `AI destekli tarif keşfi için YemekbulAI uygulamasını deneyin! ${shareUrl}`;
 
     // Web paylaşımı - gerçek uygulamada Share API kullanılabilir
     Linking.openURL(
-      `mailto:?subject=Yemek Bulucu Tavsiyesi&body=${encodeURIComponent(message)}`
+      `mailto:?subject=YemekbulAI Tavsiyesi&body=${encodeURIComponent(message)}`
     );
   };
 
@@ -620,7 +620,7 @@ Build: ${
           <SettingItem
             icon='share-outline'
             title='Arkadaşlarınla Paylaş'
-            subtitle="Yemek Bulucu'yu öner"
+            subtitle="YemekbulAI'ı öner"
             iconColor={colors.secondary[600]}
             iconBackground={colors.secondary[100]}
             onPress={handleShareApp}
@@ -661,7 +661,7 @@ Build: ${
         <View style={[styles.section, styles.lastSection]}>
           <SettingItem
             icon='information-circle-outline'
-            title='Yemek Bulucu'
+            title='YemekbulAI'
             subtitle={`Sürüm ${Constants.expoConfig?.version || '1.0.0'} ${versionTapCount > 0 ? `(${versionTapCount}/10)` : ''}`}
             iconColor={colors.primary[600]}
             iconBackground={colors.primary[100]}

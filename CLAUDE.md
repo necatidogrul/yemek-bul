@@ -5,7 +5,7 @@ repository.
 
 ## Project Overview
 
-Yemek Bulucu - AI-powered recipe discovery app that suggests recipes based on available ingredients.
+YemekbulAI - AI-powered recipe discovery app that suggests recipes based on available ingredients.
 Built with React Native/Expo, uses OpenAI for recipe generation and Supabase for backend services.
 
 ## Development Commands

@@ -46,7 +46,7 @@ export class OnboardingService {
     {
       id: 'welcome',
       type: 'welcome',
-      title: "Yemek Bulucu'ya Hoş Geldin!",
+      title: "YemekbulAI'a Hoş Geldin!",
       subtitle: 'AI destekli tarif keşfetme deneyimin başlıyor',
       description:
         'Elindeki malzemelerle harika tarifler bul, favorilere kaydet ve mutfakta ustalaş!',
@@ -95,7 +95,8 @@ export class OnboardingService {
       type: 'dietary-preferences',
       title: 'Beslenme Tercihlerin',
       subtitle: 'Özel diyet gereksinimlerini belirle',
-      description: 'Vegan, vejetaryan, glutensiz gibi beslenme tercihlerini seç',
+      description:
+        'Vegan, vejetaryan, glutensiz gibi beslenme tercihlerini seç',
       icon: 'leaf-outline',
       color: '#22C55E',
       gradient: ['#22C55E', '#16A34A'],
@@ -104,8 +105,8 @@ export class OnboardingService {
       tips: [
         'Tarifler tercihlerin doğrultusunda filtrelenecek',
         'İstediğin zaman değiştirebilirsin',
-        'Birden fazla seçenek işaretleyebilirsin'
-      ]
+        'Birden fazla seçenek işaretleyebilirsin',
+      ],
     },
     {
       id: 'tutorial',
@@ -129,7 +130,7 @@ export class OnboardingService {
       type: 'completion',
       title: 'Hazırsın!',
       subtitle: 'İlk tarifini keşfetmeye başla',
-      description: "Artık Yemek Bulucu'nun tüm özelliklerini kullanabilirsin",
+      description: "Artık YemekbulAI'ın tüm özelliklerini kullanabilirsin",
       icon: 'checkmark-circle-outline',
       color: '#10B981',
       gradient: ['#10B981', '#059669'],

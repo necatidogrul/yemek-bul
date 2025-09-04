@@ -1,6 +1,6 @@
 // App Constants
 export const APP_CONFIG = {
-  name: 'Yemek Bulucu',
+  name: 'YemekbulAI',
   version: '1.0.0',
   description: 'AI-powered recipe discovery app',
 } as const;

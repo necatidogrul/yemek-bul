@@ -1,4 +1,4 @@
-# "Yemek Bulucu" - Proje Tanım Dokümanı (PRD)
+# "YemekbulAI" - Proje Tanım Dokümanı (PRD)
 
 ---
 

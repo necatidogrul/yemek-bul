@@ -236,7 +236,7 @@ const RecipeResultsScreen: React.FC<RecipeResultsScreenProps> = ({
       haptics.light();
       const message = `🍽️ ${ingredients.join(', ')} ile ${
         processedRecipes.length
-      } tarif buldum!\n\nYemek Bulucu ile paylaşıldı`;
+      } tarif buldum!\n\nYemekbulAI ile paylaşıldı`;
       await Share.share({
         message,
         title: 'Tarif Sonuçları',

@@ -1,4 +1,4 @@
-● 🔍 YEMEK BULUCU - KAPSAMLI PROJE RAPORU
+● 🔍 YemekbulAI - KAPSAMLI PROJE RAPORU
 
 Projenizi baştan sona inceledim ve App Store yayına hazırlık açısından detaylı analiz raporunu
 sunuyorum:

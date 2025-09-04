@@ -102,7 +102,7 @@ RevenueCat entegrasyonunda yapılan düzeltmeler:
 ### 5. Test Adımları
 
 1. **TestFlight Uygulamasını Açın**
-   - TestFlight'ta Yemek Bulucu uygulamasını açın
+   - TestFlight'ta YemekbulAI uygulamasını açın
 
 2. **Premium Özelliği Test Edin**
    - Uygulamada premium özelliği tetikleyin (örn: sınırsız tarif)

@@ -1,7 +1,7 @@
 export const tr = {
   // App General
   app: {
-    name: 'Yemek Bulucu',
+    name: 'YemekbulAI',
     tagline: 'AI destekli tarif asistanınız',
     loading: 'Yükleniyor...',
     error: 'Bir hata oluştu',
@@ -39,7 +39,7 @@ export const tr = {
   // Onboarding
   onboarding: {
     welcome: {
-      title: "Yemek Bulucu'ya\nHoş Geldiniz! 👋",
+      title: "YemekbulAI'a\nHoş Geldiniz! 👋",
       subtitle: 'AI destekli tarif asistanınız',
       description:
         'Evinizdeki malzemelerle binlerce lezzetli tarif keşfedin. Akıllı öneriler ve kişisel deneyim sizi bekliyor!',
@@ -71,7 +71,7 @@ export const tr = {
     },
     steps: {
       welcome: {
-        title: "Yemek Bulucu'ya\nHoş Geldiniz! 👋",
+        title: "YemekbulAI'a\nHoş Geldiniz! 👋",
         subtitle: 'AI destekli tarif asistanınız',
       },
       features: {
