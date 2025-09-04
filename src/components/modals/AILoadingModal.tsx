@@ -24,7 +24,7 @@ const stages = {
     color: '#3B82F6',
   },
   generating: {
-    title: 'Tarifler Oluşturuluyor',
+    title: 'Tarifler Özenle Oluşturuluyor',
     subtitle: 'Yaratıcı algoritma çalışıyor...',
     icon: 'restaurant',
     color: '#8B5CF6',
@@ -36,7 +36,7 @@ const stages = {
     color: '#10B981',
   },
   finalizing: {
-    title: 'Son Dokunuşlar',
+    title: 'Son Dokunuşlar Yapılıyor',
     subtitle: 'Tarifler hazırlanıyor...',
     icon: 'checkmark-circle',
     color: '#F59E0B',
@@ -53,54 +53,74 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
   const [spinValue] = useState(new Animated.Value(0));
   const [pulseValue] = useState(new Animated.Value(1));
   const [progressAnim] = useState(new Animated.Value(0));
+  const [shimmerValue] = useState(new Animated.Value(0));
+  const [particleAnimations] = useState(
+    [...Array(6)].map(() => new Animated.Value(0))
+  );
 
   const currentStage = stages[stage];
 
   useEffect(() => {
     if (visible) {
-      // Spinning animation
-      const spinAnimation = Animated.loop(
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 2000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        })
-      );
+      // Icon rotation - only for generating stage
+      if (stage === 'generating') {
+        const spinAnimation = Animated.loop(
+          Animated.timing(spinValue, {
+            toValue: 1,
+            duration: 3000,
+            easing: Easing.linear,
+            useNativeDriver: true,
+          })
+        );
+        spinAnimation.start();
+        return () => spinAnimation.stop();
+      }
 
-      // Pulse animation
+      // Gentle pulse for icon
       const pulseAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(pulseValue, {
-            toValue: 1.2,
-            duration: 1000,
+            toValue: 1.1,
+            duration: 1500,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
           Animated.timing(pulseValue, {
             toValue: 1,
-            duration: 1000,
+            duration: 1500,
             easing: Easing.inOut(Easing.ease),
             useNativeDriver: true,
           }),
         ])
       );
 
-      spinAnimation.start();
       pulseAnimation.start();
+      return () => pulseAnimation.stop();
+    }
+  }, [visible, stage]);
 
-      return () => {
-        spinAnimation.stop();
-        pulseAnimation.stop();
-      };
+  useEffect(() => {
+    if (visible) {
+      // Shimmer effect on progress bar
+      const shimmerAnimation = Animated.loop(
+        Animated.timing(shimmerValue, {
+          toValue: 1,
+          duration: 2000,
+          easing: Easing.linear,
+          useNativeDriver: false,
+        })
+      );
+      shimmerAnimation.start();
+      return () => shimmerAnimation.stop();
     }
   }, [visible]);
 
   useEffect(() => {
-    Animated.timing(progressAnim, {
+    // Smooth progress animation
+    Animated.spring(progressAnim, {
       toValue: progress,
-      duration: 500,
-      easing: Easing.out(Easing.ease),
+      friction: 8,
+      tension: 40,
       useNativeDriver: false,
     }).start();
   }, [progress]);
@@ -110,12 +130,43 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
     outputRange: ['0deg', '360deg'],
   });
 
+  // Particle animations
+  useEffect(() => {
+    if (visible) {
+      const staggeredAnimations = particleAnimations.map((anim, index) => {
+        return Animated.loop(
+          Animated.sequence([
+            Animated.delay(index * 150),
+            Animated.timing(anim, {
+              toValue: 1,
+              duration: 1500,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(anim, {
+              toValue: 0,
+              duration: 1500,
+              easing: Easing.in(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ])
+        );
+      });
+
+      staggeredAnimations.forEach(anim => anim.start());
+
+      return () => {
+        staggeredAnimations.forEach(anim => anim.stop());
+      };
+    }
+  }, [visible]);
+
   return (
     <Modal
       isVisible={visible}
       animationIn='fadeIn'
       animationOut='fadeOut'
-      backdropOpacity={0.8}
+      backdropOpacity={0.9}
       backdropColor='#000'
       style={styles.modal}
       onBackdropPress={onClose}
@@ -126,14 +177,15 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
       >
         {/* Header */}
         <LinearGradient
-          colors={[currentStage.color + '20', currentStage.color + '10']}
+          colors={[currentStage.color + '15', 'transparent']}
           style={styles.header}
         >
           <Animated.View
             style={[
               styles.iconContainer,
               {
-                backgroundColor: currentStage.color + '20',
+                backgroundColor: colors.surface.primary,
+                borderColor: currentStage.color,
                 transform: [
                   { scale: pulseValue },
                   { rotate: stage === 'generating' ? spin : '0deg' },
@@ -143,7 +195,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
           >
             <Ionicons
               name={currentStage.icon as any}
-              size={32}
+              size={36}
               color={currentStage.color}
             />
           </Animated.View>
@@ -169,7 +221,11 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
             <View
               style={[
                 styles.progressBg,
-                { backgroundColor: colors.neutral[200] },
+                {
+                  backgroundColor: colors.neutral[100],
+                  borderWidth: 1,
+                  borderColor: colors.neutral[200],
+                },
               ]}
             >
               <Animated.View
@@ -183,35 +239,73 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
                     }),
                   },
                 ]}
-              />
+              >
+                <Animated.View
+                  style={{
+                    ...StyleSheet.absoluteFillObject,
+                    opacity: shimmerValue.interpolate({
+                      inputRange: [0, 0.5, 1],
+                      outputRange: [0.3, 0, 0.3],
+                    }),
+                    backgroundColor: 'rgba(255,255,255,0.4)',
+                  }}
+                />
+              </Animated.View>
             </View>
-            <Text
-              variant='caption'
-              color='secondary'
-              style={styles.progressText}
-            >
-              {Math.round(progress)}% tamamlandı
-            </Text>
+            <View style={styles.progressInfo}>
+              <Text
+                variant='h6'
+                weight='bold'
+                style={{ ...styles.progressPercent, color: currentStage.color }}
+              >
+                {Math.round(progress)}%
+              </Text>
+              <Text
+                variant='caption'
+                color='secondary'
+                style={styles.progressText}
+              >
+                tamamlandı
+              </Text>
+            </View>
           </View>
 
           {/* AI Particles Animation */}
           <View style={styles.particlesContainer}>
-            {[...Array(6)].map((_, index) => (
+            {particleAnimations.map((anim, index) => (
               <Animated.View
                 key={index}
                 style={[
                   styles.particle,
                   {
-                    backgroundColor: currentStage.color + '60',
-                    opacity: spinValue.interpolate({
+                    backgroundColor: currentStage.color,
+                    width: 3 + (index % 2),
+                    height: 3 + (index % 2),
+                    opacity: anim.interpolate({
                       inputRange: [0, 0.5, 1],
-                      outputRange: [0.3, 1, 0.3],
+                      outputRange: [0, 1, 0],
                     }),
                     transform: [
                       {
-                        translateY: spinValue.interpolate({
+                        translateY: anim.interpolate({
                           inputRange: [0, 1],
-                          outputRange: [0, -20 * (index + 1)],
+                          outputRange: [20, -30],
+                        }),
+                      },
+                      {
+                        translateX: anim.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [
+                            0,
+                            (index - 2.5) * 8,
+                            (index - 2.5) * 15,
+                          ],
+                        }),
+                      },
+                      {
+                        scale: anim.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [0.5, 1, 0.3],
                         }),
                       },
                     ],
@@ -222,13 +316,35 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
           </View>
 
           {/* Fun Facts */}
-          <View style={styles.factContainer}>
-            <Ionicons name='bulb' size={16} color={colors.warning[500]} />
+          <Animated.View
+            style={[
+              styles.factContainer,
+              {
+                opacity: pulseValue.interpolate({
+                  inputRange: [1, 1.05, 1.1],
+                  outputRange: [0.8, 1, 0.8],
+                }),
+              },
+            ]}
+          >
+            <LinearGradient
+              colors={[colors.warning[500] + '10', colors.warning[500] + '05']}
+              style={StyleSheet.absoluteFillObject}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+            <Ionicons name='sparkles' size={14} color={colors.warning[500]} />
             <Text variant='caption' color='secondary' style={styles.factText}>
-              AI şu anda binlerce tarif veritabanını tarayarak size özel
-              öneriler hazırlıyor
+              {stage === 'analyzing' &&
+                'Malzemeleriniz için en uygun tarifleri arıyorum'}
+              {stage === 'generating' &&
+                'Yaratıcı AI algoritması size özel tarifler üretiyor'}
+              {stage === 'optimizing' &&
+                'Beslenme değerleri ve lezzet dengesi optimize ediliyor'}
+              {stage === 'finalizing' &&
+                'Son kontroller yapılıyor, tarifiniz neredeyse hazır'}
             </Text>
-          </View>
+          </Animated.View>
         </View>
       </View>
     </Modal>
@@ -265,8 +381,16 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 2.5,
+    borderStyle: 'solid',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
   },
   content: {
     padding: spacing[6],
@@ -283,46 +407,66 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     marginBottom: spacing[6],
+    minHeight: 40,
   },
   progressBg: {
     width: '100%',
-    height: 6,
-    borderRadius: 3,
+    height: 12,
+    borderRadius: 6,
     overflow: 'hidden',
-    marginBottom: spacing[2],
+    marginBottom: spacing[3],
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 3,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  progressInfo: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing[2],
+    height: 20,
+  },
+  progressPercent: {
+    fontSize: 18,
+    lineHeight: 20,
   },
   progressText: {
-    fontSize: 12,
+    fontSize: 13,
+    lineHeight: 20,
   },
   particlesContainer: {
-    flexDirection: 'row',
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginLeft: -50,
+    marginTop: -20,
+    width: 100,
+    height: 60,
     justifyContent: 'center',
-    alignItems: 'flex-end',
-    height: 40,
-    marginBottom: spacing[4],
-    gap: spacing[1],
+    alignItems: 'center',
   },
   particle: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+    position: 'absolute',
+    borderRadius: 10,
   },
   factContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(251, 191, 36, 0.1)',
-    paddingHorizontal: spacing[3],
-    paddingVertical: spacing[2],
-    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[3],
+    borderRadius: borderRadius.lg,
     gap: spacing[2],
+    marginTop: spacing[2],
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.2)',
   },
   factText: {
     flex: 1,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.2,
   },
 });

@@ -159,3 +159,28 @@ Babel alias configured: `@` -> `./src`
 - Turkish/English localization via i18next
 - Haptic feedback integration throughout the app
 - Toast notifications for user feedback
+
+### React Native Style Guidelines
+
+**IMPORTANT: Avoid common TypeScript errors in React Native styles:**
+
+1. **Array styles with conditional objects**: Don't use `style={[styles.text, { color: 'red' }]}` for Text components. Instead use spread operator: `style={{ ...styles.text, color: 'red' }}`
+
+2. **Web-specific CSS properties**: Never use CSS properties that are web-only in React Native:
+   - `transition` - Not supported in React Native
+   - `cursor` - Not supported in React Native
+   - `:hover`, `:focus` pseudo-selectors - Not supported
+   - CSS Grid properties - Use Flexbox instead
+
+3. **Type-safe styles**: Always ensure styles match the component type:
+   - View components: ViewStyle
+   - Text components: TextStyle
+   - Image components: ImageStyle
+
+4. **Platform-specific styles**: Use `Platform.select()` for platform differences:
+   ```javascript
+   ...Platform.select({
+     ios: { shadowColor: '#000' },
+     android: { elevation: 10 }
+   })
+   ```
