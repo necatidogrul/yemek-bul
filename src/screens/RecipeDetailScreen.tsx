@@ -356,7 +356,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
             color='secondary'
             style={{ marginTop: spacing[4] }}
           >
-            {t('common.loading')}
+            {t('app.loading')}
           </Text>
         </View>
       </SafeAreaView>

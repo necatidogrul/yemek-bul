@@ -17,6 +17,7 @@ import { Logger } from '../services/LoggerService';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useFocusEffect } from '@react-navigation/native';
 
 // Services & Types
 import { HistoryService } from '../services/historyService';
@@ -113,19 +114,6 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     }
   }, [isPremium]);
 
-  // App focus'ta premium durumunu kontrol et
-  useEffect(() => {
-    const unsubscribe = navigation.addListener?.('focus', async () => {
-      if (!isLoading && !premiumLoading) {
-        debugLog('HistoryScreen focused, refreshing premium status');
-        // Premium durumunu force refresh yap
-        await refreshPremiumStatus?.(true);
-      }
-    });
-
-    return unsubscribe;
-  }, [navigation, isLoading, premiumLoading]);
-
   useEffect(() => {
     // Start entrance animation
     Animated.parallel([
@@ -142,7 +130,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     ]).start();
   }, []);
 
-  const loadHistoryData = async () => {
+  const loadHistoryData = useCallback(async () => {
     if (!hasHistoryAccess) {
       setIsLoading(false);
       return;
@@ -164,7 +152,23 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [hasHistoryAccess, filter, isPremium]);
+
+  // Screen focus'ta premium durumunu kontrol et ve geçmişi yenile
+  useFocusEffect(
+    useCallback(() => {
+      if (!isLoading && !premiumLoading) {
+        debugLog('HistoryScreen focused, refreshing premium status and history');
+        // Premium durumunu force refresh yap
+        refreshPremiumStatus?.(true).then(() => {
+          // Geçmiş verilerini de yeniden yükle
+          if (hasHistoryAccess) {
+            loadHistoryData();
+          }
+        });
+      }
+    }, [isLoading, premiumLoading, hasHistoryAccess, refreshPremiumStatus, loadHistoryData])
+  );
 
   const handleViewResults = useCallback(
     (item: AIRequestHistory) => {
