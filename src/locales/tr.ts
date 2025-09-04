@@ -137,6 +137,9 @@ export const tr = {
       healthy: 'Sağlıklı',
       dessert: 'Tatlı',
       fast: 'Hızlı',
+      vegan: 'Vegan',
+      vegetarian: 'Vejeteryan',
+      glutenfree: 'Glutensiz',
     },
     levelLabels: {
       beginner: 'Başlangıç',

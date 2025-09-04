@@ -138,6 +138,9 @@ export const en = {
       healthy: 'Healthy',
       dessert: 'Dessert',
       fast: 'Quick',
+      vegan: 'Vegan',
+      vegetarian: 'Vegetarian',
+      glutenfree: 'Gluten Free',
     },
     levelLabels: {
       beginner: 'Beginner',
