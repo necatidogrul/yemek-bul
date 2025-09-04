@@ -651,8 +651,8 @@ const createStyles = () =>
     // Kompakt Hero Section
     compactHero: {
       alignItems: 'center',
-      paddingVertical: 16,
-      marginBottom: 16,
+      paddingVertical: 12,
+      marginBottom: 12,
     },
     compactTitle: {
       fontSize: 20,
@@ -683,9 +683,9 @@ const createStyles = () =>
     // Feature Highlight
     featureHighlight: {
       backgroundColor: designColors.primary[50],
-      padding: 18,
+      padding: 16,
       borderRadius: 16,
-      marginBottom: 24,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: designColors.primary[200],
       flexDirection: 'row',
@@ -702,7 +702,7 @@ const createStyles = () =>
 
     // Features Section - Kompakt
     featuresContainer: {
-      marginBottom: 24,
+      marginBottom: 16,
     },
     featuresTitle: {
       fontSize: 18,
@@ -796,7 +796,7 @@ const createStyles = () =>
 
     // Packages Section - Daha prominent
     packagesContainer: {
-      marginBottom: 24,
+      marginBottom: 16,
       paddingHorizontal: 4,
     },
     sectionTitle: {
@@ -895,9 +895,9 @@ const createStyles = () =>
       backgroundColor: 'transparent',
     },
     footer: {
-      padding: 20,
-      paddingBottom: 40,
-      borderTopWidth: 2,
+      padding: 16,
+      paddingBottom: 24,
+      borderTopWidth: 1,
       borderTopColor: designColors.primary[100],
       backgroundColor: '#FFFFFF',
       shadowColor: '#000',
@@ -907,8 +907,8 @@ const createStyles = () =>
       elevation: 5,
     },
     purchaseButton: {
-      marginBottom: 16,
-      paddingVertical: 16,
+      marginBottom: 12,
+      paddingVertical: 14,
       backgroundColor: designColors.primary[600],
       shadowColor: designColors.primary[600],
       shadowOffset: { width: 0, height: 4 },
@@ -918,8 +918,8 @@ const createStyles = () =>
     },
     restoreButton: {
       alignItems: 'center',
-      paddingVertical: 12,
-      marginBottom: 16,
+      paddingVertical: 8,
+      marginBottom: 12,
     },
     restoreText: {
       fontWeight: '500',
