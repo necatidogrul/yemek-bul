@@ -61,7 +61,6 @@ export const SettingsScreen: React.FC = () => {
     startEntranceAnimation();
   }, []);
 
-
   const startEntranceAnimation = () => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
@@ -86,7 +85,6 @@ export const SettingsScreen: React.FC = () => {
       console.error('Premium status check failed:', error);
     }
   };
-
 
   const checkDeveloperMode = () => {
     if (__DEV__) {
@@ -140,11 +138,11 @@ Build: ${
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL('https://necatidogrul.dev/yemek-bulucu/privacy-policy');
+    Linking.openURL('https://www.necatidogrul.dev/tr/cook-ai');
   };
 
   const openTermsOfService = () => {
-    Linking.openURL('https://necatidogrul.dev/yemek-bulucu/terms-of-service');
+    Linking.openURL('https://www.necatidogrul.dev/tr/cook-ai');
   };
 
   const handleContactSupport = () => {
@@ -155,7 +153,8 @@ Build: ${
 
   const handleRateApp = () => {
     // iOS App Store rating
-    const appStoreUrl = 'https://apps.apple.com/app/idYOUR_APP_ID?action=write-review';
+    const appStoreUrl =
+      'https://apps.apple.com/app/idYOUR_APP_ID?action=write-review';
     Linking.openURL(appStoreUrl).catch(() => {
       showError('App Store açılamadı');
     });
@@ -164,9 +163,11 @@ Build: ${
   const handleShareApp = () => {
     const shareUrl = 'https://apps.apple.com/app/idYOUR_APP_ID';
     const message = `AI destekli tarif keşfi için Yemek Bulucu uygulamasını deneyin! ${shareUrl}`;
-    
+
     // Web paylaşımı - gerçek uygulamada Share API kullanılabilir
-    Linking.openURL(`mailto:?subject=Yemek Bulucu Tavsiyesi&body=${encodeURIComponent(message)}`);
+    Linking.openURL(
+      `mailto:?subject=Yemek Bulucu Tavsiyesi&body=${encodeURIComponent(message)}`
+    );
   };
 
   const openAppStore = () => {
@@ -380,13 +381,27 @@ Build: ${
           >
             <View style={styles.premiumCardContent}>
               <View style={styles.premiumCardIcon}>
-                <Ionicons name='checkmark-circle' size={24} color={colors.neutral[0]} />
+                <Ionicons
+                  name='checkmark-circle'
+                  size={24}
+                  color={colors.neutral[0]}
+                />
               </View>
               <View style={styles.premiumCardText}>
-                <Text style={[styles.premiumCardTitle, { color: colors.neutral[0] }]}>
+                <Text
+                  style={[
+                    styles.premiumCardTitle,
+                    { color: colors.neutral[0] },
+                  ]}
+                >
                   Premium Aktif ✨
                 </Text>
-                <Text style={[styles.premiumCardSubtitle, { color: colors.neutral[0] }]}>
+                <Text
+                  style={[
+                    styles.premiumCardSubtitle,
+                    { color: colors.neutral[0] },
+                  ]}
+                >
                   Tüm özelliklere sınırsız erişim
                 </Text>
               </View>
@@ -397,13 +412,17 @@ Build: ${
     }
 
     return (
-      <TouchableOpacity 
-        style={styles.premiumCardContainer} 
+      <TouchableOpacity
+        style={styles.premiumCardContainer}
         activeOpacity={0.8}
         onPress={() => showPaywall()}
       >
         <LinearGradient
-          colors={[colors.primary[400], colors.primary[500], colors.secondary[500]]}
+          colors={[
+            colors.primary[400],
+            colors.primary[500],
+            colors.secondary[500],
+          ]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.premiumCard}
@@ -413,14 +432,25 @@ Build: ${
               <Ionicons name='diamond' size={24} color={colors.neutral[0]} />
             </View>
             <View style={styles.premiumCardText}>
-              <Text style={[styles.premiumCardTitle, { color: colors.neutral[0] }]}>
+              <Text
+                style={[styles.premiumCardTitle, { color: colors.neutral[0] }]}
+              >
                 Premium'a Yükselt
               </Text>
-              <Text style={[styles.premiumCardSubtitle, { color: colors.neutral[0] }]}>
+              <Text
+                style={[
+                  styles.premiumCardSubtitle,
+                  { color: colors.neutral[0] },
+                ]}
+              >
                 Sınırsız tarif ve özel özellikler
               </Text>
             </View>
-            <Ionicons name='arrow-forward' size={20} color={colors.neutral[0]} />
+            <Ionicons
+              name='arrow-forward'
+              size={20}
+              color={colors.neutral[0]}
+            />
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -479,12 +509,12 @@ Build: ${
         {/* Premium Upgrade Card */}
         <PremiumCard />
         {/* Uygulama Ayarları */}
-        <SectionHeader title="Uygulama Ayarları" />
+        <SectionHeader title='Uygulama Ayarları' />
         <View style={styles.section}>
           <SettingItem
             icon='notifications-outline'
-            title="Bildirimler"
-            subtitle="Yeni özellikler ve güncellemeler"
+            title='Bildirimler'
+            subtitle='Yeni özellikler ve güncellemeler'
             iconColor={colors.info[600]}
             iconBackground={colors.info[100]}
             rightElement={
@@ -507,12 +537,8 @@ Build: ${
           />
           <SettingItem
             icon='globe-outline'
-            title="Dil Seçimi"
-            subtitle={
-              currentLanguage === 'tr'
-                ? 'Türkçe'
-                : 'English'
-            }
+            title='Dil Seçimi'
+            subtitle={currentLanguage === 'tr' ? 'Türkçe' : 'English'}
             iconColor={colors.secondary[600]}
             iconBackground={colors.secondary[100]}
             onPress={() => {
@@ -524,11 +550,11 @@ Build: ${
         </View>
 
         {/* Görünüm Ayarları */}
-        <SectionHeader title="Görünüm" />
+        <SectionHeader title='Görünüm' />
         <View style={styles.section}>
           <SettingItem
             icon={isDark ? 'moon' : 'sunny'}
-            title="Tema"
+            title='Tema'
             subtitle={isDark ? 'Koyu tema' : 'Açık tema'}
             iconColor={isDark ? colors.info[600] : colors.warning[600]}
             iconBackground={isDark ? colors.info[100] : colors.warning[100]}
@@ -550,8 +576,8 @@ Build: ${
           />
           <SettingItem
             icon='phone-portrait-outline'
-            title="Dokunma Geri Bildirimi"
-            subtitle="Titreşim ile geri bildirim"
+            title='Dokunma Geri Bildirimi'
+            subtitle='Titreşim ile geri bildirim'
             iconColor={colors.primary[500]}
             iconBackground={colors.primary[100]}
             rightElement={
@@ -573,19 +599,19 @@ Build: ${
         </View>
 
         {/* Destek ve Yardım */}
-        <SectionHeader title="Destek" />
+        <SectionHeader title='Destek' />
         <View style={styles.section}>
           <SettingItem
             icon='mail-outline'
-            title="İletişim"
-            subtitle="Sorularınız için bize yazın"
+            title='İletişim'
+            subtitle='Sorularınız için bize yazın'
             iconColor={colors.primary[600]}
             iconBackground={colors.primary[100]}
             onPress={handleContactSupport}
           />
           <SettingItem
             icon='star-outline'
-            title="Uygulamayı Değerlendir"
+            title='Uygulamayı Değerlendir'
             subtitle="App Store'da puan verin"
             iconColor={colors.warning[600]}
             iconBackground={colors.warning[100]}
@@ -593,7 +619,7 @@ Build: ${
           />
           <SettingItem
             icon='share-outline'
-            title="Arkadaşlarınla Paylaş"
+            title='Arkadaşlarınla Paylaş'
             subtitle="Yemek Bulucu'yu öner"
             iconColor={colors.secondary[600]}
             iconBackground={colors.secondary[100]}
@@ -601,50 +627,21 @@ Build: ${
           />
         </View>
 
-        {/* Developer Options (Hidden - Only shown after version taps) */}
-        {showDeveloperOptions && __DEV__ && (
-          <>
-            <SectionHeader title={t('settings.developerTools')} />
-            <View style={styles.section}>
-              <SettingItem
-                icon='code-outline'
-                title={t('settings.developmentMode.title')}
-                subtitle={t('settings.developmentMode.subtitle', {
-                  environment:
-                    process.env.EXPO_PUBLIC_ENVIRONMENT || 'development',
-                })}
-                onPress={() => showSuccess(t('success.debugToolsActivated'))}
-              />
-              <SettingItem
-                icon='bug-outline'
-                title={t('settings.debugLogs.title')}
-                subtitle={t('settings.debugLogs.subtitle')}
-                onPress={() =>
-                  Alert.alert(
-                    t('settings.debugInfo'),
-                    `Environment: ${process.env.EXPO_PUBLIC_ENVIRONMENT}\nVersion: ${Constants.expoConfig?.version}`
-                  )
-                }
-              />
-            </View>
-          </>
-        )}
-
         {/* Yasal Bilgiler */}
-        <SectionHeader title="Yasal" />
+        <SectionHeader title='Yasal' />
         <View style={styles.section}>
           <SettingItem
             icon='shield-checkmark-outline'
-            title="Gizlilik Politikası"
-            subtitle="Veri kullanım politikamız"
+            title='Gizlilik Politikası'
+            subtitle='Veri kullanım politikamız'
             iconColor={colors.info[600]}
             iconBackground={colors.info[100]}
             onPress={openPrivacyPolicy}
           />
           <SettingItem
             icon='document-text-outline'
-            title="Kullanım Şartları"
-            subtitle="Hizmet şartları ve koşulları"
+            title='Kullanım Şartları'
+            subtitle='Hizmet şartları ve koşulları'
             iconColor={colors.primary[600]}
             iconBackground={colors.primary[100]}
             onPress={openTermsOfService}
@@ -652,7 +649,7 @@ Build: ${
           <SettingItem
             icon='storefront-outline'
             title="App Store'da Görüntüle"
-            subtitle="Uygulama mağazasında incele"
+            subtitle='Uygulama mağazasında incele'
             iconColor={colors.secondary[600]}
             iconBackground={colors.secondary[100]}
             onPress={openAppStore}
@@ -660,11 +657,11 @@ Build: ${
         </View>
 
         {/* Uygulama Bilgileri */}
-        <SectionHeader title="Uygulama" />
+        <SectionHeader title='Uygulama' />
         <View style={[styles.section, styles.lastSection]}>
           <SettingItem
             icon='information-circle-outline'
-            title="Yemek Bulucu"
+            title='Yemek Bulucu'
             subtitle={`Sürüm ${Constants.expoConfig?.version || '1.0.0'} ${versionTapCount > 0 ? `(${versionTapCount}/10)` : ''}`}
             iconColor={colors.primary[600]}
             iconBackground={colors.primary[100]}
@@ -673,19 +670,11 @@ Build: ${
           />
           <SettingItem
             icon='code-outline'
-            title="Geliştirici"
-            subtitle="Necati Doğrul"
+            title='Geliştirici'
+            subtitle='Necati Doğrul'
             iconColor={colors.secondary[600]}
             iconBackground={colors.secondary[100]}
             onPress={() => Linking.openURL('https://necatidogrul.dev')}
-            showChevron={false}
-          />
-          <SettingItem
-            icon='heart-outline'
-            title="Teşekkürler"
-            subtitle="AI ile yapıldı ❤️"
-            iconColor={colors.error[500]}
-            iconBackground={colors.error[100]}
             showChevron={false}
           />
         </View>

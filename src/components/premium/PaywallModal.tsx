@@ -419,17 +419,11 @@ export const PaywallModal: React.FC<PaywallModalProps> = ({
       hideModalContentWhileAnimating={true}
     >
       <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {/* Close button */}
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name='close' size={24} color='#1A1A1A' />
           </TouchableOpacity>
-          <Text style={styles.title}>
-            {title || t('premium.upgrade_to_premium')}
-          </Text>
-        </View>
-
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Kompakt Hero Section */}
           <View style={styles.compactHero}>
             <View style={styles.premiumBadge}>
@@ -640,31 +634,14 @@ const createStyles = () =>
       color: '#666666',
       fontSize: 16,
     },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingHorizontal: 20,
-      paddingTop: 60,
-      paddingBottom: 20,
-      borderBottomWidth: 1,
-      borderBottomColor: '#F0F0F0',
-      position: 'relative',
-      backgroundColor: '#FFFFFF',
-    },
     closeButton: {
       position: 'absolute',
       right: 20,
-      top: 60,
+      top: 20,
       padding: 8,
       borderRadius: 20,
       backgroundColor: '#F5F5F5',
       zIndex: 1,
-    },
-    title: {
-      fontWeight: '700',
-      fontSize: 20,
-      color: '#1A1A1A',
     },
     content: {
       flex: 1,
