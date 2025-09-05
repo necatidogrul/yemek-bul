@@ -1,6 +1,5 @@
 import { Recipe } from '../types/Recipe';
 import { supabase } from './supabase';
-import { UnsplashService } from './unsplashService';
 import { GoogleImageService } from './googleImageService';
 import { Logger } from '../services/LoggerService';
 import i18n from '../locales/index';
@@ -351,7 +350,6 @@ export class OpenAIService {
       "difficulty": "easy",
       "category": "main_dish",
       "imageSearchTerm": "chicken pasta italian food", // English image search keywords (2-4 words)
-      "imageUrl": "https://source.unsplash.com/featured/?pasta,food", // Prefer direct Unsplash Source URL; if unknown, leave empty
       "recommendationType": "preference", // "preference" or "discovery"
       "recommendationReason": "Briefly explain why recommended",
       "tips": "Tip (optional)",
@@ -372,7 +370,6 @@ export class OpenAIService {
       "difficulty": "kolay",
       "category": "ana_yemek",
       "imageSearchTerm": "chicken pasta italian food", // İngilizce resim arama kelimesi (2-4 kelime)
-      "imageUrl": "https://source.unsplash.com/featured/?pasta,food", // Mümkünse direkt Unsplash Source URL ver; bilmiyorsan boş bırak
       "recommendationType": "preference", // "preference" veya "discovery"
       "recommendationReason": "Neden önerildiğini kısaca açıkla",
       "tips": "İpucu (opsiyonel)",
@@ -387,7 +384,7 @@ export class OpenAIService {
   }
 
   /**
-   * AI yanıtını Recipe formatına çevir ve Unsplash'ten fotoğraf getir
+   * AI yanıtını Recipe formatına çevir ve Google'dan fotoğraf getir
    */
   private static async parseRecipesFromAI(aiResponse: any): Promise<Recipe[]> {
     const recipes: Recipe[] = [];
@@ -402,26 +399,30 @@ export class OpenAIService {
 
       try {
         const searchTerm = recipe.imageSearchTerm || recipe.name;
+        let imageUrl: string | null = null;
 
-        // 1) Google görsel arama
-        let imageUrl: string | null =
-          await GoogleImageService.searchImageUrl(searchTerm);
-
-        // 2) AI tarafından verilmiş URL varsa onu kullan (Google sonuç vermediyse)
-        if (
-          !imageUrl &&
-          typeof recipe.imageUrl === 'string' &&
-          recipe.imageUrl.trim()
-        ) {
-          imageUrl = recipe.imageUrl.trim();
-          console.log('📸 AI imageUrl kullanılıyor:', imageUrl);
+        // 1) Google görsel arama - ilk olarak tam isimle dene
+        imageUrl = await GoogleImageService.searchImageUrl(searchTerm);
+        
+        // 2) Bulunamazsa, tarif ismini sadeleştir ve tekrar dene
+        if (!imageUrl) {
+          const simplifiedTerm = this.simplifySearchTerm(searchTerm);
+          console.log('🔄 Sadeleştirilmiş arama terimi:', simplifiedTerm);
+          imageUrl = await GoogleImageService.searchImageUrl(simplifiedTerm);
         }
 
-        // 3) Hâlâ yoksa Unsplash fallback
+        // 3) Hala bulunamazsa, genel bir terim kullan
         if (!imageUrl) {
-          console.log('🔍 Unsplash arama terimi:', searchTerm);
-          imageUrl = await UnsplashService.searchFoodImage(searchTerm);
-          console.log('📸 Unsplash sonucu:', imageUrl);
+          const genericTerm = this.getGenericSearchTerm(recipe);
+          console.log('🔄 Genel arama terimi:', genericTerm);
+          imageUrl = await GoogleImageService.searchImageUrl(genericTerm);
+        }
+
+        // 4) Son çare: kategori + "food" ile dene
+        if (!imageUrl) {
+          const categoryFallback = `${recipe.category || 'delicious'} food`;
+          console.log('🔄 Kategori fallback:', categoryFallback);
+          imageUrl = await GoogleImageService.searchImageUrl(categoryFallback);
         }
 
         const parsedRecipe: Recipe = {
@@ -868,5 +869,89 @@ Lütfen sadece malzeme listesini ver, başka açıklama yapma.`,
       console.error('Base64 conversion error:', error);
       throw new Error('Fotoğraf işlenirken hata oluştu');
     }
+  }
+
+  /**
+   * Arama terimini sadeleştir
+   * Örnek: "Fırında Soslu Tavuk Göğsü" -> "Tavuk"
+   */
+  private static simplifySearchTerm(term: string): string {
+    const language = i18n.language || 'tr';
+    
+    // Gereksiz kelimeleri çıkar
+    const unnecessaryWords = language === 'tr' 
+      ? ['fırında', 'haşlanmış', 'kızarmış', 'soslu', 'tava', 'ızgara', 'buğulama', 'yemeği', 'tarifi', 'özel', 'ev yapımı', 'geleneksel', 'pratik', 'kolay', 'lezzetli']
+      : ['baked', 'boiled', 'fried', 'grilled', 'steamed', 'with sauce', 'recipe', 'special', 'homemade', 'traditional', 'easy', 'quick', 'delicious'];
+    
+    let simplified = term.toLowerCase();
+    
+    // Gereksiz kelimeleri kaldır
+    unnecessaryWords.forEach(word => {
+      simplified = simplified.replace(new RegExp(word, 'gi'), '');
+    });
+    
+    // Birden fazla boşluğu tek boşluğa çevir ve trim yap
+    simplified = simplified.replace(/\s+/g, ' ').trim();
+    
+    // Eğer çok kısa kaldıysa orijinal terimin ilk kelimesini kullan
+    if (simplified.length < 3) {
+      simplified = term.split(' ')[0];
+    }
+    
+    return simplified;
+  }
+
+  /**
+   * Tarif için genel arama terimi oluştur
+   * Tarif kategorisine veya ana malzemesine göre genel bir terim döndürür
+   */
+  private static getGenericSearchTerm(recipe: any): string {
+    const language = i18n.language || 'tr';
+    
+    // Kategori bazlı genel terimler
+    const categoryTerms: Record<string, Record<string, string>> = {
+      tr: {
+        çorba: 'çorba',
+        ana_yemek: 'yemek tabağı',
+        salata: 'salata',
+        tatlı: 'tatlı',
+        aperatif: 'aperatif',
+        kahvaltı: 'kahvaltı',
+      },
+      en: {
+        soup: 'soup',
+        main_course: 'main dish',
+        salad: 'salad',
+        dessert: 'dessert',
+        appetizer: 'appetizer',
+        breakfast: 'breakfast',
+      }
+    };
+    
+    // Kategoriye göre genel terim
+    if (recipe.category) {
+      const terms = categoryTerms[language] || categoryTerms.tr;
+      const genericTerm = terms[recipe.category];
+      if (genericTerm) return genericTerm;
+    }
+    
+    // Ana malzemeyi bulmaya çalış (ilk malzeme genelde ana malzemedir)
+    if (recipe.ingredients && recipe.ingredients.length > 0) {
+      const mainIngredient = recipe.ingredients[0];
+      // Basit malzeme isimlerini çıkar (tavuk, et, balık vb.)
+      const mainIngredientWords = mainIngredient.toLowerCase().split(' ');
+      const proteinKeywords = language === 'tr' 
+        ? ['tavuk', 'et', 'balık', 'köfte', 'sebze', 'makarna', 'pilav', 'börek']
+        : ['chicken', 'meat', 'fish', 'meatball', 'vegetable', 'pasta', 'rice', 'pastry'];
+      
+      for (const word of mainIngredientWords) {
+        if (proteinKeywords.includes(word)) {
+          return word;
+        }
+      }
+    }
+    
+    // Son çare: çok genel bir terim kullan
+    return language === 'tr' ? 'yemek' : 'food';
   }
 }
