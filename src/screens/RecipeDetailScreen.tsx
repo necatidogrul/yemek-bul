@@ -19,9 +19,7 @@ import { RouteProp } from '@react-navigation/native';
 import { HomeStackParamList, FavoritesStackParamList } from '../../App';
 import { Recipe } from '../types/Recipe';
 import { SpeechService } from '../services/speechService';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
 // UI Components
 import { Button, Text } from '../components/ui';
@@ -41,7 +39,7 @@ import { RecipeService } from '../services/recipeService';
 import { UsageLimitService } from '../services/UsageLimitService';
 import { usePremium } from '../contexts/PremiumContext';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 // Route params type
 type RecipeDetailParams = {
@@ -74,56 +72,25 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [showQAModal, setShowQAModal] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    'ingredients' | 'instructions' | 'nutrition'
-  >('ingredients');
-  const [servingSize, setServingSize] = useState(recipe?.servings || 4);
+  const [activeTab, setActiveTab] = useState<'ingredients' | 'instructions'>('ingredients');
   const [checkedIngredients, setCheckedIngredients] = useState<boolean[]>([]);
   const [imageLoading, setImageLoading] = useState(true);
-  const [isCookingMode, setIsCookingMode] = useState(false);
 
   // Hooks
   const { colors } = useThemedStyles();
   const { showSuccess, showError } = useToast();
   const haptics = useHaptics();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isPremium } = usePremium();
 
   // Premium guards
-  const exportGuard = usePremiumGuard({
-    feature: 'exportRecipes',
-    title: 'PDF Export',
-  });
-
   const aiQuestionGuard = usePremiumGuard({
     feature: 'unlimitedRecipes',
     title: 'AI Assistant',
   });
 
   // Animations
-  const scrollY = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-  const scaleAnim = useRef(new Animated.Value(0.9)).current;
-
-  // Interpolations
-  const headerOpacity = scrollY.interpolate({
-    inputRange: [0, 150],
-    outputRange: [0, 1],
-    extrapolate: 'clamp',
-  });
-
-  const imageScale = scrollY.interpolate({
-    inputRange: [-100, 0, 100],
-    outputRange: [1.5, 1, 0.9],
-    extrapolate: 'clamp',
-  });
-
-  const imageOpacity = scrollY.interpolate({
-    inputRange: [0, 200],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
 
   // Load recipe if needed
   useEffect(() => {
@@ -148,36 +115,21 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     };
 
     loadRecipeDetails();
-  }, [recipeId]);
+  }, [recipeId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize animations
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 500,
-        delay: 100,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 20,
-        friction: 7,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Initialize checked ingredients
   useEffect(() => {
     if (recipe?.ingredients) {
       setCheckedIngredients(new Array(recipe.ingredients.length).fill(false));
-      setServingSize(recipe.servings || 4);
     }
   }, [recipe]);
 
@@ -192,15 +144,6 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     } catch (error) {
       Logger.error('Share failed:', error);
     }
-  };
-
-  const handleExportPDF = () => {
-    if (!exportGuard.hasAccess) {
-      exportGuard.requirePremium();
-      return;
-    }
-    showSuccess(t('success.pdfExportComingSoon'));
-    haptics.notificationSuccess();
   };
 
   const handleQAOpen = () => {
@@ -271,14 +214,6 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     haptics.selection();
   };
 
-  const startCooking = () => {
-    setIsCookingMode(true);
-    setCurrentStep(0);
-    setActiveTab('instructions');
-    haptics.notificationSuccess();
-    showSuccess(t('success.cookingStarted'));
-  };
-
   const nextStep = () => {
     if (currentStep < (recipe?.instructions?.length || 0) - 1) {
       setCurrentStep(currentStep + 1);
@@ -299,7 +234,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
     setIsPlaying(true);
     try {
       await SpeechService.speak(recipe.instructions[currentStep], {
-        language: 'tr-TR',
+        language: i18n.language === 'tr' ? 'tr-TR' : 'en-US',
       });
     } catch (error) {
       Logger.error('Speech failed:', error);
@@ -307,38 +242,6 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
       setIsPlaying(false);
     }
   };
-
-  // Calculate nutrition values
-  const nutritionData = [
-    {
-      label: 'Kalori',
-      value: 280,
-      unit: 'kcal',
-      color: colors.error[500],
-      icon: 'fire',
-    },
-    {
-      label: 'Protein',
-      value: 18,
-      unit: 'g',
-      color: colors.primary[500],
-      icon: 'dumbbell',
-    },
-    {
-      label: 'Karbonhidrat',
-      value: 35,
-      unit: 'g',
-      color: colors.warning[500],
-      icon: 'grain',
-    },
-    {
-      label: 'Yağ',
-      value: 12,
-      unit: 'g',
-      color: colors.info[500],
-      icon: 'water',
-    },
-  ];
 
   // Loading state
   if (!recipe || isLoadingRecipe) {
@@ -364,862 +267,481 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
   }
 
   return (
-    <View
+    <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
       <StatusBar barStyle='dark-content' />
 
-      {/* Fixed Header */}
-      <Animated.View
+      {/* Header */}
+      <View
         style={[
-          styles.fixedHeader,
-          {
-            backgroundColor: colors.background.primary,
-            opacity: headerOpacity,
-            borderBottomColor: colors.border.light,
-          },
+          styles.header,
+          { borderBottomColor: colors.border.light },
         ]}
       >
-        <SafeAreaView style={styles.headerSafeArea}>
-          <View style={styles.headerContent}>
-            <TouchableOpacity
-              style={[styles.headerButton, { backgroundColor: colors.surface.primary }]}
-              onPress={() => navigation.goBack()}
-            >
-              <Ionicons
-                name='arrow-back'
-                size={24}
-                color={colors.text.primary}
-              />
-            </TouchableOpacity>
-
-            <Text
-              variant='headlineLarge'
-              weight='bold'
-              numberOfLines={1}
-              style={{
-                flex: 1,
-                textAlign: 'center',
-                marginHorizontal: spacing[3],
-              }}
-            >
-              {recipe.name}
-            </Text>
-
-            <View style={styles.headerActions}>
-              <FavoriteButton recipe={recipe} size='medium' />
-            </View>
-          </View>
-        </SafeAreaView>
-      </Animated.View>
-
-      <Animated.ScrollView
-        showsVerticalScrollIndicator={false}
-        bounces={true}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-        scrollEventThrottle={16}
-      >
-        {/* Hero Section */}
-        <Animated.View
-          style={[
-            styles.heroSection,
-            {
-              transform: [{ scale: imageScale }],
-              opacity: imageOpacity,
-            },
-          ]}
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={() => navigation.goBack()}
         >
+          <Ionicons
+            name='arrow-back'
+            size={24}
+            color={colors.text.primary}
+          />
+        </TouchableOpacity>
+
+        <Text
+          variant='headlineMedium'
+          weight='semibold'
+          numberOfLines={1}
+          style={styles.headerTitle}
+        >
+          {recipe.name}
+        </Text>
+
+        <View style={styles.headerActions}>
+          <FavoriteButton recipe={recipe} size='medium' />
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={handleShare}
+          >
+            <Ionicons
+              name='share-outline'
+              size={22}
+              color={colors.text.primary}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Recipe Image */}
+        <View style={styles.imageContainer}>
           {recipe.imageUrl ? (
             <>
               <Image
                 source={{ uri: recipe.imageUrl }}
-                style={styles.heroImage}
+                style={styles.recipeImage}
                 resizeMode='cover'
                 onLoadStart={() => setImageLoading(true)}
                 onLoadEnd={() => setImageLoading(false)}
               />
               {imageLoading && (
                 <View style={styles.imageLoader}>
-                  <ActivityIndicator size='large' color='white' />
+                  <ActivityIndicator size='large' color={colors.primary[500]} />
                 </View>
               )}
             </>
           ) : (
-            <LinearGradient
-              colors={[colors.primary[400], colors.primary[600]]}
-              style={styles.heroImage}
+            <View
+              style={[
+                styles.placeholderImage,
+                { backgroundColor: colors.neutral[100] },
+              ]}
             >
-              <Ionicons name='restaurant' size={80} color='white' />
-            </LinearGradient>
+              <Ionicons
+                name='restaurant'
+                size={48}
+                color={colors.neutral[400]}
+              />
+            </View>
+          )}
+        </View>
+
+        {/* Recipe Info */}
+        <Animated.View
+          style={[styles.content, { opacity: fadeAnim }]}
+        >
+          {/* Quick Stats */}
+          <View style={styles.statsContainer}>
+            {recipe.cookingTime || recipe.preparationTime ? (
+              <View
+                style={[
+                  styles.statItem,
+                  { backgroundColor: colors.surface.primary },
+                ]}
+              >
+                <Ionicons
+                  name='time-outline'
+                  size={20}
+                  color={colors.primary[500]}
+                />
+                <Text variant='bodyMedium'>
+                  {recipe.cookingTime || recipe.preparationTime || 30} {t('recipeDetailScreen.minutes')}
+                </Text>
+              </View>
+            ) : null}
+
+            {recipe.servings && (
+              <View
+                style={[
+                  styles.statItem,
+                  { backgroundColor: colors.surface.primary },
+                ]}
+              >
+                <Ionicons
+                  name='people-outline'
+                  size={20}
+                  color={colors.primary[500]}
+                />
+                <Text variant='bodyMedium'>
+                  {recipe.servings} {t('recipeDetailScreen.servingsCount')}
+                </Text>
+              </View>
+            )}
+
+            {recipe.difficulty && (
+              <View
+                style={[
+                  styles.statItem,
+                  { backgroundColor: colors.surface.primary },
+                ]}
+              >
+                <MaterialIcons
+                  name='signal-cellular-alt'
+                  size={20}
+                  color={colors.primary[500]}
+                />
+                <Text variant='bodyMedium'>
+                  {recipe.difficulty === 'kolay'
+                    ? t('recipeDetailScreen.easy')
+                    : recipe.difficulty === 'orta'
+                      ? t('recipeDetailScreen.medium')
+                      : t('recipeDetailScreen.hard')}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Description */}
+          {recipe.description && (
+            <View style={styles.descriptionContainer}>
+              <Text variant='bodyLarge' color='secondary'>
+                {recipe.description}
+              </Text>
+            </View>
           )}
 
-          {/* Gradient Overlay */}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.7)']}
-            style={styles.gradientOverlay}
-          />
-
-          {/* Hero Content */}
-          <View style={styles.heroContent}>
-            <TouchableOpacity
-              style={[
-                styles.floatingButton,
-                { backgroundColor: 'rgba(255,255,255,0.2)' },
-              ]}
-              onPress={() => navigation.goBack()}
-            >
-              <BlurView intensity={80} style={styles.blurButton}>
-                <Ionicons name='arrow-back' size={24} color='white' />
-              </BlurView>
-            </TouchableOpacity>
-
-            <View style={styles.heroInfo}>
-              <Animated.View
-                style={{
-                  opacity: fadeAnim,
-                  transform: [{ translateY: slideAnim }],
-                }}
-              >
-                <Text
-                  variant='displaySmall'
-                  weight='bold'
-                  style={styles.heroTitle}
-                >
-                  {recipe.name}
-                </Text>
-
-                <View style={styles.heroStats}>
-                  <View style={styles.statChip}>
-                    <Ionicons name='time-outline' size={16} color='white' />
-                    <Text variant='labelMedium' style={styles.statText}>
-                      {recipe.cookingTime || recipe.preparationTime || 30} dk
-                    </Text>
-                  </View>
-
-                  <View style={styles.statChip}>
-                    <Ionicons name='people-outline' size={16} color='white' />
-                    <Text variant='labelMedium' style={styles.statText}>
-                      {recipe.servings || 4} kişilik
-                    </Text>
-                  </View>
-
-                  {recipe.difficulty && (
-                    <View
-                      style={[
-                        styles.statChip,
-                        {
-                          backgroundColor:
-                            recipe.difficulty === 'kolay'
-                              ? 'rgba(76, 175, 80, 0.3)'
-                              : recipe.difficulty === 'orta'
-                                ? 'rgba(255, 152, 0, 0.3)'
-                                : 'rgba(244, 67, 54, 0.3)',
-                        },
-                      ]}
-                    >
-                      <Text variant='labelMedium' style={styles.statText}>
-                        {recipe.difficulty}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </Animated.View>
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* Content Container */}
-        <View
-          style={[
-            styles.contentContainer,
-            { backgroundColor: colors.background.primary },
-          ]}
-        >
-          {/* Quick Actions */}
-          <Animated.View
+          {/* Tabs */}
+          <View
             style={[
-              styles.quickActions,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }, { scale: scaleAnim }],
-              },
+              styles.tabContainer,
+              { backgroundColor: colors.surface.primary },
             ]}
           >
             <TouchableOpacity
               style={[
-                styles.actionCard,
-                { backgroundColor: colors.primary[500] },
+                styles.tab,
+                activeTab === 'ingredients' && [
+                  styles.activeTab,
+                  { borderBottomColor: colors.primary[500] },
+                ],
               ]}
-              onPress={startCooking}
+              onPress={() => {
+                setActiveTab('ingredients');
+                haptics.selection();
+              }}
             >
-              <LinearGradient
-                colors={[colors.primary[400], colors.primary[600]]}
-                style={styles.actionCardGradient}
+              <Text
+                variant='labelLarge'
+                weight={activeTab === 'ingredients' ? 'semibold' : 'normal'}
+                color={activeTab === 'ingredients' ? 'primary' : 'secondary'}
               >
-                <Ionicons name='play-circle' size={32} color='white' />
-                <Text
-                  variant='labelLarge'
-                  weight='semibold'
-                  style={{ color: 'white' }}
-                >
-                  Pişirmeye Başla
-                </Text>
-              </LinearGradient>
+                {t('recipeDetailScreen.ingredients')}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: colors.surface.primary }]}
-              onPress={handleQAOpen}
+              style={[
+                styles.tab,
+                activeTab === 'instructions' && [
+                  styles.activeTab,
+                  { borderBottomColor: colors.primary[500] },
+                ],
+              ]}
+              onPress={() => {
+                setActiveTab('instructions');
+                setCurrentStep(0);
+                haptics.selection();
+              }}
             >
-              <View style={styles.actionCardContent}>
-                <View style={styles.aiIndicator}>
-                  <MaterialCommunityIcons
-                    name='robot'
-                    size={24}
-                    color={colors.primary[500]}
-                  />
-                  {!aiQuestionGuard.hasAccess && (
-                    <View style={styles.premiumBadge}>
-                      <Ionicons name='star' size={10} color='white' />
-                    </View>
-                  )}
-                </View>
-                <Text variant='labelMedium' weight='medium' color='primary'>
-                  AI Asistan
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionCard, { backgroundColor: colors.surface.primary }]}
-              onPress={handleShare}
-            >
-              <View style={styles.actionCardContent}>
-                <Ionicons
-                  name='share-outline'
-                  size={24}
-                  color={colors.text.primary}
-                />
-                <Text variant='labelMedium' weight='medium'>
-                  Paylaş
-                </Text>
-              </View>
-            </TouchableOpacity>
-          </Animated.View>
-
-          {/* Tab Navigation */}
-          <View
-            style={[styles.tabContainer, { backgroundColor: colors.surface.primary }]}
-          >
-            {['ingredients', 'instructions', 'nutrition'].map(tab => (
-              <TouchableOpacity
-                key={tab}
-                style={[
-                  styles.tab,
-                  activeTab === tab && [
-                    styles.activeTab,
-                    { backgroundColor: colors.primary[100] },
-                  ],
-                ]}
-                onPress={() => {
-                  setActiveTab(tab as any);
-                  haptics.selection();
-                }}
+              <Text
+                variant='labelLarge'
+                weight={activeTab === 'instructions' ? 'semibold' : 'normal'}
+                color={activeTab === 'instructions' ? 'primary' : 'secondary'}
               >
-                <Ionicons
-                  name={
-                    tab === 'ingredients'
-                      ? 'basket-outline'
-                      : tab === 'instructions'
-                        ? 'list-outline'
-                        : 'nutrition-outline'
-                  }
-                  size={20}
-                  color={
-                    activeTab === tab
-                      ? colors.primary[500]
-                      : colors.text.secondary
-                  }
-                />
-                <Text
-                  variant='labelMedium'
-                  weight={activeTab === tab ? 'semibold' : 'normal'}
-                  color={activeTab === tab ? 'primary' : 'secondary'}
-                >
-                  {tab === 'ingredients'
-                    ? 'Malzemeler'
-                    : tab === 'instructions'
-                      ? 'Yapılışı'
-                      : 'Besin Değeri'}
-                </Text>
-              </TouchableOpacity>
-            ))}
+                {t('recipeDetailScreen.instructions')}
+              </Text>
+            </TouchableOpacity>
           </View>
 
           {/* Tab Content */}
-          <Animated.View
-            style={[
-              styles.tabContent,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
+          <View style={styles.tabContent}>
             {/* Ingredients Tab */}
             {activeTab === 'ingredients' && (
-              <View style={styles.section}>
-                {/* Serving Adjuster */}
-                <View
-                  style={[
-                    styles.servingAdjuster,
-                    { backgroundColor: colors.surface.primary },
-                  ]}
-                >
-                  <Text variant='headlineMedium' weight='semibold'>
-                    Porsiyon Sayısı
-                  </Text>
-                  <View style={styles.servingControls}>
-                    <TouchableOpacity
-                      style={[
-                        styles.servingButton,
-                        { backgroundColor: colors.primary[100] },
-                      ]}
-                      onPress={() =>
-                        servingSize > 1 && setServingSize(servingSize - 1)
-                      }
-                      disabled={servingSize <= 1}
-                    >
-                      <Ionicons
-                        name='remove'
-                        size={20}
-                        color={colors.primary[500]}
-                      />
-                    </TouchableOpacity>
-                    <Text
-                      variant='headlineLarge'
-                      weight='bold'
-                      style={{ minWidth: 40, textAlign: 'center' }}
-                    >
-                      {servingSize}
-                    </Text>
-                    <TouchableOpacity
-                      style={[
-                        styles.servingButton,
-                        { backgroundColor: colors.primary[100] },
-                      ]}
-                      onPress={() => setServingSize(servingSize + 1)}
-                    >
-                      <Ionicons
-                        name='add'
-                        size={20}
-                        color={colors.primary[500]}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-
-                {/* Ingredients List */}
-                <View style={styles.ingredientsList}>
-                  {recipe.ingredients?.map((ingredient, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.ingredientItem,
-                        {
-                          backgroundColor: checkedIngredients[index]
-                            ? colors.primary[50]
-                            : colors.surface.primary,
-                          borderColor: checkedIngredients[index]
-                            ? colors.primary[200]
-                            : colors.border.light,
-                        },
-                      ]}
-                      onPress={() => toggleIngredient(index)}
-                    >
-                      <View
-                        style={[
-                          styles.checkbox,
-                          {
-                            backgroundColor: checkedIngredients[index]
-                              ? colors.primary[500]
-                              : 'transparent',
-                            borderColor: checkedIngredients[index]
-                              ? colors.primary[500]
-                              : colors.border.medium,
-                          },
-                        ]}
-                      >
-                        {checkedIngredients[index] && (
-                          <Ionicons name='checkmark' size={16} color='white' />
-                        )}
-                      </View>
-                      <Text
-                        variant='bodyLarge'
-                        style={StyleSheet.flatten([
-                          styles.ingredientText,
-                          checkedIngredients[index] && styles.checkedText,
-                        ])}
-                      >
-                        {ingredient}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* Progress Indicator */}
-                <View
-                  style={[
-                    styles.progressCard,
-                    { backgroundColor: colors.surface.primary },
-                  ]}
-                >
-                  <View style={styles.progressHeader}>
-                    <Text variant='labelLarge' weight='medium'>
-                      Hazırlık İlerlemesi
-                    </Text>
-                    <Text variant='labelMedium' color='secondary'>
-                      {checkedIngredients.filter(Boolean).length}/
-                      {checkedIngredients.length}
-                    </Text>
-                  </View>
-                  <View
+              <View style={styles.ingredientsList}>
+                {recipe.ingredients?.map((ingredient, index) => (
+                  <TouchableOpacity
+                    key={index}
                     style={[
-                      styles.progressBar,
-                      { backgroundColor: colors.neutral[100] },
+                      styles.ingredientItem,
+                      {
+                        backgroundColor: colors.surface.primary,
+                        borderColor: checkedIngredients[index]
+                          ? colors.primary[200]
+                          : colors.border.light,
+                      },
                     ]}
+                    onPress={() => toggleIngredient(index)}
                   >
                     <View
                       style={[
-                        styles.progressFill,
+                        styles.checkbox,
                         {
-                          backgroundColor: colors.primary[500],
-                          width: `${(checkedIngredients.filter(Boolean).length / checkedIngredients.length) * 100}%`,
+                          backgroundColor: checkedIngredients[index]
+                            ? colors.primary[500]
+                            : 'transparent',
+                          borderColor: checkedIngredients[index]
+                            ? colors.primary[500]
+                            : colors.border.medium,
                         },
                       ]}
-                    />
-                  </View>
+                    >
+                      {checkedIngredients[index] && (
+                        <Ionicons name='checkmark' size={14} color='white' />
+                      )}
+                    </View>
+                    <Text
+                      variant='bodyMedium'
+                      style={{
+                        ...styles.ingredientText,
+                        ...(checkedIngredients[index] ? styles.checkedText : {}),
+                      }}
+                    >
+                      {ingredient}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                
+                {/* AI Assistant Info */}
+                <View
+                  style={[
+                    styles.aiInfoCard,
+                    { 
+                      backgroundColor: colors.primary[50],
+                      borderColor: colors.primary[200],
+                    },
+                  ]}
+                >
+                  <MaterialIcons
+                    name='tips-and-updates'
+                    size={20}
+                    color={colors.primary[600]}
+                  />
+                  <Text
+                    variant='bodySmall'
+                    style={{ 
+                      flex: 1,
+                      color: colors.primary[700],
+                      marginLeft: spacing[2],
+                    }}
+                  >
+                    {t('recipeDetailScreen.aiAssistantHint')}
+                  </Text>
                 </View>
               </View>
             )}
 
             {/* Instructions Tab */}
             {activeTab === 'instructions' && (
-              <View style={styles.section}>
-                {isCookingMode ? (
-                  <>
-                    {/* Cooking Mode Header */}
-                    <View
-                      style={[
-                        styles.cookingHeader,
-                        { backgroundColor: colors.primary[50] },
-                      ]}
-                    >
-                      <View style={styles.cookingInfo}>
-                        <Text
-                          variant='headlineMedium'
-                          weight='bold'
-                          color='primary'
-                        >
-                          Pişirme Modu
-                        </Text>
-                        <Text variant='labelMedium' color='secondary'>
-                          Adım {currentStep + 1} /{' '}
-                          {recipe.instructions?.length || 0}
-                        </Text>
-                      </View>
-                      <TouchableOpacity
-                        style={[
-                          styles.exitButton,
-                          { backgroundColor: colors.error[500] },
-                        ]}
-                        onPress={() => {
-                          setIsCookingMode(false);
-                          haptics.selection();
-                        }}
-                      >
-                        <Ionicons name='close' size={20} color='white' />
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* Current Step */}
-                    <View
-                      style={[
-                        styles.stepCard,
-                        { backgroundColor: colors.surface.primary },
-                      ]}
-                    >
-                      <View style={styles.stepNumber}>
-                        <Text
-                          variant='displaySmall'
-                          weight='bold'
-                          color='primary'
-                        >
-                          {currentStep + 1}
-                        </Text>
-                      </View>
-                      <Text variant='bodyLarge' style={styles.stepText}>
-                        {recipe.instructions?.[currentStep]}
-                      </Text>
-
-                      <View style={styles.stepActions}>
-                        <TouchableOpacity
-                          style={[
-                            styles.audioButton,
-                            { backgroundColor: colors.primary[100] },
-                          ]}
-                          onPress={playStepAudio}
-                          disabled={isPlaying}
-                        >
-                          {isPlaying ? (
-                            <ActivityIndicator
-                              size='small'
-                              color={colors.primary[500]}
-                            />
-                          ) : (
-                            <Ionicons
-                              name='volume-high'
-                              size={24}
-                              color={colors.primary[500]}
-                            />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-
-                    {/* Step Navigation */}
-                    <View style={styles.stepNavigation}>
-                      <TouchableOpacity
-                        style={[
-                          styles.navButton,
-                          {
-                            backgroundColor:
-                              currentStep === 0
-                                ? colors.neutral[100]
-                                : colors.primary[100],
-                            opacity: currentStep === 0 ? 0.5 : 1,
-                          },
-                        ]}
-                        onPress={previousStep}
-                        disabled={currentStep === 0}
-                      >
-                        <Ionicons
-                          name='chevron-back'
-                          size={24}
-                          color={
-                            currentStep === 0
-                              ? colors.neutral[400]
-                              : colors.primary[500]
-                          }
-                        />
-                        <Text
-                          variant='labelLarge'
-                          weight='medium'
-                          color={currentStep === 0 ? 'disabled' : 'primary'}
-                        >
-                          Önceki
-                        </Text>
-                      </TouchableOpacity>
-
-                      <TouchableOpacity
-                        style={[
-                          styles.navButton,
-                          {
-                            backgroundColor:
-                              currentStep ===
-                              (recipe.instructions?.length || 0) - 1
-                                ? colors.success[500] + '20'
-                                : colors.primary[500],
-                          },
-                        ]}
-                        onPress={
-                          currentStep === (recipe.instructions?.length || 0) - 1
-                            ? () => {
-                                setIsCookingMode(false);
-                                showSuccess('Tebrikler! Tarif tamamlandı 🎉');
-                                haptics.notificationSuccess();
-                              }
-                            : nextStep
-                        }
-                      >
-                        <Text
-                          variant='labelLarge'
-                          weight='medium'
-                          style={{
-                            color:
-                              currentStep ===
-                              (recipe.instructions?.length || 0) - 1
-                                ? colors.success[500]
-                                : 'white',
-                          }}
-                        >
-                          {currentStep ===
-                          (recipe.instructions?.length || 0) - 1
-                            ? 'Tamamla'
-                            : 'Sonraki'}
-                        </Text>
-                        <Ionicons
-                          name={
-                            currentStep ===
-                            (recipe.instructions?.length || 0) - 1
-                              ? 'checkmark-circle'
-                              : 'chevron-forward'
-                          }
-                          size={24}
-                          color={
-                            currentStep ===
-                            (recipe.instructions?.length || 0) - 1
-                              ? colors.success[500]
-                              : 'white'
-                          }
-                        />
-                      </TouchableOpacity>
-                    </View>
-
-                    {/* Progress Dots */}
-                    <View style={styles.progressDots}>
-                      {recipe.instructions?.map((_, index) => (
-                        <View
-                          key={index}
-                          style={[
-                            styles.dot,
-                            {
-                              backgroundColor:
-                                index <= currentStep
-                                  ? colors.primary[500]
-                                  : colors.neutral[200],
-                              width: index === currentStep ? 24 : 8,
-                            },
-                          ]}
-                        />
-                      ))}
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    {/* Instructions List */}
-                    <View style={styles.instructionsList}>
-                      {recipe.instructions?.map((instruction, index) => (
-                        <View
-                          key={index}
-                          style={[
-                            styles.instructionItem,
-                            { backgroundColor: colors.surface.primary },
-                          ]}
-                        >
-                          <View
-                            style={[
-                              styles.instructionNumber,
-                              { backgroundColor: colors.primary[100] },
-                            ]}
-                          >
-                            <Text
-                              variant='headlineMedium'
-                              weight='bold'
-                              color='primary'
-                            >
-                              {index + 1}
-                            </Text>
-                          </View>
-                          <Text
-                            variant='bodyLarge'
-                            style={styles.instructionText}
-                          >
-                            {instruction}
-                          </Text>
-                        </View>
-                      ))}
-                    </View>
-
-                    {/* Start Cooking Button */}
-                    <TouchableOpacity
-                      style={[
-                        styles.startCookingButton,
-                        { backgroundColor: colors.primary[500] },
-                      ]}
-                      onPress={startCooking}
-                    >
-                      <LinearGradient
-                        colors={[colors.primary[400], colors.primary[600]]}
-                        style={styles.startCookingGradient}
-                      >
-                        <Ionicons name='play-circle' size={28} color='white' />
-                        <Text
-                          variant='headlineMedium'
-                          weight='bold'
-                          style={{ color: 'white' }}
-                        >
-                          Adım Adım Pişirme Modunu Başlat
-                        </Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
-            )}
-
-            {/* Nutrition Tab */}
-            {activeTab === 'nutrition' && (
-              <View style={styles.section}>
-                <View style={styles.nutritionGrid}>
-                  {nutritionData.map((item, index) => (
-                    <View
-                      key={index}
-                      style={[
-                        styles.nutritionCard,
-                        { backgroundColor: colors.surface.primary },
-                      ]}
-                    >
-                      <View
-                        style={[
-                          styles.nutritionIcon,
-                          { backgroundColor: item.color + '20' },
-                        ]}
-                      >
-                        <MaterialCommunityIcons
-                          name={item.icon as any}
-                          size={24}
-                          color={item.color}
-                        />
-                      </View>
-                      <Text
-                        variant='displaySmall'
-                        weight='bold'
-                        style={{ color: item.color }}
-                      >
-                        {item.value}
-                      </Text>
-                      <Text variant='labelMedium' color='secondary'>
-                        {item.unit}
-                      </Text>
-                      <Text variant='labelSmall' weight='medium'>
-                        {item.label}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-
-                {/* Daily Values */}
+              <View style={styles.instructionsContainer}>
+                {/* Step Counter */}
                 <View
                   style={[
-                    styles.dailyValuesCard,
+                    styles.stepHeader,
+                    { backgroundColor: colors.primary[50] },
+                  ]}
+                >
+                  <Text variant='labelMedium' color='primary'>
+                    {t('recipeDetailScreen.step')} {currentStep + 1} / {recipe.instructions?.length || 0}
+                  </Text>
+                </View>
+
+                {/* Current Step */}
+                <View
+                  style={[
+                    styles.stepCard,
                     { backgroundColor: colors.surface.primary },
                   ]}
                 >
-                  <Text
-                    variant='headlineMedium'
-                    weight='semibold'
-                    style={{ marginBottom: spacing[4] }}
-                  >
-                    Günlük Değerler (%)
+                  <Text variant='bodyLarge' style={styles.stepText}>
+                    {recipe.instructions?.[currentStep]}
                   </Text>
-                  {nutritionData.map((item, index) => (
-                    <View key={index} style={styles.dailyValueRow}>
-                      <Text variant='bodyMedium'>{item.label}</Text>
-                      <View style={styles.dailyValueBarContainer}>
-                        <View
-                          style={[
-                            styles.dailyValueBar,
-                            { backgroundColor: colors.neutral[100] },
-                          ]}
-                        >
-                          <View
-                            style={[
-                              styles.dailyValueFill,
-                              {
-                                backgroundColor: item.color,
-                                width: `${Math.min((item.value / 200) * 100, 100)}%`,
-                              },
-                            ]}
-                          />
-                        </View>
-                        <Text
-                          variant='labelSmall'
-                          weight='medium'
-                          style={{ marginLeft: spacing[2] }}
-                        >
-                          {Math.round((item.value / 200) * 100)}%
-                        </Text>
-                      </View>
-                    </View>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.audioButton,
+                      { backgroundColor: colors.primary[50] },
+                    ]}
+                    onPress={playStepAudio}
+                    disabled={isPlaying}
+                  >
+                    {isPlaying ? (
+                      <ActivityIndicator
+                        size='small'
+                        color={colors.primary[500]}
+                      />
+                    ) : (
+                      <Ionicons
+                        name='volume-medium'
+                        size={20}
+                        color={colors.primary[500]}
+                      />
+                    )}
+                  </TouchableOpacity>
+                </View>
+
+                {/* Step Navigation */}
+                <View style={styles.stepNavigation}>
+                  <TouchableOpacity
+                    style={[
+                      styles.navButton,
+                      {
+                        backgroundColor: colors.surface.primary,
+                        opacity: currentStep === 0 ? 0.5 : 1,
+                      },
+                    ]}
+                    onPress={previousStep}
+                    disabled={currentStep === 0}
+                  >
+                    <Ionicons
+                      name='chevron-back'
+                      size={20}
+                      color={
+                        currentStep === 0
+                          ? colors.neutral[400]
+                          : colors.text.primary
+                      }
+                    />
+                    <Text
+                      variant='bodyMedium'
+                      color={currentStep === 0 ? 'disabled' : 'primary'}
+                    >
+                      {t('recipeDetailScreen.previous')}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.navButton,
+                      {
+                        backgroundColor:
+                          currentStep === (recipe.instructions?.length || 0) - 1
+                            ? colors.success[500]
+                            : colors.primary[500],
+                      },
+                    ]}
+                    onPress={
+                      currentStep === (recipe.instructions?.length || 0) - 1
+                        ? () => {
+                            setCurrentStep(0);
+                            showSuccess(t('recipeDetailScreen.recipeCongrats'));
+                            haptics.notificationSuccess();
+                          }
+                        : nextStep
+                    }
+                  >
+                    <Text
+                      variant='bodyMedium'
+                      weight='medium'
+                      style={{ color: 'white' }}
+                    >
+                      {currentStep === (recipe.instructions?.length || 0) - 1
+                        ? t('recipeDetailScreen.complete')
+                        : t('recipeDetailScreen.next')}
+                    </Text>
+                    <Ionicons
+                      name={
+                        currentStep === (recipe.instructions?.length || 0) - 1
+                          ? 'checkmark'
+                          : 'chevron-forward'
+                      }
+                      size={20}
+                      color='white'
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Progress Dots */}
+                <View style={styles.progressDots}>
+                  {recipe.instructions?.map((_, index) => (
+                    <View
+                      key={index}
+                      style={[
+                        styles.dot,
+                        {
+                          backgroundColor:
+                            index === currentStep
+                              ? colors.primary[500]
+                              : index < currentStep
+                                ? colors.primary[200]
+                                : colors.neutral[200],
+                        },
+                      ]}
+                    />
                   ))}
                 </View>
 
-                {/* Nutrition Info */}
+                {/* AI Assistant Info */}
                 <View
                   style={[
-                    styles.infoCard,
-                    { backgroundColor: colors.info[50] },
+                    styles.aiInfoCard,
+                    { 
+                      backgroundColor: colors.primary[50],
+                      borderColor: colors.primary[200],
+                    },
                   ]}
                 >
-                  <Ionicons
-                    name='information-circle'
+                  <MaterialIcons
+                    name='tips-and-updates'
                     size={20}
-                    color={colors.info[500]}
+                    color={colors.primary[600]}
                   />
                   <Text
                     variant='bodySmall'
-                    color='secondary'
-                    style={{ flex: 1, marginLeft: spacing[2] }}
+                    style={{ 
+                      flex: 1,
+                      color: colors.primary[700],
+                      marginLeft: spacing[2],
+                    }}
                   >
-                    Besin değerleri yaklaşık hesaplamalardır ve kullanılan
-                    malzemelere göre değişebilir.
+                    {t('recipeDetailScreen.aiAssistantHint')}
                   </Text>
                 </View>
               </View>
             )}
-          </Animated.View>
-        </View>
-      </Animated.ScrollView>
+          </View>
+        </Animated.View>
+      </ScrollView>
 
-      {/* Bottom Action Bar */}
-      <View
+      {/* AI Assistant Button */}
+      <TouchableOpacity
         style={[
-          styles.bottomBar,
-          {
-            backgroundColor: colors.surface.primary,
-            borderTopColor: colors.border.light,
-          },
+          styles.floatingButton,
+          { backgroundColor: colors.primary[500] },
         ]}
+        onPress={handleQAOpen}
       >
-        <TouchableOpacity
-          style={[styles.bottomAction, { backgroundColor: colors.surface.primary }]}
-          onPress={handleExportPDF}
-        >
-          <Ionicons
-            name='document-text-outline'
-            size={24}
-            color={
-              exportGuard.hasAccess
-                ? colors.text.primary
-                : colors.text.secondary
-            }
-          />
-          {!exportGuard.hasAccess && (
-            <View style={styles.bottomBadge}>
-              <Ionicons name='star' size={10} color='white' />
-            </View>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.bottomMainAction}>
-          <FavoriteButton recipe={recipe} size='large' style={{ flex: 1 }} />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.bottomAction, { backgroundColor: colors.surface.primary }]}
-          onPress={handleShare}
-        >
-          <Ionicons
-            name='share-social-outline'
-            size={24}
-            color={colors.text.primary}
-          />
-        </TouchableOpacity>
-      </View>
+        <MaterialIcons name='assistant' size={24} color='white' />
+        {!aiQuestionGuard.hasAccess && (
+          <View style={styles.premiumBadge}>
+            <Ionicons name='star' size={8} color='white' />
+          </View>
+        )}
+      </TouchableOpacity>
 
       {/* QA Modal */}
       {showQAModal && (
@@ -1230,7 +752,7 @@ const RecipeDetailScreen: React.FC<RecipeDetailScreenProps> = ({
           onAskQuestion={handleAskQuestion}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -1244,31 +766,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Fixed Header
-  fixedHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-    borderBottomWidth: 1,
-  },
-  headerSafeArea: {
-    paddingTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight || 0,
-  },
-  headerContent: {
+  // Header
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing[4],
     paddingVertical: spacing[3],
+    borderBottomWidth: 1,
   },
   headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.sm,
+    padding: spacing[2],
+  },
+  headerTitle: {
+    flex: 1,
+    marginHorizontal: spacing[3],
   },
   headerActions: {
     flexDirection: 'row',
@@ -1276,12 +787,24 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
 
-  // Hero Section
-  heroSection: {
-    height: SCREEN_HEIGHT * 0.4,
+  // Content
+  scrollContent: {
+    paddingBottom: spacing[10],
+  },
+  content: {
+    padding: spacing[5],
+  },
+
+  // Image
+  imageContainer: {
+    height: 240,
     position: 'relative',
   },
-  heroImage: {
+  recipeImage: {
+    width: '100%',
+    height: '100%',
+  },
+  placeholderImage: {
     width: '100%',
     height: '100%',
     alignItems: 'center',
@@ -1295,180 +818,65 @@ const styles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.8)',
   },
-  gradientOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '70%',
-  },
-  heroContent: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: spacing[5],
-    justifyContent: 'space-between',
-  },
-  floatingButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-    marginTop: Platform.OS === 'ios' ? 44 : StatusBar.currentHeight || 0,
-  },
-  blurButton: {
-    width: '100%',
-    height: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroInfo: {
-    marginBottom: spacing[4],
-  },
-  heroTitle: {
-    color: 'white',
-    marginBottom: spacing[3],
-  },
-  heroStats: {
+
+  // Stats
+  statsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[2],
+    marginBottom: spacing[4],
   },
-  statChip: {
+  statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing[1],
+    gap: spacing[2],
     paddingHorizontal: spacing[3],
     paddingVertical: spacing[2],
-    backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: borderRadius.full,
   },
-  statText: {
-    color: 'white',
-  },
 
-  // Content Container
-  contentContainer: {
-    marginTop: -spacing[8],
-    borderTopLeftRadius: borderRadius.xl,
-    borderTopRightRadius: borderRadius.xl,
-    paddingTop: spacing[6],
-    minHeight: SCREEN_HEIGHT * 0.7,
-  },
-
-  // Quick Actions
-  quickActions: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing[5],
+  // Description
+  descriptionContainer: {
     marginBottom: spacing[5],
-    gap: spacing[3],
-  },
-  actionCard: {
-    flex: 1,
-    height: 80,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    ...shadows.md,
-  },
-  actionCardGradient: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[1],
-  },
-  actionCardContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[1],
-  },
-  aiIndicator: {
-    position: 'relative',
-  },
-  premiumBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#FFD700',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   // Tabs
   tabContainer: {
     flexDirection: 'row',
-    marginHorizontal: spacing[5],
-    marginBottom: spacing[4],
-    padding: spacing[1],
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
+    borderRadius: borderRadius.base,
+    marginBottom: spacing[5],
   },
   tab: {
     flex: 1,
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[2],
     paddingVertical: spacing[3],
-    borderRadius: borderRadius.base,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   activeTab: {
-    ...shadows.xs,
+    borderBottomWidth: 2,
   },
   tabContent: {
-    paddingHorizontal: spacing[5],
-  },
-
-  // Section
-  section: {
-    marginBottom: spacing[10],
-  },
-
-  // Serving Adjuster
-  servingAdjuster: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing[5],
-    marginBottom: spacing[4],
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-  servingControls: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[4],
-  },
-  servingButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minHeight: 300,
   },
 
   // Ingredients
   ingredientsList: {
-    gap: spacing[3],
+    gap: spacing[2],
   },
   ingredientItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing[4],
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.base,
     borderWidth: 1,
     gap: spacing[3],
   },
   checkbox: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     borderRadius: borderRadius.sm,
     borderWidth: 2,
     alignItems: 'center',
@@ -1481,119 +889,48 @@ const styles = StyleSheet.create({
     textDecorationLine: 'line-through',
     opacity: 0.6,
   },
-
-  // Progress
-  progressCard: {
-    padding: spacing[5],
-    marginTop: spacing[4],
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-  progressHeader: {
+  aiInfoCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing[3],
-  },
-  progressBar: {
-    height: 8,
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: 4,
+    alignItems: 'center',
+    padding: spacing[3],
+    marginTop: spacing[4],
+    borderRadius: borderRadius.base,
+    borderWidth: 1,
   },
 
   // Instructions
-  instructionsList: {
+  instructionsContainer: {
     gap: spacing[4],
   },
-  instructionItem: {
-    flexDirection: 'row',
+  stepHeader: {
+    alignSelf: 'center',
+    paddingHorizontal: spacing[4],
+    paddingVertical: spacing[2],
+    borderRadius: borderRadius.full,
+  },
+  stepCard: {
     padding: spacing[5],
     borderRadius: borderRadius.lg,
-    gap: spacing[4],
     ...shadows.sm,
+    position: 'relative',
   },
-  instructionNumber: {
+  stepText: {
+    lineHeight: 24,
+    paddingRight: spacing[10],
+  },
+  audioButton: {
+    position: 'absolute',
+    top: spacing[4],
+    right: spacing[4],
     width: 40,
     height: 40,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  instructionText: {
-    flex: 1,
-    lineHeight: 24,
-  },
-  startCookingButton: {
-    marginTop: spacing[5],
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    ...shadows.lg,
-  },
-  startCookingGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing[3],
-    paddingVertical: spacing[5],
-  },
-
-  // Cooking Mode
-  cookingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing[4],
-    marginBottom: spacing[4],
-    borderRadius: borderRadius.lg,
-  },
-  cookingInfo: {
-    gap: spacing[1],
-  },
-  exitButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepCard: {
-    padding: spacing[6],
-    marginBottom: spacing[4],
-    borderRadius: borderRadius.lg,
-    ...shadows.md,
-  },
-  stepNumber: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing[4],
-    alignSelf: 'center',
-  },
-  stepText: {
-    lineHeight: 28,
-    textAlign: 'center',
-    marginBottom: spacing[5],
-  },
-  stepActions: {
-    alignItems: 'center',
-  },
-  audioButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.sm,
-  },
   stepNavigation: {
     flexDirection: 'row',
     gap: spacing[3],
-    marginBottom: spacing[4],
   },
   navButton: {
     flex: 1,
@@ -1601,9 +938,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing[2],
-    paddingVertical: spacing[4],
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
+    paddingVertical: spacing[3],
+    borderRadius: borderRadius.base,
+    ...shadows.xs,
   },
   progressDots: {
     flexDirection: 'row',
@@ -1612,89 +949,24 @@ const styles = StyleSheet.create({
     gap: spacing[2],
   },
   dot: {
+    width: 8,
     height: 8,
     borderRadius: 4,
   },
 
-  // Nutrition
-  nutritionGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing[3],
-    marginBottom: spacing[4],
-  },
-  nutritionCard: {
-    width: (SCREEN_WIDTH - spacing[5] * 2 - spacing[3]) / 2,
-    alignItems: 'center',
-    padding: spacing[5],
-    borderRadius: borderRadius.lg,
-    gap: spacing[2],
-    ...shadows.sm,
-  },
-  nutritionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  // Floating Button
+  floatingButton: {
+    position: 'absolute',
+    bottom: spacing[8],
+    right: spacing[5],
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  dailyValuesCard: {
-    padding: spacing[5],
-    marginBottom: spacing[4],
-    borderRadius: borderRadius.lg,
-    ...shadows.sm,
-  },
-  dailyValueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing[3],
-  },
-  dailyValueBarContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: spacing[4],
-  },
-  dailyValueBar: {
-    flex: 1,
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  dailyValueFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  infoCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing[4],
-    borderRadius: borderRadius.lg,
-  },
-
-  // Bottom Bar
-  bottomBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing[5],
-    paddingVertical: spacing[3],
-    borderTopWidth: 1,
     ...shadows.lg,
   },
-  bottomAction: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  bottomMainAction: {
-    flex: 1,
-    marginHorizontal: spacing[4],
-  },
-  bottomBadge: {
+  premiumBadge: {
     position: 'absolute',
     top: 0,
     right: 0,

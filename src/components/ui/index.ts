@@ -6,7 +6,6 @@ export { default as Text } from './Text';
 
 // Interactive Components
 export { FavoriteButton } from './FavoriteButton';
-export { default as TourOverlay } from './TourOverlay';
 
 // Loading Components
 export { Loading, InlineLoading, PageLoading, LoadingOverlay } from './Loading';

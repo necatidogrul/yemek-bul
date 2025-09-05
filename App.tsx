@@ -15,13 +15,11 @@ import './src/locales';
 // Contexts
 import { ThemeProvider } from './src/contexts/ThemeContext';
 import { ToastProvider } from './src/contexts/ToastContext';
-import { TourProvider } from './src/contexts/TourContext';
 import { PremiumProvider } from './src/contexts/PremiumContext';
 import { HapticProvider } from './src/hooks/useHaptics';
 import { LanguageProvider } from './src/contexts/LanguageContext';
 
 // UI Components
-import TourOverlay from './src/components/ui/TourOverlay';
 import { ToastContainer } from './src/components/ui/ToastContainer';
 import { ThemedStatusBar } from './src/components/theme/ThemedStatusBar';
 import { GlobalErrorHandler } from './src/components/error/GlobalErrorHandler';
@@ -280,12 +278,9 @@ export default function App(): React.ReactElement {
               <ToastProvider>
                 <PremiumProvider>
                   <GlobalErrorHandler>
-                    <TourProvider>
-                      <NavigationContainer>
-                        <MainTabNavigator />
-                      </NavigationContainer>
-                      <TourOverlay />
-                    </TourProvider>
+                    <NavigationContainer>
+                      <MainTabNavigator />
+                    </NavigationContainer>
                     <ToastContainer />
                     <ThemedStatusBar />
                   </GlobalErrorHandler>

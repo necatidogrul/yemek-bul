@@ -28,7 +28,6 @@ const DEFAULT_PREFERENCES: UserPreferences = {
 const STORAGE_KEYS = {
   USER_PREFERENCES: 'user_preferences',
   ONBOARDING_COMPLETED: 'onboarding_completed',
-  FIRST_TIME_TOUR: 'first_time_tour_completed',
 } as const;
 
 export class UserPreferencesService {
@@ -112,33 +111,6 @@ export class UserPreferencesService {
   }
 
   /**
-   * Check if user has completed first-time tour
-   */
-  static async hasCompletedFirstTimeTour(): Promise<boolean> {
-    try {
-      const completed = await AsyncStorage.getItem(
-        STORAGE_KEYS.FIRST_TIME_TOUR
-      );
-      return completed === 'true';
-    } catch (error) {
-      console.error('Error checking first time tour status:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Mark first-time tour as completed
-   */
-  static async markFirstTimeTourCompleted(): Promise<void> {
-    try {
-      await AsyncStorage.setItem(STORAGE_KEYS.FIRST_TIME_TOUR, 'true');
-    } catch (error) {
-      console.error('Error marking first time tour completed:', error);
-      throw error;
-    }
-  }
-
-  /**
    * Reset all user preferences and onboarding status (for testing/debugging)
    */
   static async resetAllPreferences(): Promise<void> {
@@ -146,7 +118,6 @@ export class UserPreferencesService {
       await AsyncStorage.multiRemove([
         STORAGE_KEYS.USER_PREFERENCES,
         STORAGE_KEYS.ONBOARDING_COMPLETED,
-        STORAGE_KEYS.FIRST_TIME_TOUR,
       ]);
     } catch (error) {
       console.error('Error resetting preferences:', error);

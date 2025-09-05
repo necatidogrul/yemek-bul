@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import { UnsplashService } from './unsplashService';
 import { GoogleImageService } from './googleImageService';
 import { Logger } from '../services/LoggerService';
+import i18n from '../locales/index';
 
 export interface RecipeGenerationRequest {
   ingredients: string[];
@@ -492,12 +493,20 @@ export class OpenAIService {
     question: string
   ): Promise<string> {
     try {
-      const prompt = this.buildQuestionPrompt(recipe, question);
+      const currentLanguage = i18n.language || 'tr';
+      const prompt = this.buildQuestionPrompt(recipe, question, currentLanguage);
 
       console.log('🤖 OpenAI API: Recipe Q&A started');
       console.log('❓ Question:', question);
+      console.log('🌍 Language:', currentLanguage);
 
       const { url, headers } = await this.getApiConfig();
+
+      // System prompt dile göre ayarla
+      const systemContent =
+        currentLanguage === 'en'
+          ? 'You are an experienced chef and nutrition expert. Answer recipe questions in a detailed, practical, and helpful manner. Respond in English using a friendly tone.'
+          : 'Sen deneyimli bir şef ve beslenme uzmanısın. Tariflerdeki soruları detaylı, pratik ve yardımcı şekilde yanıtlıyorsun. Yanıtların Türkçe olsun ve samimi bir dille konuş.';
 
       const response = await fetch(url, {
         method: 'POST',
@@ -507,8 +516,7 @@ export class OpenAIService {
           messages: [
             {
               role: 'system',
-              content:
-                'Sen deneyimli bir şef ve beslenme uzmanısın. Tariflerdeki soruları detaylı, pratik ve yardımcı şekilde yanıtlıyorsun. Yanıtların Türkçe olsun ve samimi bir dille konuş.',
+              content: systemContent,
             },
             {
               role: 'user',
@@ -547,8 +555,28 @@ export class OpenAIService {
   /**
    * Soru için prompt oluştur
    */
-  private static buildQuestionPrompt(recipe: any, question: string): string {
-    return `Şu tarif hakkında soruyu yanıtla:
+  private static buildQuestionPrompt(
+    recipe: any,
+    question: string,
+    language: string = 'tr'
+  ): string {
+    if (language === 'en') {
+      return `Please answer this question about the following recipe:
+
+RECIPE:
+Name: ${recipe.name}
+Description: ${recipe.description || ''}
+Ingredients: ${recipe.ingredients?.join(', ') || ''}
+Instructions: ${recipe.instructions?.join(' ') || ''}
+Time: ${recipe.preparationTime || recipe.cookingTime || 'Not specified'} minutes
+Servings: ${recipe.servings || 'Not specified'} people
+Difficulty: ${recipe.difficulty || 'Not specified'}
+
+QUESTION: ${question}
+
+Please answer this question clearly, practically, and helpfully. Offer alternative suggestions if appropriate.`;
+    } else {
+      return `Şu tarif hakkında soruyu yanıtla:
 
 TARİF:
 Adı: ${recipe.name}
@@ -562,6 +590,7 @@ Zorluk: ${recipe.difficulty || 'Belirtilmemiş'}
 SORU: ${question}
 
 Lütfen bu soruyu net, pratik ve yardımcı şekilde yanıtla. Gerekirse alternatif öneriler de sun.`;
+    }
   }
 
   /**

@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { FavoritesStackParamList } from '../../App';
 import { Recipe } from '../types/Recipe';
 import { FavoritesService } from '../services/FavoritesService';
+import { useTranslation } from 'react-i18next';
 
 // UI Components
 import { Text } from '../components/ui';
@@ -54,6 +55,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const { showSuccess, showError } = useToast();
   const haptics = useHaptics();
   const { isPremium, showPaywall, refreshPremiumStatus, isLoading: premiumLoading } = usePremium();
+  const { t } = useTranslation();
 
   const debugLog = (message: string, data?: any) => {
     if (__DEV__) {
@@ -126,7 +128,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       setFavorites(favRecipes);
     } catch (error) {
       console.error('Failed to load favorites:', error);
-      showError('Favoriler yüklenemedi');
+      showError(t('favoritesScreen.failedToLoad'));
       setFavorites([]);
     } finally {
       setIsLoading(false);
@@ -170,7 +172,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 
   const handleRecipePress = (recipe: Recipe) => {
     if (!recipe.id) {
-      showError('Tarif bilgisi eksik');
+      showError(t('favoritesScreen.recipeMissingInfo'));
       return;
     }
 
@@ -286,7 +288,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             haptics.notificationSuccess();
             const success = await FavoritesService.removeFromFavorites(item.id);
             if (success) {
-              showSuccess('Favorilerden kaldırıldı');
+              showSuccess(t('favoritesScreen.removedFromFavorites'));
               loadFavorites();
             }
           }}
@@ -313,7 +315,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
               color={colors.neutral[400]}
             />
             <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
-              {item.cookingTime || 30} dk
+              {item.cookingTime || 30} {t('favoritesScreen.minutes')}
             </Text>
           </View>
           <View style={styles.statItem}>
@@ -323,7 +325,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
               color={colors.neutral[400]}
             />
             <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
-              {item.servings || 4} kişi
+              {item.servings || 4} {t('favoritesScreen.servings')}
             </Text>
           </View>
         </View>
@@ -377,7 +379,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
               color={colors.neutral[400]}
             />
             <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
-              {item.cookingTime || 30} dk
+              {item.cookingTime || 30} {t('favoritesScreen.minutes')}
             </Text>
           </View>
           <View style={styles.statItem}>
@@ -430,7 +432,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           haptics.notificationSuccess();
           const success = await FavoritesService.removeFromFavorites(item.id);
           if (success) {
-            showSuccess('Favorilerden kaldırıldı');
+            showSuccess(t('favoritesScreen.removedFromFavorites'));
             loadFavorites();
           }
         }}
@@ -447,7 +449,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           type='no-search-results'
           actions={[
             {
-              label: 'Filtreleri Temizle',
+              label: t('favoritesScreen.clearFilters'),
               onPress: clearFilters,
               variant: 'outline',
               icon: 'close-circle-outline',
@@ -462,7 +464,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
         type='no-favorites'
         actions={[
           {
-            label: 'Tarif Keşfet',
+            label: t('favoritesScreen.discoverRecipes'),
             onPress: () => navigation.getParent()?.navigate('HomeTab' as any),
             icon: 'compass-outline',
           },
@@ -511,7 +513,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             weight='bold'
             style={{ color: colors.text.primary }}
           >
-            Favorilerim
+            {t('favoritesScreen.title')}
           </Text>
           <View style={styles.headerRight} />
         </View>
@@ -536,7 +538,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
               color='primary'
               align='center'
             >
-              Premium Özellik
+              {t('favoritesScreen.premium.title')}
             </Text>
 
             <Text
@@ -545,16 +547,16 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
               align='center'
               style={styles.premiumDescription}
             >
-              Favori tariflerinizi kaydetmek ve yönetmek için Premium'a geçin
+              {t('favoritesScreen.premium.description')}
             </Text>
 
             <View style={styles.premiumFeaturesList}>
               {[
-                'Sınırsız favori tarif kaydetme',
-                'Favorileri kategorilere ayırma',
-                'Offline erişim için kaydetme',
-                'Favori tarifleri dışa aktarma',
-                'Gelişmiş arama ve filtreleme',
+                t('favoritesScreen.premium.features.unlimitedFavorites'),
+                t('favoritesScreen.premium.features.categorize'),
+                t('favoritesScreen.premium.features.offlineAccess'),
+                t('favoritesScreen.premium.features.export'),
+                t('favoritesScreen.premium.features.advancedSearch'),
               ].map((feature, index) => (
                 <View key={index} style={styles.premiumFeatureItem}>
                   <Ionicons
@@ -586,7 +588,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                   weight='bold'
                   style={{ color: 'white' }}
                 >
-                  Premium'a Geç
+                  {t('favoritesScreen.premium.upgradeToPremium')}
                 </Text>
               </TouchableOpacity>
             </LinearGradient>
@@ -691,7 +693,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder='Favorilerde ara...'
+              placeholder={t('favoritesScreen.searchPlaceholder')}
               placeholderTextColor={colors.neutral[400]}
               style={[styles.searchInput, { color: colors.text.primary }]}
             />
@@ -744,13 +746,13 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
               weight='600'
               style={{ color: colors.neutral[600] }}
             >
-              Sıralama
+              {t('favoritesScreen.sorting')}
             </Text>
             <View style={styles.filterChips}>
               {[
-                { key: 'recent', label: 'En Yeni', icon: 'time' },
-                { key: 'name', label: 'İsim', icon: 'text' },
-                { key: 'cookingTime', label: 'Süre', icon: 'timer' },
+                { key: 'recent', label: t('favoritesScreen.sortOptions.recent'), icon: 'time' },
+                { key: 'name', label: t('favoritesScreen.sortOptions.name'), icon: 'text' },
+                { key: 'cookingTime', label: t('favoritesScreen.sortOptions.cookingTime'), icon: 'timer' },
               ].map(option => (
                 <TouchableOpacity
                   key={option.key}
@@ -797,14 +799,14 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
               weight='600'
               style={{ color: colors.neutral[600] }}
             >
-              Zorluk
+              {t('favoritesScreen.difficulty')}
             </Text>
             <View style={styles.filterChips}>
               {[
-                { key: 'all', label: 'Tümü' },
-                { key: 'easy', label: 'Kolay' },
-                { key: 'medium', label: 'Orta' },
-                { key: 'hard', label: 'Zor' },
+                { key: 'all', label: t('favoritesScreen.difficultyOptions.all') },
+                { key: 'easy', label: t('favoritesScreen.difficultyOptions.easy') },
+                { key: 'medium', label: t('favoritesScreen.difficultyOptions.medium') },
+                { key: 'hard', label: t('favoritesScreen.difficultyOptions.hard') },
               ].map(option => (
                 <TouchableOpacity
                   key={option.key}
@@ -846,7 +848,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             variant='bodyMedium'
             style={{ marginTop: spacing[3], color: colors.neutral[500] }}
           >
-            Favoriler yükleniyor...
+            {t('favoritesScreen.loadingFavorites')}
           </Text>
         </View>
       ) : (

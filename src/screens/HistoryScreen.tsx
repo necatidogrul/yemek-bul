@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 
 // Services & Types
 import { HistoryService } from '../services/historyService';
@@ -77,6 +78,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     isLoading: premiumLoading,
   } = usePremium();
   const { showSuccess, showError } = useToast();
+  const { t } = useTranslation();
 
   const debugLog = (message: string, data?: any) => {
     if (__DEV__) {
@@ -202,23 +204,23 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
         convertToFullRecipe(recipe)
       );
       if (result.success) {
-        showSuccess(result.message || 'Tarif favorilerinize eklendi!');
+        showSuccess(result.message || t('historyScreen.addedToFavorites'));
       } else {
-        showError(result.message || 'Favorilere eklenirken hata oluştu.');
+        showError(result.message || t('historyScreen.failedToAddFavorite'));
       }
     } catch (error) {
-      showError('Favorilere eklenirken hata oluştu.');
+      showError(t('historyScreen.failedToAddFavorite'));
     }
   };
 
   const handleDeleteItem = useCallback(async (id: string) => {
     Alert.alert(
-      'Geçmişi Sil',
-      'Bu arama geçmişini silmek istediğinizden emin misiniz?',
+      t('historyScreen.deleteTitle'),
+      t('historyScreen.deleteMessage'),
       [
-        { text: 'İptal', style: 'cancel' },
+        { text: t('historyScreen.cancel'), style: 'cancel' },
         {
-          text: 'Sil',
+          text: t('historyScreen.delete'),
           style: 'destructive',
           onPress: async () => {
             await HistoryService.deleteRequest(id);
@@ -231,12 +233,12 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
   const handleClearHistory = useCallback(() => {
     Alert.alert(
-      'Tüm Geçmişi Sil',
-      'Tüm arama geçmişinizi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.',
+      t('historyScreen.clearAllTitle'),
+      t('historyScreen.clearAllMessage'),
       [
-        { text: 'İptal', style: 'cancel' },
+        { text: t('historyScreen.cancel'), style: 'cancel' },
         {
-          text: 'Tümünü Sil',
+          text: t('historyScreen.deleteAll'),
           style: 'destructive',
           onPress: async () => {
             await HistoryService.clearHistory();
@@ -253,9 +255,9 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     const diffTime = now.getTime() - date.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 1) return 'Bugün';
-    if (diffDays === 2) return 'Dün';
-    if (diffDays <= 7) return `${diffDays - 1} gün önce`;
+    if (diffDays === 1) return t('historyScreen.today');
+    if (diffDays === 2) return t('historyScreen.yesterday');
+    if (diffDays <= 7) return t('historyScreen.daysAgo', { days: diffDays - 1 });
 
     return date.toLocaleDateString('tr-TR', {
       day: 'numeric',
@@ -331,7 +333,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 color: item.success ? colors.success[700] : colors.error[700],
               }}
             >
-              {item.results.count} tarif
+              {item.results.count} {t('historyScreen.recipes')}
             </Text>
           </View>
         </View>
@@ -382,10 +384,10 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             </LinearGradient>
             <View>
               <Text variant='headlineSmall' weight='bold' color='primary'>
-                Arama İstatistiklerin
+                {t('historyScreen.searchStatistics')}
               </Text>
               <Text variant='bodySmall' color='secondary'>
-                Toplam aktivite özeti
+                {t('historyScreen.totalActivity')}
               </Text>
             </View>
           </View>
@@ -396,7 +398,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 {stats.totalRequests}
               </Text>
               <Text variant='labelSmall' color='secondary' align='center'>
-                Toplam Arama
+                {t('historyScreen.totalSearches')}
               </Text>
             </View>
 
@@ -407,7 +409,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 {stats.successfulRequests}
               </Text>
               <Text variant='labelSmall' color='secondary' align='center'>
-                Başarılı
+                {t('historyScreen.successful')}
               </Text>
             </View>
 
@@ -418,7 +420,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 {stats.totalRecipesGenerated}
               </Text>
               <Text variant='labelSmall' color='secondary' align='center'>
-                Tarif Bulundu
+                {t('historyScreen.recipesFound')}
               </Text>
             </View>
           </View>
@@ -426,7 +428,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           <View style={styles.successRateContainer}>
             <View style={styles.successRateInfo}>
               <Text variant='bodySmall' color='secondary'>
-                Başarı Oranı
+                {t('historyScreen.successRate')}
               </Text>
               <Text variant='headlineSmall' weight='bold' color='primary'>
                 %{Math.round(successRate)}
@@ -466,7 +468,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               {stats.totalRequests}
             </Text>
             <Text variant='labelSmall' color='secondary' align='center'>
-              Toplam Arama
+              {t('historyScreen.totalSearches')}
             </Text>
           </Card>
 
@@ -487,7 +489,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               {stats.successfulRequests}
             </Text>
             <Text variant='labelSmall' color='secondary' align='center'>
-              Başarılı
+              {t('historyScreen.successful')}
             </Text>
           </Card>
 
@@ -508,7 +510,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               {stats.totalRecipesGenerated}
             </Text>
             <Text variant='labelSmall' color='secondary' align='center'>
-              Tarif
+              {t('historyScreen.recipes')}
             </Text>
           </Card>
         </View>
@@ -525,10 +527,10 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               </LinearGradient>
               <View>
                 <Text variant='headlineSmall' weight='bold' color='primary'>
-                  En Çok Kullanılan
+                  {t('historyScreen.mostUsed')}
                 </Text>
                 <Text variant='bodySmall' color='secondary'>
-                  Favori malzemeleriniz
+                  {t('historyScreen.yourFavoriteIngredients')}
                 </Text>
               </View>
             </View>
@@ -552,7 +554,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                           {item.ingredient}
                         </Text>
                         <Text variant='labelSmall' color='secondary'>
-                          {item.count} kez kullanıldı
+                          {t('historyScreen.usedTimes', { count: item.count })}
                         </Text>
                       </View>
                       <View
@@ -601,10 +603,10 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               </LinearGradient>
               <View>
                 <Text variant='headlineSmall' weight='bold' color='primary'>
-                  Popüler Kombinasyonlar
+                  {t('historyScreen.popularCombinations')}
                 </Text>
                 <Text variant='bodySmall' color='secondary'>
-                  Başarılı malzeme grupları
+                  {t('historyScreen.successfulIngredientGroups')}
                 </Text>
               </View>
             </View>
@@ -635,7 +637,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                     <View style={styles.combinationStats}>
                       <View style={styles.combinationStat}>
                         <Text variant='labelSmall' color='secondary'>
-                          {combo.count} kez
+                          {t('historyScreen.times', { count: combo.count })}
                         </Text>
                       </View>
                       <View style={styles.combinationStat}>
@@ -651,7 +653,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                                   : colors.error[600],
                           }}
                         >
-                          %{Math.round(combo.successRate * 100)} başarı
+                          {t('historyScreen.successPercentage', { percentage: Math.round(combo.successRate * 100) })}
                         </Text>
                       </View>
                     </View>
@@ -698,7 +700,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
                   <View style={styles.combinationAction}>
                     <Text variant='labelSmall' color='secondary'>
-                      Tekrar dene
+                      {t('historyScreen.tryAgain')}
                     </Text>
                     <Ionicons
                       name='chevron-forward'
@@ -724,10 +726,10 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               </LinearGradient>
               <View>
                 <Text variant='headlineSmall' weight='bold' color='primary'>
-                  Premium Analitik
+                  {t('historyScreen.premiumAnalytics')}
                 </Text>
                 <Text variant='bodySmall' color='secondary'>
-                  Detaylı kullanım istatistikleri
+                  {t('historyScreen.detailedUsageStats')}
                 </Text>
               </View>
             </View>
@@ -737,7 +739,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               <View style={styles.analyticsRow}>
                 <View style={styles.analyticsItem}>
                   <Text variant='bodySmall' color='secondary'>
-                    Toplam Token
+                    {t('historyScreen.totalTokens')}
                   </Text>
                   <Text variant='headlineSmall' weight='bold' color='primary'>
                     {stats.totalTokensUsed?.toLocaleString() || '0'}
@@ -745,7 +747,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 </View>
                 <View style={styles.analyticsItem}>
                   <Text variant='bodySmall' color='secondary'>
-                    Ort. Yanıt Süresi
+                    {t('historyScreen.avgResponseTime')}
                   </Text>
                   <Text variant='headlineSmall' weight='bold' color='primary'>
                     {Math.round(stats.averageResponseTime || 0)}ms
@@ -757,10 +759,10 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               {stats.weeklyActivity && stats.weeklyActivity.length > 0 && (
                 <View style={styles.weeklyActivityContainer}>
                   <Text variant='bodyMedium' weight='semibold' color='primary'>
-                    Haftalık Aktivite
+                    {t('historyScreen.weeklyActivity')}
                   </Text>
                   <View style={styles.weeklyActivity}>
-                    {['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'].map(
+                    {[t('historyScreen.days.sun'), t('historyScreen.days.mon'), t('historyScreen.days.tue'), t('historyScreen.days.wed'), t('historyScreen.days.thu'), t('historyScreen.days.fri'), t('historyScreen.days.sat')].map(
                       (day, index) => {
                         const dayData = stats.weeklyActivity?.find(
                           d => d.day === index
@@ -800,7 +802,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               {stats.monthlyTrends && stats.monthlyTrends.length > 0 && (
                 <View style={styles.monthlyTrendsContainer}>
                   <Text variant='bodyMedium' weight='semibold' color='primary'>
-                    Aylık Trend (Son 6 Ay)
+                    {t('historyScreen.monthlyTrend')}
                   </Text>
                   <View style={styles.monthlyTrends}>
                     {stats.monthlyTrends.map((month, index) => (
@@ -828,7 +830,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                           {Math.round(
                             (month.success / (month.requests || 1)) * 100
                           )}{' '}
-                          başarı
+                          {t('historyScreen.success')}
                         </Text>
                       </View>
                     ))}
@@ -854,15 +856,15 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           <View style={styles.filterHeader}>
             <Ionicons name='funnel' size={16} color={colors.primary[500]} />
             <Text variant='bodySmall' weight='semibold' color='primary'>
-              Zaman Filtresi
+              {t('historyScreen.timeFilter')}
             </Text>
           </View>
           <View style={styles.filterButtons}>
             {[
-              { key: 'all', label: 'Tümü', icon: 'infinite' },
-              { key: 'today', label: 'Bugün', icon: 'today' },
-              { key: 'week', label: 'Bu Hafta', icon: 'calendar' },
-              { key: 'month', label: 'Bu Ay', icon: 'calendar-outline' },
+              { key: 'all', label: t('historyScreen.filterOptions.all'), icon: 'infinite' },
+              { key: 'today', label: t('historyScreen.filterOptions.today'), icon: 'today' },
+              { key: 'week', label: t('historyScreen.filterOptions.thisWeek'), icon: 'calendar' },
+              { key: 'month', label: t('historyScreen.filterOptions.thisMonth'), icon: 'calendar-outline' },
             ].map(item => (
               <TouchableOpacity
                 key={item.key}
@@ -957,7 +959,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             weight='bold'
             style={{ color: colors.text.primary }}
           >
-            Arama Geçmişi
+            {t('historyScreen.title')}
           </Text>
           <View style={styles.headerRight} />
         </View>
@@ -982,7 +984,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               color='primary'
               align='center'
             >
-              Premium Özellik
+              {t('historyScreen.premium.title')}
             </Text>
 
             <Text
@@ -991,16 +993,16 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               align='center'
               style={styles.premiumDescription}
             >
-              Arama geçmişinizi görmek ve analiz etmek için Premium'a geçin
+              {t('historyScreen.premium.description')}
             </Text>
 
             <View style={styles.premiumFeaturesList}>
               {[
-                'Tüm arama geçmişinizi görüntüleme',
-                'Detaylı istatistik ve analiz',
-                'Popüler malzeme kombinasyonları',
-                'Haftalık ve aylık aktivite raporları',
-                'Başarılı tarifleri tekrar bulma',
+                t('historyScreen.premium.features.viewAll'),
+                t('historyScreen.premium.features.detailedStats'),
+                t('historyScreen.premium.features.popularCombos'),
+                t('historyScreen.premium.features.activityReports'),
+                t('historyScreen.premium.features.findSuccessful'),
               ].map((feature, index) => (
                 <View key={index} style={styles.premiumFeatureItem}>
                   <Ionicons
@@ -1032,7 +1034,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                   weight='bold'
                   style={{ color: 'white' }}
                 >
-                  Premium'a Geç
+                  {t('historyScreen.premium.upgradeToPremium')}
                 </Text>
               </TouchableOpacity>
             </LinearGradient>
@@ -1085,7 +1087,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             weight='bold'
             style={{ color: colors.text.primary }}
           >
-            Arama Geçmişi
+            {t('historyScreen.title')}
           </Text>
           <View style={styles.headerRight} />
         </View>
@@ -1096,7 +1098,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             variant='bodyMedium'
             style={{ marginTop: spacing[3], color: colors.neutral[500] }}
           >
-            Geçmiş yükleniyor...
+            {t('historyScreen.loadingHistory')}
           </Text>
         </View>
       </SafeAreaView>
@@ -1138,7 +1140,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           weight='bold'
           style={{ color: colors.text.primary }}
         >
-          Arama Geçmişi
+          {t('historyScreen.title')}
         </Text>
         <View style={styles.headerRight}>
           {/* View Mode Toggle */}
@@ -1198,7 +1200,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 color: colors.neutral[400],
               }}
             >
-              Geçmişte ara...
+              {t('historyScreen.searchPlaceholder')}
             </Text>
           </View>
 
@@ -1224,7 +1226,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             variant='bodyMedium'
             style={{ marginTop: spacing[3], color: colors.neutral[500] }}
           >
-            Geçmiş yükleniyor...
+            {t('historyScreen.loadingHistory')}
           </Text>
         </View>
       ) : (
@@ -1245,7 +1247,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                 type='no-history'
                 actions={[
                   {
-                    label: 'İlk Aramayı Yap',
+                    label: t('historyScreen.makeFirstSearch'),
                     onPress: () => navigation.getParent()?.navigate('HomeTab'),
                     icon: 'search-outline',
                   },

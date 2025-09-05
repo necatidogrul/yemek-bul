@@ -20,6 +20,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { HomeStackParamList } from '../components/navigation/ThemedNavigators';
 import * as ImagePicker from 'expo-image-picker';
 import { Camera } from 'expo-camera';
+import { useTranslation } from 'react-i18next';
 
 // Components
 import { Text } from '../components/ui';
@@ -41,21 +42,6 @@ type IngredientsScreenProps = {
   navigation: StackNavigationProp<HomeStackParamList, 'IngredientsSelect'>;
 };
 
-const SUGGESTED_INGREDIENTS = [
-  { name: 'Domates', icon: '🍅' },
-  { name: 'Soğan', icon: '🧅' },
-  { name: 'Peynir', icon: '🧀' },
-  { name: 'Yumurta', icon: '🥚' },
-  { name: 'Patates', icon: '🥔' },
-  { name: 'Tavuk', icon: '🍗' },
-  { name: 'Et', icon: '🥩' },
-  { name: 'Biber', icon: '🌶️' },
-  { name: 'Süt', icon: '🥛' },
-  { name: 'Un', icon: '🌾' },
-  { name: 'Yağ', icon: '🧈' },
-  { name: 'Salça', icon: '🥫' },
-];
-
 export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
   navigation,
 }) => {
@@ -68,6 +54,23 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
   const haptics = useHaptics();
   const { showWarning } = useToast();
   const { isPremium, showPaywall } = usePremium();
+  const { t } = useTranslation();
+
+  // Suggested ingredients list
+  const SUGGESTED_INGREDIENTS = [
+    { name: t('ingredientsScreen.ingredients.tomato'), key: 'tomato', icon: '🍅' },
+    { name: t('ingredientsScreen.ingredients.onion'), key: 'onion', icon: '🧅' },
+    { name: t('ingredientsScreen.ingredients.cheese'), key: 'cheese', icon: '🧀' },
+    { name: t('ingredientsScreen.ingredients.egg'), key: 'egg', icon: '🥚' },
+    { name: t('ingredientsScreen.ingredients.potato'), key: 'potato', icon: '🥔' },
+    { name: t('ingredientsScreen.ingredients.chicken'), key: 'chicken', icon: '🍗' },
+    { name: t('ingredientsScreen.ingredients.meat'), key: 'meat', icon: '🥩' },
+    { name: t('ingredientsScreen.ingredients.pepper'), key: 'pepper', icon: '🌶️' },
+    { name: t('ingredientsScreen.ingredients.milk'), key: 'milk', icon: '🥛' },
+    { name: t('ingredientsScreen.ingredients.flour'), key: 'flour', icon: '🌾' },
+    { name: t('ingredientsScreen.ingredients.oil'), key: 'oil', icon: '🧈' },
+    { name: t('ingredientsScreen.ingredients.paste'), key: 'paste', icon: '🥫' },
+  ];
 
   // Kredi durumunu kontrol et
   useEffect(() => {
@@ -108,15 +111,15 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
 
   const handleSubmit = async () => {
     if (ingredients.length === 0) {
-      showWarning('En az bir malzeme ekleyin');
+      showWarning(t('ingredientsScreen.minIngredientWarning'));
       return;
     }
 
     // Kredi kontrolü
     if (!isPremium && remainingCredits.daily <= 0) {
       showPaywall(
-        'Tarif Arama',
-        'Tarif aramak için premium üyelik gerekir veya günlük limitiniz dolmuş.'
+        t('ingredientsScreen.findRecipes'),
+        t('ingredientsScreen.searchLimit')
       );
       return;
     }
@@ -163,9 +166,9 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
     const { status } = await Camera.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert(
-        'Kamera İzni Gerekli',
-        'Bu özelliği kullanmak için kamera erişimine izin vermelisiniz.',
-        [{ text: 'Tamam' }]
+        t('ingredientsScreen.cameraPermission.title'),
+        t('ingredientsScreen.cameraPermission.message'),
+        [{ text: t('ingredientsScreen.cameraPermission.ok') }]
       );
       return false;
     }
@@ -218,11 +221,11 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
         haptics.success();
         // Visual addition of ingredients is feedback enough
       } else {
-        showWarning('Fotoğraflarda malzeme tespit edilemedi');
+        showWarning(t('ingredientsScreen.fridgePhoto.noIngredientsDetected'));
       }
     } catch (error) {
       console.error('Fotoğraf analizi hatası:', error);
-      showWarning('Fotoğraf analiz edilemedi, tekrar deneyin');
+      showWarning(t('ingredientsScreen.fridgePhoto.analysisFailed'));
     } finally {
       setIsAnalyzing(false);
     }
@@ -252,7 +255,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
       }
     } catch (error) {
       console.error('Kamera hatası:', error);
-      showWarning('Kamera açılamadı');
+      showWarning(t('errors.camera'));
     }
   };
 
@@ -278,7 +281,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
       }
     } catch (error) {
       console.error('Galeri hatası:', error);
-      showWarning('Galeri açılamadı');
+      showWarning(t('errors.gallery'));
     }
   };
 
@@ -297,30 +300,30 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
     // Kredi kontrolü
     if (!isPremium && remainingCredits.daily <= 0) {
       showPaywall(
-        'Buzdolabı Fotoğrafı',
-        'Buzdolabı fotoğrafı analizini kullanmak için premium üyelik gerekir.'
+        t('ingredientsScreen.fridgePhoto.title'),
+        t('ingredientsScreen.fridgePhoto.premiumDescription')
       );
       return;
     }
 
     Alert.alert(
-      'Buzdolabı Fotoğrafları',
+      t('ingredientsScreen.fridgePhoto.selectPhotos'),
       selectedImages.length > 0
-        ? `${selectedImages.length} fotoğraf seçildi. Daha fazla eklemek istiyorsunuz?`
-        : 'Buzdolabınızın fotoğraflarını nasıl eklemek istiyorsunuz?',
+        ? t('ingredientsScreen.fridgePhoto.additionalPhotos', { count: selectedImages.length })
+        : t('ingredientsScreen.fridgePhoto.selectPhotosDescription'),
       [
-        { text: 'İptal', style: 'cancel' },
+        { text: t('ingredientsScreen.cancel'), style: 'cancel' },
         ...(selectedImages.length > 0
           ? [
               {
-                text: 'Fotoğrafları Temizle',
+                text: t('ingredientsScreen.fridgePhoto.clearPhotos'),
                 onPress: clearImages,
                 style: 'destructive' as const,
               },
             ]
           : []),
-        { text: 'Kamera ile Çek', onPress: takeFridgePhoto },
-        { text: 'Galeriden Seç (Çoklu)', onPress: pickFridgePhotos },
+        { text: t('ingredientsScreen.fridgePhoto.takePhoto'), onPress: takeFridgePhoto },
+        { text: t('ingredientsScreen.fridgePhoto.selectFromGallery'), onPress: pickFridgePhotos },
       ]
     );
   };
@@ -344,10 +347,10 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
             weight='bold'
             style={{ color: colors.text.primary }}
           >
-            Malzeme Seç
+            {t('ingredientsScreen.title')}
           </Text>
           <Text variant='bodySmall' color='secondary'>
-            Evindeki malzemeleri ekle
+            {t('ingredientsScreen.subtitle')}
           </Text>
         </View>
         <TouchableOpacity
@@ -357,7 +360,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
           ]}
           onPress={() => {
             if (!isPremium) {
-              showPaywall('Kredi Bilgisi', 'Premium üyelikle sınırsız kullanım');
+              showPaywall(t('ingredientsScreen.creditInfo.title'), t('ingredientsScreen.creditInfo.premiumInfo'));
             }
           }}
           activeOpacity={0.7}
@@ -373,7 +376,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
             style={{ color: isPremium ? colors.success[600] : colors.primary[600], fontSize: 12 }}
           >
             {isPremium ? 
-              `G: ${remainingCredits.daily} | A: ${remainingCredits.monthly || 0}` : 
+              `${t('ingredientsScreen.creditInfo.daily')}: ${remainingCredits.daily} | ${t('ingredientsScreen.creditInfo.monthly')}: ${remainingCredits.monthly || 0}` : 
               remainingCredits.daily
             }
           </Text>
@@ -405,7 +408,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
               <Ionicons name='search' size={20} color={colors.neutral[400]} />
               <TextInput
                 style={[styles.input, { color: colors.text.primary }]}
-                placeholder='Malzeme ara veya ekle...'
+                placeholder={t('ingredientsScreen.searchPlaceholder')}
                 placeholderTextColor={colors.neutral[400]}
                 value={inputText}
                 onChangeText={setInputText}
@@ -483,17 +486,17 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
                     }}
                   >
                     {isAnalyzing
-                      ? 'Fotoğraflar Analiz Ediliyor...'
+                      ? t('ingredientsScreen.fridgePhoto.analyzing')
                       : !isPremium && remainingCredits.daily <= 0
-                      ? 'Premium Özellik - Kilit'
+                      ? t('ingredientsScreen.fridgePhoto.premiumFeature')
                       : selectedImages.length > 0
-                      ? `${selectedImages.length} Fotoğraf Seçildi - Daha Ekle`
-                      : 'Buzdolabının Fotoğrafını Çek'}
+                      ? t('ingredientsScreen.fridgePhoto.selected', { count: selectedImages.length })
+                      : t('ingredientsScreen.fridgePhoto.title')}
                   </Text>
                   <Text variant='bodySmall' color='secondary'>
                     {!isPremium && remainingCredits.daily <= 0
-                      ? 'Premium üyelik ile kullanılabilir'
-                      : 'AI ile otomatik malzeme tespit et'}
+                      ? t('ingredientsScreen.fridgePhoto.premiumDescription')
+                      : t('ingredientsScreen.fridgePhoto.subtitle')}
                   </Text>
                 </View>
                 <Ionicons
@@ -518,14 +521,14 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
                   weight='600'
                   style={{ color: colors.text.primary }}
                 >
-                  Seçilen Fotoğraflar ({selectedImages.length})
+                  {t('ingredientsScreen.fridgePhoto.selectedPhotos')} ({selectedImages.length})
                 </Text>
                 <TouchableOpacity onPress={clearImages}>
                   <Text
                     variant='labelSmall'
                     style={{ color: colors.primary[500] }}
                   >
-                    Temizle
+                    {t('ingredientsScreen.clear')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -567,14 +570,14 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
                   weight='600'
                   style={{ color: colors.text.primary }}
                 >
-                  Seçilen Malzemeler ({ingredients.length})
+                  {t('ingredientsScreen.selectedIngredients')} ({ingredients.length})
                 </Text>
                 <TouchableOpacity onPress={() => setIngredients([])}>
                   <Text
                     variant='labelSmall'
                     style={{ color: colors.primary[500] }}
                   >
-                    Temizle
+                    {t('ingredientsScreen.clear')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -613,7 +616,7 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
               weight='600'
               style={{ color: colors.text.primary, marginBottom: spacing[3] }}
             >
-              Önerilen Malzemeler
+              {t('ingredientsScreen.suggestedIngredients')}
             </Text>
             <View style={styles.suggestionsGrid}>
               {SUGGESTED_INGREDIENTS.map((item, index) => (
@@ -685,8 +688,8 @@ export const IngredientsScreen: React.FC<IngredientsScreenProps> = ({
             />
             <Text variant='bodyLarge' weight='600' style={{ color: '#fff' }}>
               {!isPremium && remainingCredits.daily <= 0
-                ? 'Premium Gerekli'
-                : `Tarif Bul (${ingredients.length})`}
+                ? t('ingredientsScreen.premiumRequired')
+                : `${t('ingredientsScreen.findRecipes')} (${ingredients.length})`}
             </Text>
           </LinearGradient>
         </TouchableOpacity>

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '../ui';
 import { useThemedStyles } from '../../hooks/useThemedStyles';
 import { spacing, borderRadius } from '../../theme/design-tokens';
+import { useTranslation } from 'react-i18next';
 
 const { width, height } = Dimensions.get('window');
 
@@ -16,31 +17,11 @@ interface AILoadingModalProps {
   progress: number; // 0-100
 }
 
-const stages = {
-  analyzing: {
-    title: 'Malzemeler Analiz Ediliyor',
-    subtitle: 'AI malzeme kombinasyonlarını inceliyor...',
-    icon: 'search',
-    color: '#3B82F6',
-  },
-  generating: {
-    title: 'Tarifler Özenle Oluşturuluyor',
-    subtitle: 'Yaratıcı algoritma çalışıyor...',
-    icon: 'restaurant',
-    color: '#8B5CF6',
-  },
-  optimizing: {
-    title: 'Tarifler Optimize Ediliyor',
-    subtitle: 'En iyi öneriler seçiliyor...',
-    icon: 'settings',
-    color: '#10B981',
-  },
-  finalizing: {
-    title: 'Son Dokunuşlar Yapılıyor',
-    subtitle: 'Tarifler hazırlanıyor...',
-    icon: 'checkmark-circle',
-    color: '#F59E0B',
-  },
+const stageIcons = {
+  analyzing: { icon: 'search', color: '#3B82F6' },
+  generating: { icon: 'restaurant', color: '#8B5CF6' },
+  optimizing: { icon: 'settings', color: '#10B981' },
+  finalizing: { icon: 'checkmark-circle', color: '#F59E0B' },
 };
 
 export const AILoadingModal: React.FC<AILoadingModalProps> = ({
@@ -50,6 +31,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
   progress,
 }) => {
   const { colors } = useThemedStyles();
+  const { t } = useTranslation();
   const [spinValue] = useState(new Animated.Value(0));
   const [pulseValue] = useState(new Animated.Value(1));
   const [progressAnim] = useState(new Animated.Value(0));
@@ -58,7 +40,11 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
     [...Array(6)].map(() => new Animated.Value(0))
   );
 
-  const currentStage = stages[stage];
+  const currentStageIcon = stageIcons[stage];
+  const currentStageText = {
+    title: t(`aiLoadingModal.stages.${stage}.title`),
+    subtitle: t(`aiLoadingModal.stages.${stage}.subtitle`),
+  };
 
   useEffect(() => {
     if (visible) {
@@ -177,7 +163,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
       >
         {/* Header */}
         <LinearGradient
-          colors={[currentStage.color + '15', 'transparent']}
+          colors={[currentStageIcon.color + '15', 'transparent']}
           style={styles.header}
         >
           <Animated.View
@@ -185,7 +171,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
               styles.iconContainer,
               {
                 backgroundColor: colors.surface.primary,
-                borderColor: currentStage.color,
+                borderColor: currentStageIcon.color,
                 transform: [
                   { scale: pulseValue },
                   { rotate: stage === 'generating' ? spin : '0deg' },
@@ -194,9 +180,9 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
             ]}
           >
             <Ionicons
-              name={currentStage.icon as any}
+              name={currentStageIcon.icon as any}
               size={36}
-              color={currentStage.color}
+              color={currentStageIcon.color}
             />
           </Animated.View>
         </LinearGradient>
@@ -204,7 +190,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
         {/* Content */}
         <View style={styles.content}>
           <Text variant='h4' weight='bold' align='center' style={styles.title}>
-            {currentStage.title}
+            {currentStageText.title}
           </Text>
 
           <Text
@@ -213,7 +199,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
             align='center'
             style={styles.subtitle}
           >
-            {currentStage.subtitle}
+            {currentStageText.subtitle}
           </Text>
 
           {/* Progress Bar */}
@@ -232,7 +218,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
                 style={[
                   styles.progressFill,
                   {
-                    backgroundColor: currentStage.color,
+                    backgroundColor: currentStageIcon.color,
                     width: progressAnim.interpolate({
                       inputRange: [0, 100],
                       outputRange: ['0%', '100%'],
@@ -256,7 +242,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
               <Text
                 variant='h6'
                 weight='bold'
-                style={{ ...styles.progressPercent, color: currentStage.color }}
+                style={{ ...styles.progressPercent, color: currentStageIcon.color }}
               >
                 {Math.round(progress)}%
               </Text>
@@ -265,7 +251,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
                 color='secondary'
                 style={styles.progressText}
               >
-                tamamlandı
+                {t('aiLoadingModal.completed')}
               </Text>
             </View>
           </View>
@@ -278,7 +264,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
                 style={[
                   styles.particle,
                   {
-                    backgroundColor: currentStage.color,
+                    backgroundColor: currentStageIcon.color,
                     width: 3 + (index % 2),
                     height: 3 + (index % 2),
                     opacity: anim.interpolate({
@@ -335,14 +321,7 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
             />
             <Ionicons name='sparkles' size={14} color={colors.warning[500]} />
             <Text variant='caption' color='secondary' style={styles.factText}>
-              {stage === 'analyzing' &&
-                'Malzemeleriniz için en uygun tarifleri arıyorum'}
-              {stage === 'generating' &&
-                'Yaratıcı AI algoritması size özel tarifler üretiyor'}
-              {stage === 'optimizing' &&
-                'Beslenme değerleri ve lezzet dengesi optimize ediliyor'}
-              {stage === 'finalizing' &&
-                'Son kontroller yapılıyor, tarifiniz neredeyse hazır'}
+              {t(`aiLoadingModal.facts.${stage}`)}
             </Text>
           </Animated.View>
         </View>

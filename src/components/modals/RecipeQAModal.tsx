@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 
 // UI Components
 import { Text, Button, Card } from '../ui';
@@ -28,39 +29,6 @@ interface RecipeQAModalProps {
   onAskQuestion: (question: string) => Promise<string>;
 }
 
-// Önceden tanımlı soru örnekleri
-const QUICK_QUESTIONS = [
-  {
-    id: 1,
-    text: 'Bu yemek kaç kişilik?',
-    icon: 'people',
-  },
-  {
-    id: 2,
-    text: 'Malzemeleri değiştirebilir miyim?',
-    icon: 'swap-horizontal',
-  },
-  {
-    id: 3,
-    text: 'Bu tarif hangi diyete uygun?',
-    icon: 'fitness',
-  },
-  {
-    id: 4,
-    text: 'Kalorisi ne kadar?',
-    icon: 'speedometer',
-  },
-  {
-    id: 5,
-    text: 'Nasıl daha lezzetli yaparım?',
-    icon: 'star',
-  },
-  {
-    id: 6,
-    text: 'Hangi yan yemeklerle servis edilir?',
-    icon: 'restaurant',
-  },
-];
 
 export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
   visible,
@@ -69,6 +37,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
   onAskQuestion,
 }) => {
   const { colors } = useThemedStyles();
+  const { t, i18n } = useTranslation();
   const [customQuestion, setCustomQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -81,9 +50,46 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
     }>
   >([]);
 
+  // Önceden tanımlı soru örnekleri
+  const QUICK_QUESTIONS = [
+    {
+      id: 1,
+      text: t('modals.recipeQA.quickQuestionsList.servings'),
+      icon: 'people',
+    },
+    {
+      id: 2,
+      text: t('modals.recipeQA.quickQuestionsList.substitute'),
+      icon: 'swap-horizontal',
+    },
+    {
+      id: 3,
+      text: t('modals.recipeQA.quickQuestionsList.diet'),
+      icon: 'fitness',
+    },
+    {
+      id: 4,
+      text: t('modals.recipeQA.quickQuestionsList.calories'),
+      icon: 'speedometer',
+    },
+    {
+      id: 5,
+      text: t('modals.recipeQA.quickQuestionsList.tips'),
+      icon: 'star',
+    },
+    {
+      id: 6,
+      text: t('modals.recipeQA.quickQuestionsList.sideDishes'),
+      icon: 'restaurant',
+    },
+  ];
+
   const handleAskQuestion = async (question: string) => {
     if (!question.trim()) {
-      Alert.alert('Hata', 'Lütfen bir soru girin.');
+      Alert.alert(
+        t('modals.recipeQA.errorTitle'),
+        t('modals.recipeQA.errorEmptyQuestion')
+      );
       return;
     }
 
@@ -118,7 +124,10 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
     } catch (error) {
       // Hatalı soruyu kaldır
       setConversation(prev => prev.slice(0, -1));
-      Alert.alert('Hata', 'Soru sorulurken bir hata oluştu.');
+      Alert.alert(
+        t('modals.recipeQA.errorTitle'),
+        t('modals.recipeQA.errorAskingQuestion')
+      );
     } finally {
       setLoading(false);
       setIsTyping(false);
@@ -203,7 +212,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
                 />
               </View>
               <Text variant='caption' style={{ color: colors.text.secondary }}>
-                AI Aşçı
+                {t('modals.recipeQA.aiChef')}
               </Text>
               {!item.answer && isTyping && (
                 <View style={styles.typingIndicator}>
@@ -240,7 +249,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
                   fontStyle: 'italic',
                 }}
               >
-                Cevap hazırlanıyor...
+                {t('modals.recipeQA.preparingAnswer')}
               </Text>
             ) : null}
             {item.answer && (
@@ -251,10 +260,13 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
                   marginTop: spacing[2],
                 }}
               >
-                {item.timestamp.toLocaleTimeString('tr-TR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {item.timestamp.toLocaleTimeString(
+                  i18n.language === 'tr' ? 'tr-TR' : 'en-US',
+                  {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  }
+                )}
               </Text>
             )}
           </View>
@@ -299,7 +311,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
                 weight='bold'
                 style={{ color: colors.text.primary }}
               >
-                Tarif Hakkında Soru Sor
+                {t('modals.recipeQA.title')}
               </Text>
               <Text variant='caption' style={{ color: colors.text.secondary }}>
                 {recipe?.name}
@@ -326,7 +338,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
                   marginBottom: spacing[3],
                 }}
               >
-                Soru & Cevaplar
+                {t('modals.recipeQA.questionsAndAnswers')}
               </Text>
               {renderConversation()}
               <View style={styles.divider} />
@@ -342,7 +354,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
               marginBottom: spacing[3],
             }}
           >
-            Hızlı Sorular
+            {t('modals.recipeQA.quickQuestions')}
           </Text>
 
           <View style={styles.quickQuestionsGrid}>
@@ -360,7 +372,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
               marginBottom: spacing[3],
             }}
           >
-            Özel Soru
+            {t('modals.recipeQA.customQuestion')}
           </Text>
 
           <Card variant='outlined' style={styles.customQuestionCard}>
@@ -372,7 +384,7 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
                   backgroundColor: colors.surface.primary,
                 },
               ]}
-              placeholder='Tarif hakkında sormak istediğin soruyu yaz...'
+              placeholder={t('modals.recipeQA.questionPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={customQuestion}
               onChangeText={setCustomQuestion}
@@ -389,7 +401,9 @@ export const RecipeQAModal: React.FC<RecipeQAModalProps> = ({
               disabled={!customQuestion.trim() || loading}
               style={{ marginTop: spacing[3] }}
             >
-              {loading ? 'Soru Soruluyor...' : 'Soru Sor (3 Kredi)'}
+              {loading
+                ? t('modals.recipeQA.askingQuestion')
+                : t('modals.recipeQA.askButton')}
             </Button>
           </Card>
 
