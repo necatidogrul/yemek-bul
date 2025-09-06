@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "YemekbulAI",
-    "slug": "yemekbulai",
+    "slug": "yemek-bulucu",
     "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -21,8 +21,14 @@
       "buildNumber": "27",
       "requireFullScreen": false,
       "infoPlist": {
-        "NSCameraUsageDescription": "Malzemelerin fotoğrafını çekmek için kamera erişimi gerekiyor.",
-        "NSMicrophoneUsageDescription": "Sesli malzeme girişi için mikrofon erişimi gerekiyor.",
+        "NSCameraUsageDescription": "YemekbulAI, mutfağınızdaki malzemeleri yapay zeka ile tanımlayarak size uygun tarif önerileri sunmak için kamera erişimine ihtiyaç duyar. Çektiğiniz fotoğraflar yalnızca malzeme tanıma için kullanılır ve cihazınızda saklanmaz.",
+        "NSCameraUsageDescription_en": "YemekbulAI needs camera access to identify ingredients in your kitchen using artificial intelligence and provide you with suitable recipe suggestions. Photos you take are only used for ingredient recognition and are not stored on your device.",
+        "NSMicrophoneUsageDescription": "YemekbulAI, malzeme listesini sesli komutlarla girmenize olanak tanımak ve tarif talimatlarını sesli olarak dinleyebilmeniz için mikrofon erişimine ihtiyaç duyar. Ses kayıtları yalnızca metin dönüştürme için kullanılır.",
+        "NSMicrophoneUsageDescription_en": "YemekbulAI needs microphone access to allow you to enter ingredient lists with voice commands and listen to recipe instructions audibly. Voice recordings are only used for text conversion.",
+        "CFBundleDisplayName": "YemekbulAI",
+        "CFBundleDisplayName_en": "CookAI",
+        "CFBundleShortVersionString": "1.0.1",
+        "CFBundleVersion": "27",
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
           "NSExceptionDomains": {
@@ -45,7 +51,7 @@
       },
       "edgeToEdgeEnabled": true,
       "permissions": ["RECORD_AUDIO", "INTERNET", "ACCESS_NETWORK_STATE", "BILLING", "CAMERA", "READ_EXTERNAL_STORAGE"],
-      "package": "com.yemekbulucu.app",
+      "package": "com.yemekbulucuai.app",
       "versionCode": 2
     },
     "web": {
@@ -59,7 +65,6 @@
         "projectId": "e3e037bb-7ebe-4355-b267-013c4b959976"
       },
       "revenueCatIosKey": "appl_aAFWiEGXPfzbOgzBYpVMbfvojQD",
-      "revenueCatAndroidKey": "",
       "revenueCatOffering": "Default",
       "revenueCatEntitlement": "Premium Subscription"
     }

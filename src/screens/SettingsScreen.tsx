@@ -11,6 +11,7 @@ import {
   Linking,
   Animated,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,7 +25,10 @@ import { useTranslation } from 'react-i18next';
 import { useLanguage } from '../contexts/LanguageContext';
 import { usePremium } from '../contexts/PremiumContext';
 import { RevenueCatService } from '../services/RevenueCatService';
-import { UserPreferencesService, UserPreferences } from '../services/UserPreferencesService';
+import {
+  UserPreferencesService,
+  UserPreferences,
+} from '../services/UserPreferencesService';
 import PreferencesEditModal from '../components/settings/PreferencesEditModal';
 import {
   typography,
@@ -32,6 +36,19 @@ import {
   borderRadius,
   shadows,
 } from '../theme/design-tokens';
+import {
+  LEGAL_URLS,
+  getLegalUrl,
+  getSupportEmailUrl,
+  getAppStoreUrl,
+} from '../config/legal';
+import { LegalDocumentModal } from '../components/legal/LegalDocumentModal';
+import {
+  PRIVACY_POLICY,
+  TERMS_OF_SERVICE,
+  KVKK_TEXT,
+  COOKIE_POLICY,
+} from '../data/legalDocuments';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -56,8 +73,15 @@ export const SettingsScreen: React.FC = () => {
   const [hapticFeedback, setHapticFeedback] = useState(true);
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [premiumStatus, setPremiumStatus] = useState<any>(null);
-  const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null);
+  const [userPreferences, setUserPreferences] =
+    useState<UserPreferences | null>(null);
   const [isEditingPreferences, setIsEditingPreferences] = useState(false);
+
+  // Legal document modals
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  const [showTermsOfService, setShowTermsOfService] = useState(false);
+  const [showKVKK, setShowKVKK] = useState(false);
+  const [showCookiePolicy, setShowCookiePolicy] = useState(false);
 
   useEffect(() => {
     checkDeveloperMode();
@@ -170,17 +194,30 @@ Build: ${
   };
 
   const openPrivacyPolicy = () => {
-    Linking.openURL('https://www.necatidogrul.dev/tr/cook-ai');
+    setShowPrivacyPolicy(true);
   };
 
   const openTermsOfService = () => {
-    Linking.openURL('https://www.necatidogrul.dev/tr/cook-ai');
+    setShowTermsOfService(true);
+  };
+
+  const openKVKK = () => {
+    setShowKVKK(true);
+  };
+
+  const openCookiePolicy = () => {
+    setShowCookiePolicy(true);
   };
 
   const handleContactSupport = () => {
-    Linking.openURL(
-      'mailto:necatidogrul7@gmail.com?subject=YemekbulAI - Destek Talebi&body=Merhaba,%0A%0ALütfen sorunuzu detaylıca açıklayınız:%0A%0A'
-    );
+    const subject =
+      currentLanguage === 'tr'
+        ? 'YemekbulAI - Destek Talebi'
+        : 'YemekbulAI - Support Request';
+    const url = getSupportEmailUrl(subject, currentLanguage as 'tr' | 'en');
+    Linking.openURL(url).catch(() => {
+      showError(t('settings.errorOpeningEmail'));
+    });
   };
 
   const handleRateApp = () => {
@@ -203,8 +240,11 @@ Build: ${
   };
 
   const openAppStore = () => {
-    const appStoreUrl = 'https://apps.apple.com/app/idYOUR_APP_ID';
-    Linking.openURL(appStoreUrl);
+    const platform = Platform.OS as 'ios' | 'android';
+    const url = getAppStoreUrl(platform);
+    Linking.openURL(url).catch(() => {
+      showError(t('settings.errorOpeningStore'));
+    });
   };
 
   const SettingItem = ({
@@ -520,7 +560,7 @@ Build: ${
           <View
             style={[
               styles.backButtonContainer,
-              { backgroundColor: colors.neutral[100] },
+              { backgroundColor: colors.current.surfaceVariant },
             ]}
           >
             <Ionicons name='arrow-back' size={22} color={colors.text.primary} />
@@ -557,12 +597,20 @@ Build: ${
               <SettingItem
                 icon='restaurant-outline'
                 title={t('settings.preferences.dietary.title')}
-                subtitle={userPreferences.dietaryRestrictions?.length > 0 
-                  ? userPreferences.dietaryRestrictions.map(d => {
-                      const dietaryKey = d.replace(/-/g, ''); // replace all hyphens
-                      return t(`settings.preferences.dietary.${dietaryKey}` as any) || d;
-                    }).join(', ') 
-                  : t('settings.preferences.dietary.none')}
+                subtitle={
+                  userPreferences.dietaryRestrictions?.length > 0
+                    ? userPreferences.dietaryRestrictions
+                        .map(d => {
+                          const dietaryKey = d.replace(/-/g, ''); // replace all hyphens
+                          return (
+                            t(
+                              `settings.preferences.dietary.${dietaryKey}` as any
+                            ) || d
+                          );
+                        })
+                        .join(', ')
+                    : t('settings.preferences.dietary.none')
+                }
                 iconColor={colors.success[600]}
                 iconBackground={colors.success[100]}
                 onPress={handleEditPreferences}
@@ -570,11 +618,17 @@ Build: ${
               <SettingItem
                 icon='warning-outline'
                 title={t('settings.preferences.allergies.title')}
-                subtitle={userPreferences.allergies?.length > 0 
-                  ? userPreferences.allergies.map(a => {
-                      return t(`settings.preferences.allergies.${a}` as any) || a;
-                    }).join(', ') 
-                  : t('settings.preferences.allergies.none')}
+                subtitle={
+                  userPreferences.allergies?.length > 0
+                    ? userPreferences.allergies
+                        .map(a => {
+                          return (
+                            t(`settings.preferences.allergies.${a}` as any) || a
+                          );
+                        })
+                        .join(', ')
+                    : t('settings.preferences.allergies.none')
+                }
                 iconColor={colors.error[600]}
                 iconBackground={colors.error[100]}
                 onPress={handleEditPreferences}
@@ -582,11 +636,17 @@ Build: ${
               <SettingItem
                 icon='earth-outline'
                 title={t('settings.preferences.cuisine.title')}
-                subtitle={userPreferences.cuisineTypes?.length > 0 
-                  ? userPreferences.cuisineTypes.map(c => {
-                      return t(`settings.preferences.cuisine.${c}` as any) || c;
-                    }).join(', ') 
-                  : t('settings.preferences.cuisine.none')}
+                subtitle={
+                  userPreferences.cuisineTypes?.length > 0
+                    ? userPreferences.cuisineTypes
+                        .map(c => {
+                          return (
+                            t(`settings.preferences.cuisine.${c}` as any) || c
+                          );
+                        })
+                        .join(', ')
+                    : t('settings.preferences.cuisine.none')
+                }
                 iconColor={colors.info[600]}
                 iconBackground={colors.info[100]}
                 onPress={handleEditPreferences}
@@ -594,7 +654,9 @@ Build: ${
               <SettingItem
                 icon='school-outline'
                 title={t('settings.preferences.cookingLevel.title')}
-                subtitle={t(`settings.preferences.cookingLevel.${userPreferences.cookingLevel || 'intermediate'}` as any)}
+                subtitle={t(
+                  `settings.preferences.cookingLevel.${userPreferences.cookingLevel || 'intermediate'}` as any
+                )}
                 iconColor={colors.warning[600]}
                 iconBackground={colors.warning[100]}
                 onPress={handleEditPreferences}
@@ -633,7 +695,11 @@ Build: ${
           <SettingItem
             icon='globe-outline'
             title={t('settings.language.title')}
-            subtitle={currentLanguage === 'tr' ? t('settings.language.turkish') : t('settings.language.english')}
+            subtitle={
+              currentLanguage === 'tr'
+                ? t('settings.language.turkish')
+                : t('settings.language.english')
+            }
             iconColor={colors.secondary[600]}
             iconBackground={colors.secondary[100]}
             onPress={() => {
@@ -650,7 +716,9 @@ Build: ${
           <SettingItem
             icon={isDark ? 'moon' : 'sunny'}
             title={t('settings.theme.title')}
-            subtitle={isDark ? t('settings.theme.dark') : t('settings.theme.light')}
+            subtitle={
+              isDark ? t('settings.theme.dark') : t('settings.theme.light')
+            }
             iconColor={isDark ? colors.info[600] : colors.warning[600]}
             iconBackground={isDark ? colors.info[100] : colors.warning[100]}
             rightElement={
@@ -741,6 +809,24 @@ Build: ${
             iconBackground={colors.primary[100]}
             onPress={openTermsOfService}
           />
+          {currentLanguage === 'tr' && (
+            <SettingItem
+              icon='lock-closed-outline'
+              title={t('settings.kvkk.title')}
+              subtitle={t('settings.kvkk.subtitle')}
+              iconColor={colors.warning[600]}
+              iconBackground={colors.warning[100]}
+              onPress={openKVKK}
+            />
+          )}
+          <SettingItem
+            icon='cafe-outline'
+            title={t('settings.cookiePolicy.title')}
+            subtitle={t('settings.cookiePolicy.subtitle')}
+            iconColor={colors.secondary[600]}
+            iconBackground={colors.secondary[100]}
+            onPress={openCookiePolicy}
+          />
           <SettingItem
             icon='storefront-outline'
             title={t('settings.appStore.title')}
@@ -777,6 +863,37 @@ Build: ${
         {/* Bottom spacing */}
         <View style={{ height: spacing[16] }} />
       </Animated.ScrollView>
+
+      {/* Legal Document Modals */}
+      <LegalDocumentModal
+        visible={showPrivacyPolicy}
+        onClose={() => setShowPrivacyPolicy(false)}
+        title={t('settings.privacyPolicy.title')}
+        content={PRIVACY_POLICY[currentLanguage as 'tr' | 'en']}
+      />
+
+      <LegalDocumentModal
+        visible={showTermsOfService}
+        onClose={() => setShowTermsOfService(false)}
+        title={t('settings.termsOfService.title')}
+        content={TERMS_OF_SERVICE[currentLanguage as 'tr' | 'en']}
+      />
+
+      {currentLanguage === 'tr' && (
+        <LegalDocumentModal
+          visible={showKVKK}
+          onClose={() => setShowKVKK(false)}
+          title={t('settings.kvkk.title')}
+          content={KVKK_TEXT}
+        />
+      )}
+
+      <LegalDocumentModal
+        visible={showCookiePolicy}
+        onClose={() => setShowCookiePolicy(false)}
+        title={t('settings.cookiePolicy.title')}
+        content={COOKIE_POLICY[currentLanguage as 'tr' | 'en']}
+      />
     </SafeAreaView>
   );
 };

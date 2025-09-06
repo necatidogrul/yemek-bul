@@ -80,10 +80,9 @@ export default function App(): React.ReactElement {
           Constants.expoConfig?.extra?.revenueCatIosKey ||
           'appl_aAFWiEGXPfzbOgzBYpVMbfvojQD';
       } else {
-        apiKey =
-          process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ||
-          Constants.expoConfig?.extra?.revenueCatAndroidKey ||
-          '';
+        // Android build alınmayacak - sadece iOS için RevenueCat
+        apiKey = '';
+        console.log('📱 Android build alınmayacak - RevenueCat devre dışı');
       }
 
       if (!apiKey) {

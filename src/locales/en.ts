@@ -1,7 +1,7 @@
 export const en = {
   // App General
   app: {
-    name: 'Recipe Finder',
+    name: 'CookAI',
     tagline: 'Your AI-powered recipe assistant',
     loading: 'Loading...',
     error: 'An error occurred',
@@ -39,7 +39,7 @@ export const en = {
   // Onboarding
   onboarding: {
     welcome: {
-      title: 'Welcome to\nRecipe Finder! 👋',
+      title: 'Welcome to\nCookAI! 👋',
       subtitle: 'Your AI-powered recipe assistant',
       description:
         'Discover thousands of delicious recipes with ingredients you have at home. Smart suggestions and personalized experience await you!',
@@ -71,7 +71,7 @@ export const en = {
     },
     steps: {
       welcome: {
-        title: 'Welcome to\nRecipe Finder! 👋',
+        title: 'Welcome to\nCookAI! 👋',
         subtitle: 'Your AI-powered recipe assistant',
       },
       features: {
@@ -230,7 +230,8 @@ export const en = {
     recipeMissingInfo: 'Recipe information missing',
     premium: {
       title: 'Premium Feature',
-      description: 'Upgrade to Premium to save and manage your favorite recipes',
+      description:
+        'Upgrade to Premium to save and manage your favorite recipes',
       features: {
         unlimitedFavorites: 'Save unlimited favorite recipes',
         categorize: 'Categorize favorites',
@@ -266,7 +267,8 @@ export const en = {
     deleteTitle: 'Delete History',
     deleteMessage: 'Are you sure you want to delete this search history?',
     clearAllTitle: 'Clear All History',
-    clearAllMessage: 'Are you sure you want to clear all search history? This action cannot be undone.',
+    clearAllMessage:
+      'Are you sure you want to clear all search history? This action cannot be undone.',
     cancel: 'Cancel',
     delete: 'Delete',
     deleteAll: 'Delete All',
@@ -311,7 +313,8 @@ export const en = {
       },
       all: {
         title: 'Delete All History',
-        message: 'Are you sure you want to delete all your search history? This action cannot be undone.',
+        message:
+          'Are you sure you want to delete all your search history? This action cannot be undone.',
         confirmButton: 'Delete All',
       },
       cancelButton: 'Cancel',
@@ -380,7 +383,8 @@ export const en = {
     completed: 'completed',
     facts: {
       analyzing: 'Searching for the most suitable recipes for your ingredients',
-      generating: 'Creative AI algorithm is generating personalized recipes for you',
+      generating:
+        'Creative AI algorithm is generating personalized recipes for you',
       optimizing: 'Nutritional values and flavor balance are being optimized',
       finalizing: 'Final checks are being made, your recipe is almost ready',
     },
@@ -404,7 +408,8 @@ export const en = {
       premiumDescription: 'Available with premium membership',
       selected: '{count} Photos Selected - Add More',
       selectPhotos: 'Fridge Photos',
-      selectPhotosDescription: 'How would you like to add photos of your fridge?',
+      selectPhotosDescription:
+        'How would you like to add photos of your fridge?',
       additionalPhotos: '{count} photos selected. Do you want to add more?',
       takePhoto: 'Take with Camera',
       selectFromGallery: 'Select from Gallery (Multiple)',
@@ -420,7 +425,8 @@ export const en = {
       premiumInfo: 'Unlimited usage with premium membership',
     },
     minIngredientWarning: 'Add at least one ingredient',
-    searchLimit: 'Premium membership required or daily limit reached for recipe search.',
+    searchLimit:
+      'Premium membership required or daily limit reached for recipe search.',
     cameraPermission: {
       title: 'Camera Permission Required',
       message: 'You need to allow camera access to use this feature.',
@@ -704,6 +710,14 @@ export const en = {
       title: 'Terms of Service',
       subtitle: 'Service terms and conditions',
     },
+    kvkk: {
+      title: 'Privacy Notice',
+      subtitle: 'Personal data protection',
+    },
+    cookiePolicy: {
+      title: 'Cookie Policy',
+      subtitle: 'About cookie usage',
+    },
     version: 'Version',
     developerOptions: 'Developer Options',
     clearCache: 'Clear Cache',
@@ -716,6 +730,9 @@ export const en = {
     cacheCleared: 'Cache cleared',
     environment: 'Environment',
     appStoreFailed: 'Could not open App Store',
+    errorOpeningLink: 'Could not open link',
+    errorOpeningEmail: 'Could not open email app',
+    errorOpeningStore: 'Could not open app store',
   },
 
   // Warnings
@@ -918,7 +935,8 @@ export const en = {
     protein: 'Protein',
     carbohydrates: 'Carbs',
     fat: 'Fat',
-    nutritionInfo: 'Nutritional values are approximate and may vary depending on ingredients used.',
+    nutritionInfo:
+      'Nutritional values are approximate and may vary depending on ingredients used.',
     time: '{{time}} min',
     minutes: 'minutes',
     servings: '{{count}} servings',
@@ -929,7 +947,8 @@ export const en = {
     recipeCongrats: 'Congratulations! Recipe completed 🎉',
     kcal: 'kcal',
     gram: 'g',
-    aiAssistantHint: 'Have questions about the recipe? Tap the AI assistant button in the bottom right for instant answers.',
+    aiAssistantHint:
+      'Have questions about the recipe? Tap the AI assistant button in the bottom right for instant answers.',
   },
   // Recipe Results Screen
   recipeResultsScreen: {
@@ -941,7 +960,8 @@ export const en = {
     failedToLoad: 'Failed to load recipes',
     recipesRefreshed: 'Recipes refreshed',
     refreshFailed: 'Refresh failed',
-    shareMessage: '🍽️ Found {{count}} recipes with {{ingredients}}!\n\nShared with YemekbulAI',
+    shareMessage:
+      '🍽️ Found {{count}} recipes with {{ingredients}}!\n\nShared with YemekbulAI',
     filterAndSort: 'Filter & Sort',
     sorting: 'Sorting',
     sortOptions: {
@@ -959,7 +979,8 @@ export const en = {
     popularIngredients: 'Popular Ingredients',
     clearFilters: 'Clear Filters',
     noRecipesFound: 'No Recipes Found',
-    noRecipesMessage: 'No recipes found with selected filters.\nTry different filters or change your ingredients.',
+    noRecipesMessage:
+      'No recipes found with selected filters.\nTry different filters or change your ingredients.',
     usedIngredients: 'Used Ingredients',
     filter: 'Filter',
   },

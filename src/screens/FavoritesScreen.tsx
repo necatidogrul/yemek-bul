@@ -51,7 +51,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  const { colors } = useThemedStyles();
+  const { colors, isDark } = useThemedStyles();
   const { showSuccess, showError } = useToast();
   const haptics = useHaptics();
   const { isPremium, showPaywall, refreshPremiumStatus, isLoading: premiumLoading } = usePremium();
@@ -232,7 +232,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 
   const renderGridItem = ({ item }: { item: Recipe }) => (
     <TouchableOpacity
-      style={[styles.gridCard]}
+      style={[styles.gridCard, { backgroundColor: colors.surface.primary }]}
       onPress={() => {
         haptics.selection();
         handleRecipePress(item);
@@ -312,9 +312,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             <Ionicons
               name='time-outline'
               size={14}
-              color={colors.neutral[400]}
+              color={colors.text.tertiary}
             />
-            <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
+            <Text variant='labelSmall' style={{ color: colors.text.secondary }}>
               {item.cookingTime || 30} {t('favoritesScreen.minutes')}
             </Text>
           </View>
@@ -322,9 +322,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             <Ionicons
               name='people-outline'
               size={14}
-              color={colors.neutral[400]}
+              color={colors.text.tertiary}
             />
-            <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
+            <Text variant='labelSmall' style={{ color: colors.text.secondary }}>
               {item.servings || 4} {t('favoritesScreen.servings')}
             </Text>
           </View>
@@ -335,7 +335,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 
   const renderListItem = ({ item }: { item: Recipe }) => (
     <TouchableOpacity
-      style={styles.listCard}
+      style={[styles.listCard, { backgroundColor: colors.surface.primary }]}
       onPress={() => {
         haptics.selection();
         handleRecipePress(item);
@@ -376,9 +376,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             <Ionicons
               name='time-outline'
               size={12}
-              color={colors.neutral[400]}
+              color={colors.text.tertiary}
             />
-            <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
+            <Text variant='labelSmall' style={{ color: colors.text.secondary }}>
               {item.cookingTime || 30} {t('favoritesScreen.minutes')}
             </Text>
           </View>
@@ -386,9 +386,9 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             <Ionicons
               name='people-outline'
               size={12}
-              color={colors.neutral[400]}
+              color={colors.text.tertiary}
             />
-            <Text variant='labelSmall' style={{ color: colors.neutral[500] }}>
+            <Text variant='labelSmall' style={{ color: colors.text.secondary }}>
               {item.servings || 4}
             </Text>
           </View>
@@ -482,7 +482,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           { backgroundColor: colors.background.primary },
         ]}
       >
-        <StatusBar barStyle='dark-content' />
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
         {/* Header - Exact Copy from SettingsScreen */}
         <View
@@ -490,7 +490,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             styles.header,
             {
               backgroundColor: colors.surface.primary,
-              borderBottomColor: colors.neutral[100],
+              borderBottomColor: colors.border.light,
             },
           ]}
         >
@@ -502,7 +502,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
             <View
               style={[
                 styles.backButtonContainer,
-                { backgroundColor: colors.neutral[100] },
+                { backgroundColor: colors.surface.secondary },
               ]}
             >
               <Ionicons name='arrow-back' size={22} color={colors.text.primary} />
@@ -602,7 +602,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
-      <StatusBar barStyle='dark-content' />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header - Exact Copy from SettingsScreen */}
       <View
@@ -610,7 +610,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           styles.header,
           {
             backgroundColor: colors.surface.primary,
-            borderBottomColor: colors.neutral[100],
+            borderBottomColor: colors.border.light,
           },
         ]}
       >
@@ -622,7 +622,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           <View
             style={[
               styles.backButtonContainer,
-              { backgroundColor: colors.neutral[100] },
+              { backgroundColor: colors.surface.secondary },
             ]}
           >
             <Ionicons name='arrow-back' size={22} color={colors.text.primary} />
@@ -654,7 +654,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                 color={
                   viewMode === 'grid'
                     ? colors.primary[600]
-                    : colors.neutral[400]
+                    : colors.text.tertiary
                 }
               />
             </TouchableOpacity>
@@ -674,7 +674,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                 color={
                   viewMode === 'list'
                     ? colors.primary[600]
-                    : colors.neutral[400]
+                    : colors.text.tertiary
                 }
               />
             </TouchableOpacity>
@@ -687,14 +687,14 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
         {/* Search Bar */}
         <View style={styles.searchContainer}>
           <View
-            style={[styles.searchBar, { backgroundColor: colors.neutral[50] }]}
+            style={[styles.searchBar, { backgroundColor: colors.surface.secondary }]}
           >
-            <Ionicons name='search' size={18} color={colors.neutral[400]} />
+            <Ionicons name='search' size={18} color={colors.text.tertiary} />
             <TextInput
               value={searchQuery}
               onChangeText={setSearchQuery}
               placeholder={t('favoritesScreen.searchPlaceholder')}
-              placeholderTextColor={colors.neutral[400]}
+              placeholderTextColor={colors.text.tertiary}
               style={[styles.searchInput, { color: colors.text.primary }]}
             />
             {searchQuery.length > 0 && (
@@ -702,7 +702,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
                 <Ionicons
                   name='close-circle'
                   size={18}
-                  color={colors.neutral[400]}
+                  color={colors.text.tertiary}
                 />
               </TouchableOpacity>
             )}
@@ -920,7 +920,7 @@ const styles = StyleSheet.create({
   },
   viewToggle: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(128,128,128,0.15)',
     borderRadius: borderRadius.md,
     padding: 2,
   },
@@ -930,7 +930,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md - 2,
   },
   toggleActive: {
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     ...shadows.sm,
   },
 
@@ -958,7 +958,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(128,128,128,0.15)',
   },
 
   // Filters
@@ -980,7 +980,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing[2],
     paddingVertical: 6,
     borderRadius: borderRadius.sm,
-    backgroundColor: 'rgba(0,0,0,0.05)',
+    backgroundColor: 'rgba(128,128,128,0.15)',
     gap: 4,
   },
 
@@ -1000,7 +1000,6 @@ const styles = StyleSheet.create({
   // Grid Card
   gridCard: {
     width: (screenWidth - spacing[3] * 3) / 2,
-    backgroundColor: 'white',
     borderRadius: borderRadius.lg,
     marginBottom: spacing[3],
     ...shadows.sm,
@@ -1032,7 +1031,6 @@ const styles = StyleSheet.create({
   // List Card
   listCard: {
     flexDirection: 'row',
-    backgroundColor: 'white',
     borderRadius: borderRadius.lg,
     padding: spacing[2],
     ...shadows.sm,
@@ -1095,7 +1093,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'white',
+    backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.sm,

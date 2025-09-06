@@ -70,7 +70,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
   const fadeAnim = useState(() => new Animated.Value(0))[0];
   const slideAnim = useState(() => new Animated.Value(50))[0];
 
-  const { colors } = useThemedStyles();
+  const { colors, isDark } = useThemedStyles();
   const {
     isPremium,
     showPaywall,
@@ -268,7 +268,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
 
   const renderHistoryItem = ({ item }: { item: AIRequestHistory }) => (
     <TouchableOpacity
-      style={styles.historyCard}
+      style={[styles.historyCard, { backgroundColor: colors.surface.primary }]}
       onPress={() => handleViewResults(item)}
       activeOpacity={0.9}
     >
@@ -317,8 +317,8 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
               styles.resultBadge,
               {
                 backgroundColor: item.success
-                  ? colors.success[50]
-                  : colors.error[50],
+                  ? (isDark ? 'rgba(34, 197, 94, 0.15)' : colors.success[50])
+                  : (isDark ? 'rgba(239, 68, 68, 0.15)' : colors.error[50]),
               },
             ]}
           >
@@ -684,7 +684,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                       <View
                         style={[
                           styles.miniChip,
-                          { backgroundColor: colors.neutral[100] },
+                          { backgroundColor: colors.surface.secondary },
                         ]}
                       >
                         <Text
@@ -783,7 +783,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                                   backgroundColor:
                                     count > 0
                                       ? colors.primary[500]
-                                      : colors.neutral[200],
+                                      : colors.border.medium,
                                 },
                               ]}
                             />
@@ -874,11 +874,11 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
                     backgroundColor:
                       filter.dateRange === item.key
                         ? colors.primary[500]
-                        : colors.neutral[50],
+                        : colors.surface.secondary,
                     borderColor:
                       filter.dateRange === item.key
                         ? colors.primary[500]
-                        : colors.neutral[200],
+                        : colors.border.light,
                   },
                 ]}
                 onPress={() =>
@@ -924,7 +924,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           { backgroundColor: colors.background.primary },
         ]}
       >
-        <StatusBar barStyle='dark-content' />
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
         {/* Header - Exact Copy from SettingsScreen */}
         <View
@@ -932,7 +932,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             styles.header,
             {
               backgroundColor: colors.surface.primary,
-              borderBottomColor: colors.neutral[100],
+              borderBottomColor: colors.border.light,
             },
           ]}
         >
@@ -944,7 +944,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             <View
               style={[
                 styles.backButtonContainer,
-                { backgroundColor: colors.neutral[100] },
+                { backgroundColor: colors.surface.secondary },
               ]}
             >
               <Ionicons
@@ -1052,7 +1052,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           { backgroundColor: colors.background.primary },
         ]}
       >
-        <StatusBar barStyle='dark-content' />
+        <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
         {/* Header - Exact Copy from SettingsScreen */}
         <View
@@ -1060,7 +1060,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             styles.header,
             {
               backgroundColor: colors.surface.primary,
-              borderBottomColor: colors.neutral[100],
+              borderBottomColor: colors.border.light,
             },
           ]}
         >
@@ -1072,7 +1072,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             <View
               style={[
                 styles.backButtonContainer,
-                { backgroundColor: colors.neutral[100] },
+                { backgroundColor: colors.surface.secondary },
               ]}
             >
               <Ionicons
@@ -1109,7 +1109,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
     <SafeAreaView
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
-      <StatusBar barStyle='dark-content' />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {/* Header - Exact Copy from SettingsScreen */}
       <View
@@ -1117,7 +1117,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           styles.header,
           {
             backgroundColor: colors.surface.primary,
-            borderBottomColor: colors.neutral[100],
+            borderBottomColor: colors.border.light,
           },
         ]}
       >
@@ -1129,7 +1129,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
           <View
             style={[
               styles.backButtonContainer,
-              { backgroundColor: colors.neutral[100] },
+              { backgroundColor: colors.surface.secondary },
             ]}
           >
             <Ionicons name='arrow-back' size={22} color={colors.text.primary} />
@@ -1191,13 +1191,13 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
       <View style={styles.actionBar}>
         <View style={styles.searchContainer}>
           <View
-            style={[styles.searchBar, { backgroundColor: colors.neutral[50] }]}
+            style={[styles.searchBar, { backgroundColor: colors.surface.secondary }]}
           >
-            <Ionicons name='search' size={18} color={colors.neutral[400]} />
+            <Ionicons name='search' size={18} color={colors.text.tertiary} />
             <Text
               style={{
                 ...styles.searchInput,
-                color: colors.neutral[400],
+                color: colors.text.tertiary,
               }}
             >
               {t('historyScreen.searchPlaceholder')}
@@ -1208,7 +1208,7 @@ const HistoryScreen: React.FC<HistoryScreenProps> = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.clearButton,
-                { backgroundColor: colors.error[100] },
+                { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.2)' : colors.error[100] },
               ]}
               onPress={handleClearHistory}
             >
@@ -1389,7 +1389,6 @@ const styles = StyleSheet.create({
   // History Card
   historyCard: {
     flexDirection: 'row',
-    backgroundColor: 'white',
     borderRadius: borderRadius.lg,
     padding: spacing[3],
     ...shadows.sm,
@@ -1432,7 +1431,7 @@ const styles = StyleSheet.create({
   deleteButton: {
     padding: spacing[1],
     borderRadius: borderRadius.sm,
-    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
   },
   resultBadge: {
     flexDirection: 'row',
@@ -1478,7 +1477,7 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     height: 40,
-    backgroundColor: 'rgba(0,0,0,0.1)',
+    backgroundColor: 'rgba(128,128,128,0.2)',
     marginHorizontal: spacing[2],
   },
   successRateContainer: {
@@ -1491,7 +1490,7 @@ const styles = StyleSheet.create({
   },
   successRateBar: {
     height: 6,
-    backgroundColor: 'rgba(0,0,0,0.06)',
+    backgroundColor: 'rgba(128,128,128,0.15)',
     borderRadius: 3,
     overflow: 'hidden',
   },

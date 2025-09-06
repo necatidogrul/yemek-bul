@@ -242,7 +242,10 @@ export const AILoadingModal: React.FC<AILoadingModalProps> = ({
               <Text
                 variant='h6'
                 weight='bold'
-                style={{ ...styles.progressPercent, color: currentStageIcon.color }}
+                style={{
+                  ...styles.progressPercent,
+                  color: currentStageIcon.color,
+                }}
               >
                 {Math.round(progress)}%
               </Text>

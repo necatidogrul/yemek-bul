@@ -96,7 +96,8 @@ Built with React Native/Expo, uses OpenAI for recipe generation and Supabase for
 - `EXPO_PUBLIC_GOOGLE_CUSTOM_SEARCH_API_KEY`: Google Custom Search for images
 - `EXPO_PUBLIC_GOOGLE_CSE_ID`: Google Custom Search Engine ID
 - `EXPO_PUBLIC_REVENUECAT_API_KEY_IOS`: RevenueCat iOS API key
-- `EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID`: RevenueCat Android API key
+- ~~`EXPO_PUBLIC_REVENUECAT_API_KEY_ANDROID`: RevenueCat Android API key~~ (Android build
+  alınmayacak - kaldırıldı)
 - `EXPO_PUBLIC_DEBUG_PREMIUM`: Debug flag for premium features
 
 ### Security Architecture
@@ -140,7 +141,8 @@ Babel alias configured: `@` -> `./src`
 
 ### RevenueCat Integration Notes
 
-- **Expo Go Limitation**: RevenueCat only works with development builds (`eas build --profile development`), not Expo Go
+- **Expo Go Limitation**: RevenueCat only works with development builds
+  (`eas build --profile development`), not Expo Go
 - **Platform Keys**: iOS uses dedicated API key, Android key is currently empty/test
 - **Error Handling**: App continues with limited functionality if RevenueCat fails to initialize
 - **Debug Mode**: Extensive logging available in development mode
@@ -164,7 +166,8 @@ Babel alias configured: `@` -> `./src`
 
 **IMPORTANT: Avoid common TypeScript errors in React Native styles:**
 
-1. **Array styles with conditional objects**: Don't use `style={[styles.text, { color: 'red' }]}` for Text components. Instead use spread operator: `style={{ ...styles.text, color: 'red' }}`
+1. **Array styles with conditional objects**: Don't use `style={[styles.text, { color: 'red' }]}`
+   for Text components. Instead use spread operator: `style={{ ...styles.text, color: 'red' }}`
 
 2. **Web-specific CSS properties**: Never use CSS properties that are web-only in React Native:
    - `transition` - Not supported in React Native

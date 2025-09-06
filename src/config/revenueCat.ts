@@ -10,7 +10,7 @@ export const REVENUECAT_CONFIG = {
     apple:
       process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ||
       'appl_aAFWiEGXPfzbOgzBYpVMbfvojQD', // RevenueCat iOS API Key
-    google: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY || '', // RevenueCat Android API Key
+    // google: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY || '', // Android build alınmayacak - kaldırıldı
   },
 
   // Apple Store Connect Product IDs

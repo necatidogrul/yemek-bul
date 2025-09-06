@@ -698,8 +698,16 @@ export const tr = {
       subtitle: 'Veri kullanım politikamız',
     },
     termsOfService: {
-      title: 'Kullanım Şartları',
+      title: 'Kullanım Koşulları',
       subtitle: 'Hizmet şartları ve koşulları',
+    },
+    kvkk: {
+      title: 'KVKK Aydınlatma Metni',
+      subtitle: 'Kişisel verilerin korunması',
+    },
+    cookiePolicy: {
+      title: 'Çerez Politikası',
+      subtitle: 'Çerez kullanımı hakkında',
     },
     version: 'Sürüm',
     developerOptions: 'Geliştirici Seçenekleri',
@@ -710,6 +718,9 @@ export const tr = {
     languageChanged: 'Dil değiştirildi',
     themeChanged: 'Tema değiştirildi',
     debugEnabled: 'Debug modu etkinleştirildi',
+    errorOpeningLink: 'Bağlantı açılamadı',
+    errorOpeningEmail: 'E-posta uygulaması açılamadı',
+    errorOpeningStore: 'Uygulama mağazası açılamadı',
     cacheCleared: 'Önbellek temizlendi',
     environment: 'Ortam',
     appStoreFailed: 'App Store açılamadı',

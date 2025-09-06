@@ -12,8 +12,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_aAFWiEGXPfzbOgzBYpVMbfvojQD",
-        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_test_key"
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_aAFWiEGXPfzbOgzBYpVMbfvojQD"
+        // "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_test_key" (Android build alınmayacak - kaldırıldı)
       }
     },
     "preview": {
@@ -24,8 +24,8 @@
         "buildConfiguration": "Release"
       },
       "env": {
-        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_aAFWiEGXPfzbOgzBYpVMbfvojQD",
-        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_test_key"
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_aAFWiEGXPfzbOgzBYpVMbfvojQD"
+        // "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_test_key" (Android build alınmayacak - kaldırıldı)
       }
     },
     "production": {
@@ -34,8 +34,8 @@
         "buildConfiguration": "Release"
       },
       "env": {
-        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_aAFWiEGXPfzbOgzBYpVMbfvojQD",
-        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_test_key"
+        "EXPO_PUBLIC_REVENUECAT_IOS_API_KEY": "appl_aAFWiEGXPfzbOgzBYpVMbfvojQD"
+        // "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_test_key" (Android build alınmayacak - kaldırıldı)
       }
     }
   },

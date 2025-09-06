@@ -31,14 +31,8 @@ export interface RecipeGenerationResponse {
 }
 
 export class OpenAIService {
-  // GÜVENLIK: Production'da Supabase Edge Function kullanır
-  private static readonly DEV_API_KEY = __DEV__
-    ? process.env.EXPO_PUBLIC_OPENAI_API_KEY
-    : null;
-  private static readonly PRODUCTION_URL =
-    process.env.EXPO_PUBLIC_SUPABASE_URL + '/functions/v1/openai-proxy';
-  private static readonly DEV_URL =
-    'https://api.openai.com/v1/chat/completions';
+  // API URLs
+  private static readonly DEV_URL = 'https://api.openai.com/v1/chat/completions';
   private static readonly MODEL = 'gpt-3.5-turbo';
 
   // Token fiyatlandırması (GPT-3.5-turbo)
@@ -92,8 +86,38 @@ export class OpenAIService {
     url: string;
     headers: Record<string, string>;
   }> {
-    // Her zaman direkt OpenAI API kullan (Supabase Edge Function yok)
-    console.log('🤖 Using direct OpenAI API');
+    // Production kontrolü - __DEV__ false ise production'dayız
+    const isProduction = !__DEV__;
+    
+    // Development ortamında ve OPENAI_API_KEY varsa direkt API kullan
+    const hasDirectApiKey = !!process.env.EXPO_PUBLIC_OPENAI_API_KEY;
+    const useDirectApi = __DEV__ && hasDirectApiKey;
+    
+    if (!useDirectApi) {
+      // Production veya development'ta bile Edge Function kullan
+      console.log('🔒 Using Supabase Edge Function (Secure)');
+      Logger.info('OpenAI Service: Using Supabase Edge Function');
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      const authToken = session?.access_token || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+      
+      if (!authToken) {
+        throw new Error('No authentication token available for Edge Function');
+      }
+      
+      return {
+        url: `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/openai-proxy`,
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      };
+    }
+    
+    // Development'ta direkt OpenAI API kullan (test için)
+    console.log('⚠️ Using direct OpenAI API (Development only)');
+    Logger.info('OpenAI Service: Using direct OpenAI API (dev mode)');
+    
     return {
       url: this.DEV_URL,
       headers: {
@@ -144,10 +168,25 @@ export class OpenAIService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorText = await response.text().catch(() => 'Unknown error');
+        let errorData: any = {};
+        
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        
+        Logger.error('OpenAI API Request Failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+          url: url,
+        });
+        
         throw new Error(
           `OpenAI API error: ${response.status} - ${
-            errorData.error?.message || response.statusText
+            errorData.error?.message || errorData.message || response.statusText
           }`
         );
       }
@@ -530,10 +569,25 @@ export class OpenAIService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorText = await response.text().catch(() => 'Unknown error');
+        let errorData: any = {};
+        
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        
+        Logger.error('OpenAI API Request Failed:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData,
+          url: url,
+        });
+        
         throw new Error(
           `OpenAI API error: ${response.status} - ${
-            errorData.error?.message || response.statusText
+            errorData.error?.message || errorData.message || response.statusText
           }`
         );
       }
